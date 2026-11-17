@@ -1,0 +1,67 @@
+{
+  "candidate_version": 2,
+  "promoted": true,
+  "reasons": [
+    "MAE 778.62 is 10.8% below best baseline (median_by_proc_age_type) (872.80)",
+    "monthly total error 11.32% is not worse than best baseline (median_by_proc_age_type) (40.81%)",
+    "monthly total error 11.32% is within the 15.0% ceiling"
+  ],
+  "metrics": {
+    "candidate": {
+      "mae": 778.6236713670914,
+      "rmse": 2705.55406813793,
+      "median_ae": 171.5523067430522,
+      "bias_pct": -11.424603730230869,
+      "mae_top_decile": 4724.826734763731,
+      "monthly_total_mape": 11.315611258238375
+    },
+    "global_mean": {
+      "mae": 1579.6352958637658,
+      "rmse": 3905.463852081911,
+      "median_ae": 972.2797056019857,
+      "bias_pct": -7.363647878824442,
+      "mae_top_decile": 7763.687578507566,
+      "monthly_total_mape": 7.147583693635227
+    },
+    "median_by_proc": {
+      "mae": 886.2875007405212,
+      "rmse": 3204.9539384740524,
+      "median_ae": 127.81000000000003,
+      "bias_pct": -41.60926039711541,
+      "mae_top_decile": 6283.976793371764,
+      "monthly_total_mape": 41.53299885257021
+    },
+    "median_by_proc_age_type": {
+      "mae": 872.799915728673,
+      "rmse": 3182.4217929116026,
+      "median_ae": 126.23999999999995,
+      "bias_pct": -40.89227397279414,
+      "mae_top_decile": 6191.195400679001,
+      "monthly_total_mape": 40.81303306845279
+    },
+    "mean_by_proc": {
+      "mae": 1003.5290901968515,
+      "rmse": 3068.9594693700865,
+      "median_ae": 274.4000965081593,
+      "bias_pct": -13.63467097442153,
+      "mae_top_decile": 5546.332447341001,
+      "monthly_total_mape": 13.495653283654711
+    },
+    "mean_by_proc_age_type": {
+      "mae": 972.1016672964975,
+      "rmse": 3020.253157499574,
+      "median_ae": 240.39740554156174,
+      "bias_pct": -13.57306095603204,
+      "mae_top_decile": 5376.141665133505,
+      "monthly_total_mape": 13.441733832208257
+    },
+    "log_linear": {
+      "mae": 937.813084483915,
+      "rmse": 3223.437881233161,
+      "median_ae": 254.30823393350875,
+      "bias_pct": -12.888757647204518,
+      "mae_top_decile": 5848.082496653875,
+      "monthly_total_mape": 12.888396464453722
+    }
+  }
+}

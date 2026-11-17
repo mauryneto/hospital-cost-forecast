@@ -1,0 +1,36 @@
+# Template for your own data: fill templates/admissions_template.csv (see DATA_CONTRACT.md), point `path` at it.
+name = "my_dataset"
+
+[source]
+type = "file"
+path = "data/my_admissions.csv"  # CSV or Parquet in the canonical format; keep it out of Git (data/ is ignored)
+
+[split]
+# Windows counted back from the last month in the data: the last 12 months replay as production,
+# the 12 before are the test set, the 12 before that are validation, and everything earlier is training.
+mode = "relative"
+monitor_months = 12
+test_months = 12
+valid_months = 12
+
+[contract]
+max_paid_amount = 5_000_000  # set to a value no real admission in your data can reach
+
+[train]
+objectives = ["tweedie", "log_l2"]
+num_leaves = [31, 63]
+sliding_months = [24]
+
+[gate]
+min_mae_gain = 0.02
+max_monthly_total_mape = 15.0
+
+[monitor]
+label_delay_months = 3  # months until (almost) every admission of a month has its cost; measure it on your data
+mae_tolerance = 0.10
+patience = 2
+
+[replay]
+policies = ["never", "rule", "monthly"]
+windows = [0]
+gate_months = 2

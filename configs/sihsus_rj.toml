@@ -1,0 +1,62 @@
+# Public demo: SIH/SUS admissions, Rio de Janeiro state.
+name = "sihsus_rj"
+
+[source]
+type = "sihsus"
+uf = "RJ"
+# Files are per *billing* month; a hospital bills an admission up to ~5 months later (99.9%), so billing months run
+# past the last admission month to make the last months of admissions complete.
+first_billing_month = "2018-01"
+last_billing_month = "2025-06"
+first_admission = "2018-01-01"
+last_admission = "2024-12-31"
+
+[split]
+mode = "dates"
+train = ["2018-01-01", "2021-12-31"]
+valid = ["2022-01-01", "2022-12-31"]
+test = ["2023-01-01", "2023-12-31"]
+monitor = ["2024-01-01", "2024-12-31"]  # simulated production, month by month
+
+[contract]
+max_paid_amount = 1_000_000  # BRL; no SUS admission in RJ 2018-2024 comes close
+
+[experiments]
+# Pandemic: in RJ, 2020 has fewer admissions, but costs peak in 2021 (second wave, ICU-heavy COVID admissions).
+exclude_year_sets = [[2020], [2020, 2021]]
+
+[train]
+# Candidate search, each combination measured on 2022. "sliding_months" adds training windows of only the last N
+# months, to compare with the expanding window (all of 2018-2021), because prices drift upwards over time.
+objectives = ["tweedie", "log_l2"]
+num_leaves = [63, 255]
+sliding_months = [24]
+# The admission date as a number: with it, trees apply the most recent price level to future admissions.
+use_time = [false, true]
+learning_rate = 0.1
+max_rounds = 2000
+early_stopping_rounds = 50
+min_category_count = 20
+seed = 42
+
+[gate]
+# Promote only with an MAE at least 2% below every reference (best baseline, and the production model if any), a
+# monthly-total error not worse than theirs, and never above 15%: the mean-per-procedure baselines reach about 12%
+# on 2022, so a model above 15% would be worse for provisioning than a lookup table.
+min_mae_gain = 0.02
+max_monthly_total_mape = 15.0
+
+[monitor]
+# Costs are known only once billed: 3 months after the admission month covers 98.7% of admissions and 95.4% of the
+# money (measured on 2018-2021). A month is judged only after that, or expensive late bills would be missing.
+label_delay_months = 3
+# Recommend retraining when 2 mature months in a row have an MAE more than 10% above the model's test MAE, or a
+# monthly-total error beyond the gate's ceiling ([gate] max_monthly_total_mape).
+mae_tolerance = 0.10
+patience = 2
+
+[replay]
+# `costmodel replay`: what each policy would have done over 2024. Retrains use the production model's settings.
+policies = ["never", "rule", "monthly"]
+windows = [0, 24]  # 0 = all data known so far; 24 = only the last 24 months
+gate_months = 2

@@ -1,0 +1,302 @@
+[
+  {
+    "model": "global_mean",
+    "train_window": "all training years",
+    "n_train": 2819848,
+    "n_valid": 786766,
+    "mae": 1559.7750358096284,
+    "rmse": 3937.896754695988,
+    "median_ae": 952.4458934382278,
+    "bias_pct": -6.965998452026367,
+    "mae_top_decile": 7691.332151479602,
+    "monthly_total_mape": 6.924367157025362,
+    "seconds": 0.2
+  },
+  {
+    "model": "median_by_proc",
+    "train_window": "all training years",
+    "n_train": 2819848,
+    "n_valid": 786766,
+    "mae": 860.5785267983109,
+    "rmse": 3336.968503336439,
+    "median_ae": 106.63,
+    "bias_pct": -40.56388242677975,
+    "mae_top_decile": 6243.517178845152,
+    "monthly_total_mape": 40.551512138626755,
+    "seconds": 1.2,
+    "coverage": {
+      "requested_procedure": 0.9974045650167902,
+      "procedure_prefix4": 0.0025954349832097473,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "median_by_proc_age_type",
+    "train_window": "all training years",
+    "n_train": 2819848,
+    "n_valid": 786766,
+    "mae": 848.6016041745577,
+    "rmse": 3313.935296375951,
+    "median_ae": 107.11999999999999,
+    "bias_pct": -39.60234150527625,
+    "mae_top_decile": 6139.0250345717295,
+    "monthly_total_mape": 39.59132870402652,
+    "seconds": 1.7,
+    "coverage": {
+      "requested_procedure+age_band+admission_type": 0.9654331783529029,
+      "requested_procedure": 0.03197138666388736,
+      "procedure_prefix4": 0.0025954349832097473,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "mean_by_proc",
+    "train_window": "all training years",
+    "n_train": 2819848,
+    "n_valid": 786766,
+    "mae": 991.9655008020532,
+    "rmse": 3177.62482914756,
+    "median_ae": 261.64160935150596,
+    "bias_pct": -12.213461624747705,
+    "mae_top_decile": 5504.004700520113,
+    "monthly_total_mape": 12.221906002220818,
+    "seconds": 1.0,
+    "coverage": {
+      "requested_procedure": 0.9974045650167902,
+      "procedure_prefix4": 0.0025954349832097473,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "mean_by_proc_age_type",
+    "train_window": "all training years",
+    "n_train": 2819848,
+    "n_valid": 786766,
+    "mae": 964.3579710955917,
+    "rmse": 3138.8866048828786,
+    "median_ae": 231.83786449399645,
+    "bias_pct": -12.282644384186355,
+    "mae_top_decile": 5363.6223646448725,
+    "monthly_total_mape": 12.290543213213965,
+    "seconds": 1.2,
+    "coverage": {
+      "requested_procedure+age_band+admission_type": 0.9654331783529029,
+      "requested_procedure": 0.03197138666388736,
+      "procedure_prefix4": 0.0025954349832097473,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "log_linear",
+    "train_window": "all training years",
+    "n_train": 2819848,
+    "n_valid": 786766,
+    "mae": 898.1750129245966,
+    "rmse": 3171.1552415887513,
+    "median_ae": 240.90722245249935,
+    "bias_pct": -15.186354687171182,
+    "mae_top_decile": 5592.141884412241,
+    "monthly_total_mape": 15.180625012357408,
+    "seconds": 114.4
+  },
+  {
+    "model": "global_mean",
+    "train_window": "without 2020",
+    "n_train": 2170701,
+    "n_valid": 786766,
+    "mae": 1552.3614542049415,
+    "rmse": 3938.2618341301772,
+    "median_ae": 941.6644418784531,
+    "bias_pct": -7.727884343794256,
+    "mae_top_decile": 7703.542486796282,
+    "monthly_total_mape": 7.686593981095336,
+    "seconds": 0.4
+  },
+  {
+    "model": "median_by_proc",
+    "train_window": "without 2020",
+    "n_train": 2170701,
+    "n_valid": 786766,
+    "mae": 861.9085917286715,
+    "rmse": 3342.6185219346244,
+    "median_ae": 107.75000000000003,
+    "bias_pct": -40.88620917775041,
+    "mae_top_decile": 6265.311036452839,
+    "monthly_total_mape": 40.8749319713853,
+    "seconds": 1.7,
+    "coverage": {
+      "requested_procedure": 0.9965847532811535,
+      "procedure_prefix4": 0.0034152467188465186,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "median_by_proc_age_type",
+    "train_window": "without 2020",
+    "n_train": 2170701,
+    "n_valid": 786766,
+    "mae": 849.7740494823112,
+    "rmse": 3309.4286070104285,
+    "median_ae": 106.60000000000002,
+    "bias_pct": -39.52603873663944,
+    "mae_top_decile": 6133.247748833839,
+    "monthly_total_mape": 39.521203844666815,
+    "seconds": 2.3,
+    "coverage": {
+      "requested_procedure+age_band+admission_type": 0.9594733376887156,
+      "requested_procedure": 0.037111415592437906,
+      "procedure_prefix4": 0.0034152467188465186,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "mean_by_proc",
+    "train_window": "without 2020",
+    "n_train": 2170701,
+    "n_valid": 786766,
+    "mae": 995.0663976904716,
+    "rmse": 3177.4911884368107,
+    "median_ae": 260.0581130355515,
+    "bias_pct": -11.918715052274202,
+    "mae_top_decile": 5493.144008235176,
+    "monthly_total_mape": 11.936008048321632,
+    "seconds": 1.5,
+    "coverage": {
+      "requested_procedure": 0.9965847532811535,
+      "procedure_prefix4": 0.0034152467188465186,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "mean_by_proc_age_type",
+    "train_window": "without 2020",
+    "n_train": 2170701,
+    "n_valid": 786766,
+    "mae": 968.3058417091868,
+    "rmse": 3138.421838689966,
+    "median_ae": 231.80081159037655,
+    "bias_pct": -11.926040890469016,
+    "mae_top_decile": 5356.334568522996,
+    "monthly_total_mape": 11.94328486564847,
+    "seconds": 1.0,
+    "coverage": {
+      "requested_procedure+age_band+admission_type": 0.9594733376887156,
+      "requested_procedure": 0.037111415592437906,
+      "procedure_prefix4": 0.0034152467188465186,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "log_linear",
+    "train_window": "without 2020",
+    "n_train": 2170701,
+    "n_valid": 786766,
+    "mae": 899.8634403690493,
+    "rmse": 3167.0717785825764,
+    "median_ae": 241.14654294551968,
+    "bias_pct": -14.999236012060752,
+    "mae_top_decile": 5582.735034617744,
+    "monthly_total_mape": 14.998476863493913,
+    "seconds": 83.5
+  },
+  {
+    "model": "global_mean",
+    "train_window": "without 2020-2021",
+    "n_train": 1431603,
+    "n_valid": 786766,
+    "mae": 1426.358126358564,
+    "rmse": 3951.05675817021,
+    "median_ae": 741.7044225179745,
+    "bias_pct": -21.277421052398804,
+    "mae_top_decile": 7920.693622399854,
+    "monthly_total_mape": 21.242193900466443,
+    "seconds": 0.2
+  },
+  {
+    "model": "median_by_proc",
+    "train_window": "without 2020-2021",
+    "n_train": 1431603,
+    "n_valid": 786766,
+    "mae": 878.4315974254099,
+    "rmse": 3374.137145399441,
+    "median_ae": 109.34000000000009,
+    "bias_pct": -42.21884811054256,
+    "mae_top_decile": 6355.711694840932,
+    "monthly_total_mape": 42.19710746192992,
+    "seconds": 0.6,
+    "coverage": {
+      "requested_procedure": 0.9833826067725346,
+      "procedure_prefix4": 0.016617393227465346,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "median_by_proc_age_type",
+    "train_window": "without 2020-2021",
+    "n_train": 1431603,
+    "n_valid": 786766,
+    "mae": 869.8850817206131,
+    "rmse": 3357.174370168535,
+    "median_ae": 106.60000000000002,
+    "bias_pct": -41.034360301587704,
+    "mae_top_decile": 6267.185536497324,
+    "monthly_total_mape": 41.01257425240475,
+    "seconds": 1.0,
+    "coverage": {
+      "requested_procedure+age_band+admission_type": 0.9343133790733203,
+      "requested_procedure": 0.04906922769921425,
+      "procedure_prefix4": 0.016617393227465346,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "mean_by_proc",
+    "train_window": "without 2020-2021",
+    "n_train": 1431603,
+    "n_valid": 786766,
+    "mae": 985.9133071884575,
+    "rmse": 3236.317660975103,
+    "median_ae": 253.31860637087607,
+    "bias_pct": -15.926576120843967,
+    "mae_top_decile": 5686.793940352024,
+    "monthly_total_mape": 15.901806771331996,
+    "seconds": 0.7,
+    "coverage": {
+      "requested_procedure": 0.9833826067725346,
+      "procedure_prefix4": 0.016617393227465346,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "mean_by_proc_age_type",
+    "train_window": "without 2020-2021",
+    "n_train": 1431603,
+    "n_valid": 786766,
+    "mae": 966.5258801214217,
+    "rmse": 3213.2372893592496,
+    "median_ae": 226.14160114861056,
+    "bias_pct": -15.935875647914184,
+    "mae_top_decile": 5576.413392771867,
+    "monthly_total_mape": 15.911129826006169,
+    "seconds": 0.9,
+    "coverage": {
+      "requested_procedure+age_band+admission_type": 0.9343133790733203,
+      "requested_procedure": 0.04906922769921425,
+      "procedure_prefix4": 0.016617393227465346,
+      "global": 0.0
+    }
+  },
+  {
+    "model": "log_linear",
+    "train_window": "without 2020-2021",
+    "n_train": 1431603,
+    "n_valid": 786766,
+    "mae": 907.0261862961113,
+    "rmse": 3264.529278981337,
+    "median_ae": 225.4305096707879,
+    "bias_pct": -21.44820478487786,
+    "mae_top_decile": 5866.743954985927,
+    "monthly_total_mape": 21.41017504976187,
+    "seconds": 48.0
+  }
+]

@@ -1,0 +1,46 @@
+# Usage:
+#   docker compose run --rm tests                                             # lint + full test suite
+#   docker compose run --rm costmodel data                                    # SIH/SUS: download, checksums, contract
+#   docker compose run --rm costmodel eda
+#   docker compose run --rm costmodel baselines
+#   docker compose run --rm costmodel train                                   # candidate -> MLflow registry ('staging')
+#   docker compose run --rm costmodel evaluate                                # test year + gate -> 'production'?
+#   docker compose run --rm costmodel monitor                                 # monitoring window: drift, error, retrain rule
+#   docker compose run --rm costmodel replay                                  # what-if of retraining policies (slow)
+#   docker compose run --rm costmodel run                                     # data + train + evaluate + monitor
+#   docker compose run --rm costmodel score --month 2024-03                   # batch: price a month with 'production'
+#   docker compose up api                                                     # POST /predict on http://127.0.0.1:8000
+#   docker compose up mlflow                                                  # experiment UI on http://127.0.0.1:5000
+#   docker compose run --rm costmodel synthetic                               # made-up plan data, contract format
+#   docker compose run --rm costmodel data --config configs/synthetic_plan.toml
+# Data and reports land in ./docker-work (ignored by Git).
+services:
+  costmodel:
+    build: .
+    image: hospital-cost-forecast:dev
+    volumes:
+      - ./docker-work:/work
+
+  tests:
+    image: hospital-cost-forecast:dev
+    build: .
+    entrypoint: ["sh", "-c", "ruff check --no-cache src tests && pytest -q -p no:cacheprovider"]
+
+  mlflow:
+    image: hospital-cost-forecast:dev
+    build: .
+    volumes:
+      - ./docker-work:/work
+    entrypoint: ["mlflow", "ui", "--backend-store-uri", "sqlite:////work/mlflow.db", "--host", "0.0.0.0", "--port", "5000"]
+    ports:
+      - "127.0.0.1:5000:5000"
+
+  # Restart it after a promotion or a rollback: it keeps the model version it loaded at startup.
+  api:
+    image: hospital-cost-forecast:dev
+    build: .
+    volumes:
+      - ./docker-work:/work
+    entrypoint: ["costmodel", "serve", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"

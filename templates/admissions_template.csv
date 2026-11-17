@@ -1,0 +1,1 @@
+admission_id,admission_date,age_years,sex,diagnosis_icd10,requested_procedure,procedure_code_system,admission_type,provider_id,residence_area,bed_specialty,paid_amount,discharge_date,length_of_stay_days,icu_days,performed_procedure,death

@@ -1,0 +1,428 @@
+{
+  "version": "2",
+  "reference_mae": 778.62,
+  "rules": {
+    "label_delay_months": 3,
+    "mae_tolerance": 0.1,
+    "patience": 2,
+    "max_monthly_total_error": 15.0
+  },
+  "months": [
+    {
+      "period": "2024-01",
+      "n": 74155.0,
+      "actual": 125102454.10000001,
+      "predicted": 106945491.38493426,
+      "mae": 811.5945023086377,
+      "total_error_pct": -14.513674288557178,
+      "psi": {
+        "sex": 0.0007755013374886226,
+        "residence_area": 0.004761446683706108,
+        "diagnosis_icd10": 0.22162694202889643,
+        "diagnosis_category": 0.2096919741371509,
+        "diagnosis_chapter": 0.1317039167652072,
+        "requested_procedure": 0.24428163050493515,
+        "procedure_prefix2": 0.011964393011838308,
+        "procedure_prefix4": 0.053103039866033916,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.02625262758405675,
+        "bed_specialty": 0.05132162471498338,
+        "provider_id": 0.016489331616032454,
+        "age_years": 0.01227888876587382,
+        "predicted cost": 0.007214617133507834
+      },
+      "breaches": []
+    },
+    {
+      "period": "2024-02",
+      "n": 70341.0,
+      "actual": 114715075.23,
+      "predicted": 98340938.6418151,
+      "mae": 786.5556180090254,
+      "total_error_pct": -14.273744366514423,
+      "psi": {
+        "sex": 0.0004203869321102925,
+        "residence_area": 0.005737831992737504,
+        "diagnosis_icd10": 0.17883741923890922,
+        "diagnosis_category": 0.1712110249105505,
+        "diagnosis_chapter": 0.12760193918725674,
+        "requested_procedure": 0.24232471726032354,
+        "procedure_prefix2": 0.010400485916379014,
+        "procedure_prefix4": 0.046506308275505046,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.021895667974581763,
+        "bed_specialty": 0.04717821844610502,
+        "provider_id": 0.029011273552038305,
+        "age_years": 0.008589694688547856,
+        "predicted cost": 0.006492293441104417
+      },
+      "breaches": []
+    },
+    {
+      "period": "2024-03",
+      "n": 77764.0,
+      "actual": 126894049.75,
+      "predicted": 109605481.14620669,
+      "mae": 779.7212820248255,
+      "total_error_pct": -13.624412364373539,
+      "psi": {
+        "sex": 0.0007811819310400832,
+        "residence_area": 0.009431419397960869,
+        "diagnosis_icd10": 0.2030393304758812,
+        "diagnosis_category": 0.17742395934482458,
+        "diagnosis_chapter": 0.14211215235158775,
+        "requested_procedure": 0.24518299236569185,
+        "procedure_prefix2": 0.010155265547440768,
+        "procedure_prefix4": 0.052002673931076174,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.03103969804876985,
+        "bed_specialty": 0.05532288309291776,
+        "provider_id": 0.027320793270426535,
+        "age_years": 0.006660867737510305,
+        "predicted cost": 0.008411630678881671
+      },
+      "breaches": []
+    },
+    {
+      "period": "2024-04",
+      "n": 78687.0,
+      "actual": 131962121.11999999,
+      "predicted": 112352562.1366255,
+      "mae": 806.6345195723566,
+      "total_error_pct": -14.859990743512302,
+      "psi": {
+        "sex": 0.0006679105862095863,
+        "residence_area": 0.008985738607174477,
+        "diagnosis_icd10": 0.26861881387018516,
+        "diagnosis_category": 0.21190457687519054,
+        "diagnosis_chapter": 0.14054823429080548,
+        "requested_procedure": 0.25133567897390857,
+        "procedure_prefix2": 0.010619801529209369,
+        "procedure_prefix4": 0.05841700910552916,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.03917246541142201,
+        "bed_specialty": 0.0643162911422166,
+        "provider_id": 0.02921272446206319,
+        "age_years": 0.0067534262748845785,
+        "predicted cost": 0.006382489813691801
+      },
+      "breaches": []
+    },
+    {
+      "period": "2024-05",
+      "n": 79045.0,
+      "actual": 140598493.13,
+      "predicted": 116045339.7819708,
+      "mae": 864.2818586241708,
+      "total_error_pct": -17.463311875844138,
+      "psi": {
+        "sex": 0.0009663735434906514,
+        "residence_area": 0.006590260484174701,
+        "diagnosis_icd10": 0.27304893665318614,
+        "diagnosis_category": 0.22744508812928332,
+        "diagnosis_chapter": 0.14633324296822678,
+        "requested_procedure": 0.25486232094679234,
+        "procedure_prefix2": 0.012582062525338947,
+        "procedure_prefix4": 0.06197247069140063,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.0412960523997055,
+        "bed_specialty": 0.07301673277874986,
+        "provider_id": 0.02749995391943008,
+        "age_years": 0.008119270723124548,
+        "predicted cost": 0.007503315862278667
+      },
+      "breaches": [
+        "MAE 864.28 > 856.48",
+        "monthly total error -17.5% beyond 15%"
+      ]
+    },
+    {
+      "period": "2024-06",
+      "n": 75564.0,
+      "actual": 132550643.51,
+      "predicted": 111018859.52612431,
+      "mae": 849.6710194795321,
+      "total_error_pct": -16.244194229242858,
+      "psi": {
+        "sex": 0.001685121471447286,
+        "residence_area": 0.006716238025791053,
+        "diagnosis_icd10": 0.27193025868639026,
+        "diagnosis_category": 0.26339847260862276,
+        "diagnosis_chapter": 0.1520879645089016,
+        "requested_procedure": 0.25913877480674125,
+        "procedure_prefix2": 0.015176203595844404,
+        "procedure_prefix4": 0.0674425534889814,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.04218945485547606,
+        "bed_specialty": 0.07162158839276694,
+        "provider_id": 0.018577891763100995,
+        "age_years": 0.009736650012003372,
+        "predicted cost": 0.008619348828899273
+      },
+      "breaches": [
+        "monthly total error -16.2% beyond 15%"
+      ]
+    },
+    {
+      "period": "2024-07",
+      "n": 76772.0,
+      "actual": 150339130.48000002,
+      "predicted": 115587332.25619654,
+      "mae": 1011.5451680262979,
+      "total_error_pct": -23.11560410975411,
+      "psi": {
+        "sex": 0.001439078091718601,
+        "residence_area": 0.00700105078701025,
+        "diagnosis_icd10": 0.26715274240056486,
+        "diagnosis_category": 0.2439292920277371,
+        "diagnosis_chapter": 0.14124558030644924,
+        "requested_procedure": 0.26190286520486883,
+        "procedure_prefix2": 0.020188740461411808,
+        "procedure_prefix4": 0.07345511322061812,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.05077282865788805,
+        "bed_specialty": 0.07394072295847606,
+        "provider_id": 0.014734574471192419,
+        "age_years": 0.014967465243869348,
+        "predicted cost": 0.01234980939214649
+      },
+      "breaches": [
+        "MAE 1011.55 > 856.48",
+        "monthly total error -23.1% beyond 15%"
+      ]
+    },
+    {
+      "period": "2024-08",
+      "n": 76809.0,
+      "actual": 146129332.32000002,
+      "predicted": 112522711.14075893,
+      "mae": 984.0092340022136,
+      "total_error_pct": -22.997861309355695,
+      "psi": {
+        "sex": 0.0020498930777062495,
+        "residence_area": 0.007734434340598265,
+        "diagnosis_icd10": 0.27153573324514374,
+        "diagnosis_category": 0.23500796000431584,
+        "diagnosis_chapter": 0.1453310711580742,
+        "requested_procedure": 0.26616124705466865,
+        "procedure_prefix2": 0.01865756439879984,
+        "procedure_prefix4": 0.07905452329924817,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.052280348461406646,
+        "bed_specialty": 0.07738899691321958,
+        "provider_id": 0.018229775269898267,
+        "age_years": 0.01668110841798493,
+        "predicted cost": 0.012626259491258883
+      },
+      "breaches": [
+        "MAE 984.01 > 856.48",
+        "monthly total error -23.0% beyond 15%"
+      ]
+    },
+    {
+      "period": "2024-09",
+      "n": 76389.0,
+      "actual": 139700937.94000003,
+      "predicted": 111065655.5694527,
+      "mae": 928.8284492469901,
+      "total_error_pct": -20.497559137967887,
+      "psi": {
+        "sex": 0.00139145936619725,
+        "residence_area": 0.005898818628279878,
+        "diagnosis_icd10": 0.25142886909009987,
+        "diagnosis_category": 0.23041256367819335,
+        "diagnosis_chapter": 0.14901726010183597,
+        "requested_procedure": 0.2694348638750189,
+        "procedure_prefix2": 0.024346794525093706,
+        "procedure_prefix4": 0.08867196385287902,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.05721134903502371,
+        "bed_specialty": 0.0771823709689183,
+        "provider_id": 0.01943241589348423,
+        "age_years": 0.014846180119122247,
+        "predicted cost": 0.011935245904057631
+      },
+      "breaches": [
+        "MAE 928.83 > 856.48",
+        "monthly total error -20.5% beyond 15%"
+      ]
+    },
+    {
+      "period": "2024-10",
+      "n": 77484.0,
+      "actual": 149377023.45,
+      "predicted": 114879412.52464268,
+      "mae": 1001.4112657368007,
+      "total_error_pct": -23.094322090910104,
+      "psi": {
+        "sex": 0.0013648246007371368,
+        "residence_area": 0.0058665034902219415,
+        "diagnosis_icd10": 0.2490601486766741,
+        "diagnosis_category": 0.22819081988892922,
+        "diagnosis_chapter": 0.15224977144524082,
+        "requested_procedure": 0.27597758011955403,
+        "procedure_prefix2": 0.02519511766275578,
+        "procedure_prefix4": 0.09524762115492819,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.059907902485955226,
+        "bed_specialty": 0.08309551419764838,
+        "provider_id": 0.021084869330646305,
+        "age_years": 0.016711621174632645,
+        "predicted cost": 0.011838486334970488
+      },
+      "breaches": [
+        "MAE 1001.41 > 856.48",
+        "monthly total error -23.1% beyond 15%"
+      ]
+    },
+    {
+      "period": "2024-11",
+      "n": 70378.0,
+      "actual": 133243836.36,
+      "predicted": 102159612.126042,
+      "mae": 1005.3949045810849,
+      "total_error_pct": -23.328827121109175,
+      "psi": {
+        "sex": 0.001075747207060902,
+        "residence_area": 0.006312210032471757,
+        "diagnosis_icd10": 0.22367592386005042,
+        "diagnosis_category": 0.20204949232145764,
+        "diagnosis_chapter": 0.13437819478141796,
+        "requested_procedure": 0.2635129445060046,
+        "procedure_prefix2": 0.012085916365254717,
+        "procedure_prefix4": 0.07492604961934307,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.036416139381952595,
+        "bed_specialty": 0.06614232489890585,
+        "provider_id": 0.01626128024859857,
+        "age_years": 0.01283703823670555,
+        "predicted cost": 0.010694995094117388
+      },
+      "breaches": [
+        "MAE 1005.39 > 856.48",
+        "monthly total error -23.3% beyond 15%"
+      ]
+    },
+    {
+      "period": "2024-12",
+      "n": 67776.0,
+      "actual": 131021293.23000002,
+      "predicted": 99052747.20184395,
+      "mae": 1041.5191494803719,
+      "total_error_pct": -24.399504263812453,
+      "psi": {
+        "sex": 0.0014478500079199113,
+        "residence_area": 0.007129868603314682,
+        "diagnosis_icd10": 0.2105922077223184,
+        "diagnosis_category": 0.19092819228989016,
+        "diagnosis_chapter": 0.11701092658306544,
+        "requested_procedure": 0.25282161629432626,
+        "procedure_prefix2": 0.00788276257971796,
+        "procedure_prefix4": 0.052953829982725874,
+        "procedure_code_system": 0.0,
+        "admission_type": 0.02394260634973962,
+        "bed_specialty": 0.047637649138683645,
+        "provider_id": 0.01528820768239354,
+        "age_years": 0.01253475514865074,
+        "predicted cost": 0.011912566473747969
+      },
+      "breaches": [
+        "MAE 1041.52 > 856.48",
+        "monthly total error -24.4% beyond 15%"
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "decision_month": "2024-01",
+      "mature_through": "2023-10",
+      "retrain": false,
+      "reason": "only 0 mature month(s); the rule needs 2"
+    },
+    {
+      "decision_month": "2024-02",
+      "mature_through": "2023-11",
+      "retrain": false,
+      "reason": "only 0 mature month(s); the rule needs 2"
+    },
+    {
+      "decision_month": "2024-03",
+      "mature_through": "2023-12",
+      "retrain": false,
+      "reason": "only 0 mature month(s); the rule needs 2"
+    },
+    {
+      "decision_month": "2024-04",
+      "mature_through": "2024-01",
+      "retrain": false,
+      "reason": "only 1 mature month(s); the rule needs 2"
+    },
+    {
+      "decision_month": "2024-05",
+      "mature_through": "2024-02",
+      "retrain": false,
+      "reason": "within bounds"
+    },
+    {
+      "decision_month": "2024-06",
+      "mature_through": "2024-03",
+      "retrain": false,
+      "reason": "within bounds"
+    },
+    {
+      "decision_month": "2024-07",
+      "mature_through": "2024-04",
+      "retrain": false,
+      "reason": "within bounds"
+    },
+    {
+      "decision_month": "2024-08",
+      "mature_through": "2024-05",
+      "retrain": false,
+      "reason": "within bounds"
+    },
+    {
+      "decision_month": "2024-09",
+      "mature_through": "2024-06",
+      "retrain": true,
+      "reason": "2 months in a row out of bounds (2024-05: MAE 864.28 > 856.48, monthly total error -17.5% beyond 15%; 2024-06: monthly total error -16.2% beyond 15%)"
+    },
+    {
+      "decision_month": "2024-10",
+      "mature_through": "2024-07",
+      "retrain": true,
+      "reason": "2 months in a row out of bounds (2024-06: monthly total error -16.2% beyond 15%; 2024-07: MAE 1011.55 > 856.48, monthly total error -23.1% beyond 15%)"
+    },
+    {
+      "decision_month": "2024-11",
+      "mature_through": "2024-08",
+      "retrain": true,
+      "reason": "2 months in a row out of bounds (2024-07: MAE 1011.55 > 856.48, monthly total error -23.1% beyond 15%; 2024-08: MAE 984.01 > 856.48, monthly total error -23.0% beyond 15%)"
+    },
+    {
+      "decision_month": "2024-12",
+      "mature_through": "2024-09",
+      "retrain": true,
+      "reason": "2 months in a row out of bounds (2024-08: MAE 984.01 > 856.48, monthly total error -23.0% beyond 15%; 2024-09: MAE 928.83 > 856.48, monthly total error -20.5% beyond 15%)"
+    },
+    {
+      "decision_month": "2025-01",
+      "mature_through": "2024-10",
+      "retrain": true,
+      "reason": "2 months in a row out of bounds (2024-09: MAE 928.83 > 856.48, monthly total error -20.5% beyond 15%; 2024-10: MAE 1001.41 > 856.48, monthly total error -23.1% beyond 15%)"
+    },
+    {
+      "decision_month": "2025-02",
+      "mature_through": "2024-11",
+      "retrain": true,
+      "reason": "2 months in a row out of bounds (2024-10: MAE 1001.41 > 856.48, monthly total error -23.1% beyond 15%; 2024-11: MAE 1005.39 > 856.48, monthly total error -23.3% beyond 15%)"
+    },
+    {
+      "decision_month": "2025-03",
+      "mature_through": "2024-12",
+      "retrain": true,
+      "reason": "2 months in a row out of bounds (2024-11: MAE 1005.39 > 856.48, monthly total error -23.3% beyond 15%; 2024-12: MAE 1041.52 > 856.48, monthly total error -24.4% beyond 15%)"
+    }
+  ],
+  "first_retrain_recommendation": "2024-09"
+}

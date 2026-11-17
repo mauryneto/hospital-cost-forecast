@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# secrets: only .env.example is committed
+.env
+
+# all data is rebuilt by `costmodel data`; only the checksum manifests in data/checksums/ are versioned
+data/*
+!data/checksums/
+
+# experiment tracking
+mlruns/
+mlartifacts/
+mlflow.db
+
+*.log
+
+# docker compose work folder
+docker-work/
