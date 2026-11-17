@@ -65,7 +65,9 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    each input, and of the predicted cost, against the data the model was fitted on) is known as soon as admissions
    arrive. Performance (MAE, error on the month's total) is known only once costs are billed, so a month is judged only
    `label_delay_months` after it ends (3 for SIH/SUS: 98.7% of admissions and 95.4% of the money are billed by then;
-   expensive stays bill later, so judging earlier would understate the error).
+   expensive stays bill later, so judging earlier would understate the error). When the error grows, the report
+   also says where: the error by admission type, and the price level, which compares what was paid with what the same
+   admissions would cost at the prices the model last saw (same mix of procedures, so only price counts).
 7. **Retrain rule.** When the last `patience` mature months all have an MAE more than `mae_tolerance` above the model's
    test MAE, or a monthly-total error beyond the gate's ceiling, the monitor recommends retraining. It does not retrain
    by itself: a person runs `costmodel run` with the new data, and the new candidate goes through the same gate.
@@ -77,6 +79,9 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    version, not the alias, so the version they report is always the one that priced the admission; a promotion or a
    rollback reaches the API when it restarts. The API does not start without a `production` model, and it rejects any
    field the contract does not know at admission (the cost, the length of stay) instead of ignoring it.
+9. **Show.** `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
+   monitoring months, where prices changed, and the retraining replay. The numbers are embedded when the page is
+   generated, so it cannot disagree with the reports, and only aggregates are published.
 
 ## Leakage control is part of the contract
 

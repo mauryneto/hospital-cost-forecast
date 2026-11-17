@@ -39,6 +39,10 @@ def test_monitor_and_replay(cfg):
     for m in result["months"]:
         assert set(m["psi"]) >= {"requested_procedure", "age_years", "predicted cost"}
         assert "admission_period" not in m["psi"]  # time drifts by construction
+        # Where the error comes from: per admission type, and the price level against what the model last saw.
+        assert sum(t["n"] for t in m["by_admission_type"].values()) == m["n"]
+        assert -50 < m["price_index_pct"] < 50
+    assert all(len(s["monthly_median"]) <= 6 and s["reference_median"] > 0 for s in result["price_shifts"])
     # A month is judged only 3 months after it ends: the first decision that sees July is the end of October.
     first_mature = next(t for t in result["timeline"] if "only 0" not in t["reason"])
     assert first_mature["decision_month"] == "2024-10"

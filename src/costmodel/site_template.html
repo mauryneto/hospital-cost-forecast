@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<meta name="description" content="__TAGLINE__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --surface: #fcfcfb; --surface-2: #f4f3f0; --rule: #e4e3df; --rule-strong: #c9c8c2;
+  --ink: #0b0b0b; --ink-2: #52514e; --ink-3: #85847f;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --neutral: #a9a8a2;
+  --heat: 42, 120, 214;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface: #1a1a19; --surface-2: #232321; --rule: #32322f; --rule-strong: #4a4a46;
+    --ink: #f0efec; --ink-2: #c3c2b7; --ink-3: #8d8c85;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --neutral: #6f6e69;
+    --heat: 57, 135, 229;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #1a1a19; --surface-2: #232321; --rule: #32322f; --rule-strong: #4a4a46;
+  --ink: #f0efec; --ink-2: #c3c2b7; --ink-3: #8d8c85;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --neutral: #6f6e69;
+  --heat: 57, 135, 229;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--surface); color: var(--ink); font: 16px/1.55 var(--sans); }
+.page { max-width: 1040px; margin: 0 auto; padding: 0 16px 96px; }
+a { color: inherit; text-decoration-color: var(--rule-strong); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--ink); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+header { padding: 72px 0 40px; border-bottom: 1px solid var(--ink); }
+.kicker { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+h1 { font: 400 clamp(38px, 7vw, 76px)/1.02 var(--serif); letter-spacing: -.02em; margin: 18px 0 20px; max-width: 14ch; }
+.lede { font: 400 clamp(18px, 2.3vw, 22px)/1.45 var(--serif); color: var(--ink-2); max-width: 46ch; margin: 0; }
+.links { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 14px; }
+
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--rule); }
+.tile { padding: 26px 20px 24px 0; }
+.tile + .tile { padding-left: 20px; border-left: 1px solid var(--rule); }
+.tile .label { font: 500 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.tile .value { font: 400 clamp(28px, 3.6vw, 40px)/1.1 var(--serif); margin: 10px 0 6px; letter-spacing: -.01em; }
+.tile .note { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+@media (max-width: 760px) {
+  .tiles { grid-template-columns: 1fr 1fr; }
+  .tile:nth-child(3) { padding-left: 0; border-left: 0; }
+  .tile:nth-child(n+3) { border-top: 1px solid var(--rule); }
+}
+
+section { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 0 40px; padding: 56px 0 8px; border-bottom: 1px solid var(--rule); }
+section > .side { position: sticky; top: 24px; align-self: start; padding-bottom: 32px; }
+section > .side .no { font: 500 12px/1 var(--mono); color: var(--ink-3); letter-spacing: .08em; }
+section > .side h2 { font: 400 28px/1.12 var(--serif); margin: 12px 0 12px; letter-spacing: -.01em; }
+section > .side p { font-size: 14px; color: var(--ink-2); margin: 0 0 10px; }
+section > .main { min-width: 0; padding-bottom: 40px; }
+@media (max-width: 860px) { section { grid-template-columns: minmax(0, 1fr); } section > .side { position: static; } }
+
+.finding { font: 400 20px/1.4 var(--serif); margin: 0 0 22px; max-width: 58ch; }
+.finding b { font-weight: 500; }
+.figure { margin: 0 0 34px; }
+.figure h3 { font: 600 14px/1.3 var(--sans); margin: 0 0 2px; }
+.figure .sub { font-size: 13px; color: var(--ink-2); margin: 0 0 12px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 13px; color: var(--ink-2); margin: 0 0 6px; }
+.legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font: 11px var(--mono); fill: var(--ink-2); }
+.chart .endlabel { font: 500 12px var(--sans); fill: var(--ink); }
+.chart .reflabel { font: 11px var(--sans); fill: var(--ink-2); }
+.chart .endlabel, .chart .reflabel { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+
+.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 6px; overflow: hidden; margin: 0 0 16px; }
+.seg button { font: 500 13px var(--sans); color: var(--ink-2); background: none; border: 0; padding: 7px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule-strong); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg button:focus-visible { outline: 2px solid var(--series-1); outline-offset: -2px; }
+
+.bars { display: grid; grid-template-columns: minmax(120px, 34%) minmax(0, 1fr); gap: 9px 14px; align-items: center; font-size: 14px; }
+.bars .name { color: var(--ink-2); overflow-wrap: anywhere; }
+.bars .name.hl { color: var(--ink); font-weight: 600; }
+.bars .name small { display: block; font: 500 10px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.bars .track { display: flex; align-items: center; gap: 8px; min-width: 0; cursor: default; padding: 4px 0; }
+.bars .bar { height: 14px; border-radius: 0 4px 4px 0; background: var(--neutral); flex: 0 0 auto; transition: width .35s ease; }
+.bars .bar.hl { background: var(--series-1); }
+.bars .val { font: 13px var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font: 500 11px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); border-bottom-color: var(--rule-strong); }
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td:first-child { font-family: var(--sans); }
+details { margin-top: 8px; }
+details > summary { font-size: 13px; color: var(--ink-2); cursor: pointer; width: fit-content; }
+details[open] > summary { margin-bottom: 8px; }
+.heat td.cell { padding: 7px 8px; }
+
+.tip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--surface); border-radius: 6px; padding: 9px 11px; font-size: 12px; line-height: 1.5; max-width: 280px; opacity: 0; transition: opacity .08s; box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+.tip.on { opacity: 1; }
+.tip .t { font: 500 11px var(--mono); letter-spacing: .04em; opacity: .7; margin-bottom: 3px; }
+.tip .r { display: flex; justify-content: space-between; gap: 16px; }
+.tip .r span:last-child { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.tip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+footer { padding: 40px 0 0; font-size: 13px; color: var(--ink-2); max-width: 70ch; }
+footer p { margin: 0 0 10px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  header > *, .tile, section { animation: rise .6s cubic-bezier(.2,.7,.2,1) both; }
+  header > :nth-child(2) { animation-delay: .06s; } header > :nth-child(3) { animation-delay: .12s; } header > :nth-child(4) { animation-delay: .18s; }
+  .tile:nth-child(1) { animation-delay: .22s; } .tile:nth-child(2) { animation-delay: .28s; } .tile:nth-child(3) { animation-delay: .34s; } .tile:nth-child(4) { animation-delay: .4s; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="kicker" id="kicker"></div>
+    <h1 id="title"></h1>
+    <p class="lede" id="lede"></p>
+    <nav class="links" id="links"></nav>
+  </header>
+  <div class="tiles" id="tiles"></div>
+
+  <section id="s-test">
+    <div class="side">
+      <div class="no">01</div>
+      <h2>The test window, scored once</h2>
+      <p>Every model was fitted on the same data and scored on the same admissions, after all choices were made on an earlier window.</p>
+      <p>Two metrics, because money is counted in totals: the error per admission, and the error on each month's total.</p>
+    </div>
+    <div class="main">
+      <p class="finding" id="test-finding"></p>
+      <div class="seg" id="test-seg" role="group" aria-label="Metric"></div>
+      <div class="figure">
+        <h3 id="test-title"></h3>
+        <p class="sub">Lower is better. The highlighted bar is the candidate model; the others are baselines.</p>
+        <div class="bars" id="test-bars"></div>
+        <details><summary>Table</summary><div class="tablewrap" id="test-table"></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-monitor">
+    <div class="side">
+      <div class="no">02</div>
+      <h2>In production, month by month</h2>
+      <p>The promoted model prices each later month as if it were live. A month's error is known only once its admissions have been billed.</p>
+      <p id="rule-text"></p>
+    </div>
+    <div class="main">
+      <p class="finding" id="monitor-finding"></p>
+      <div class="figure">
+        <h3>Error on the month's total, and how prices moved</h3>
+        <p class="sub">Percent. Negative error = under-predicted. The price level compares what was paid with what the same admissions would cost at the prices the model last saw.</p>
+        <div class="legend" id="m1-legend"></div>
+        <div class="chart" id="m1"></div>
+        <details><summary>Table</summary><div class="tablewrap" id="m1-table"></div></details>
+      </div>
+      <div class="figure">
+        <h3>Error per admission (MAE)</h3>
+        <p class="sub" id="m2-sub"></p>
+        <div class="chart" id="m2"></div>
+      </div>
+      <div class="figure">
+        <h3>Input drift (largest PSI among the inputs)</h3>
+        <p class="sub">Known as soon as admissions arrive, months before their costs. Above 0.25 counts as a shift.</p>
+        <div class="chart" id="m3"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-prices">
+    <div class="side">
+      <div class="no">03</div>
+      <h2>Where prices changed</h2>
+      <p>The procedures that cost most above the prices the model last saw, and the median paid for each, month by month.</p>
+      <p>A cell is shaded by how far its median is above what the model last saw. A row that turns dark at one month was repriced.</p>
+    </div>
+    <div class="main">
+      <p class="finding" id="prices-finding"></p>
+      <div class="figure">
+        <div class="tablewrap heat" id="prices-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-replay">
+    <div class="side">
+      <div class="no">04</div>
+      <h2>What if we had retrained?</h2>
+      <p>The same months replayed under three policies. Each retrain uses only data known at that moment and must pass the promotion gate before it is used.</p>
+    </div>
+    <div class="main">
+      <p class="finding" id="replay-finding"></p>
+      <div class="seg" id="replay-seg" role="group" aria-label="Training window"></div>
+      <div class="figure">
+        <h3>Error on the month's total, by retraining policy</h3>
+        <p class="sub">Percent; negative = under-predicted.</p>
+        <div class="legend" id="r1-legend"></div>
+        <div class="chart" id="r1"></div>
+      </div>
+      <div class="figure">
+        <div class="tablewrap" id="replay-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+<div class="tip" id="tip" role="status"></div>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var D = JSON.parse(document.getElementById("data").textContent);
+  var $ = function (id) { return document.getElementById(id); };
+  var NS = "http://www.w3.org/2000/svg";
+  var CUR = D.currency ? D.currency + " " : "";
+  function fmt(v, d) { return v == null || isNaN(v) ? "–" : Number(v).toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function pct(v, d, signed) { return v == null || isNaN(v) ? "–" : (signed && v > 0 ? "+" : "") + fmt(v, d == null ? 1 : d).replace("-", "−") + "%"; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function el(name, attrs, parent) { var e = document.createElementNS(NS, name); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function pretty(name) { return name.replace(/_/g, " "); }
+
+  // ---- tooltip -----------------------------------------------------------------------------------------------------
+  var tip = $("tip");
+  function showTip(html, x, y) {
+    tip.innerHTML = html; tip.classList.add("on");
+    var r = tip.getBoundingClientRect(), left = x + 14, top = y + 14;
+    if (left + r.width > innerWidth - 8) left = x - r.width - 14;
+    if (top + r.height > innerHeight - 8) top = y - r.height - 14;
+    tip.style.left = Math.max(8, left) + "px"; tip.style.top = Math.max(8, top) + "px";
+  }
+  function hideTip() { tip.classList.remove("on"); }
+  function tipRows(title, rows) {
+    return '<div class="t">' + esc(title) + "</div>" + rows.map(function (r) {
+      return '<div class="r"><span>' + (r.color ? '<i style="background:' + r.color + '"></i>' : "") + esc(r.name) + "</span><span>" + esc(r.value) + "</span></div>";
+    }).join("");
+  }
+
+  // ---- line chart --------------------------------------------------------------------------------------------------
+  function niceTicks(lo, hi, n) {
+    var span = hi - lo || 1, step = Math.pow(10, Math.floor(Math.log10(span / n))), err = span / n / step;
+    step *= err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1;
+    var t = [], v = Math.floor(lo / step) * step;
+    for (; v <= hi + step * 0.5; v += step) t.push(Math.round(v / step) * step);
+    return t;
+  }
+  function lineChart(host, o) {
+    function draw() {
+      host.innerHTML = "";
+      var W = Math.max(300, host.clientWidth), H = o.height || 270;
+      var labelRoom = o.series.length > 1 ? Math.min(150, Math.max(104, W * 0.2)) : 58;
+      var m = { l: 46, r: labelRoom, t: 14, b: 28 };
+      var vals = [];
+      o.series.forEach(function (s) { s.values.forEach(function (v) { if (v != null) vals.push(v); }); });
+      (o.refs || []).forEach(function (r) { vals.push(r.y); });
+      if (o.zero) vals.push(0);
+      var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), pad = (hi - lo) * 0.08 || 1;
+      var ticks = niceTicks(lo - pad, hi + pad, 5).filter(function (t) { return o.min == null || t >= o.min; }); lo = ticks[0]; hi = ticks[ticks.length - 1];
+      var n = o.x.length;
+      var X = function (i) { return m.l + (n === 1 ? 0.5 : i / (n - 1)) * (W - m.l - m.r); };
+      var Y = function (v) { return m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b); };
+      var svg = el("svg", { viewBox: "0 0 " + W + " " + H, height: H, role: "img", "aria-label": o.label || "" }, host);
+      ticks.forEach(function (t) {
+        el("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), stroke: css(t === 0 ? "--rule-strong" : "--rule"), "stroke-width": 1 }, svg);
+        var tx = el("text", { x: m.l - 8, y: Y(t) + 4, "text-anchor": "end" }, svg); tx.textContent = (o.yfmt || fmt)(t);
+      });
+      var every = Math.ceil(n / Math.max(2, Math.floor((W - m.l - m.r) / 64)));
+      o.x.forEach(function (lab, i) {
+        if (i % every) return;
+        var tx = el("text", { x: X(i), y: H - 8, "text-anchor": "middle" }, svg); tx.textContent = lab;
+      });
+      (o.refs || []).forEach(function (r) {
+        el("line", { x1: m.l, x2: W - m.r, y1: Y(r.y), y2: Y(r.y), stroke: css("--ink-3"), "stroke-width": 1 }, svg);
+        var tx = el("text", { x: m.l + 4, y: Y(r.y) - 5, class: "reflabel" }, svg); tx.textContent = r.label;
+      });
+      if (o.marker && o.marker.index != null) {
+        var mx = X(o.marker.index);
+        el("line", { x1: mx, x2: mx, y1: m.t, y2: H - m.b, stroke: css("--ink"), "stroke-width": 1 }, svg);
+        var anchorEnd = mx > W * 0.6;
+        var tx = el("text", { x: mx + (anchorEnd ? -6 : 6), y: m.t + 10, class: "reflabel", "text-anchor": anchorEnd ? "end" : "start" }, svg);
+        tx.textContent = o.marker.label;
+      }
+      var ends = [];
+      o.series.forEach(function (s) {
+        var d = "", last = null;
+        s.values.forEach(function (v, i) { if (v == null) return; d += (d ? "L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1); last = i; });
+        el("path", { d: d, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+        (s.events || []).forEach(function (i) {
+          el("circle", { cx: X(i), cy: Y(s.values[i]), r: 5, fill: css("--surface"), stroke: s.color, "stroke-width": 2 }, svg);
+        });
+        if (last != null) {
+          el("circle", { cx: X(last), cy: Y(s.values[last]), r: 4, fill: s.color, stroke: css("--surface"), "stroke-width": 2 }, svg);
+          ends.push({ y: Y(s.values[last]), text: (o.series.length > 1 ? (s.short || s.name) + "  " : "") + (o.yfmt || fmt)(s.values[last]), x: X(last) });
+        }
+      });
+      if (o.series.length <= 4) {
+        ends.sort(function (a, b) { return a.y - b.y; });
+        for (var i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
+        ends.forEach(function (e) { var tx = el("text", { x: e.x + 10, y: e.y + 4, class: "endlabel" }, svg); tx.textContent = e.text; });
+      }
+      var cross = el("line", { y1: m.t, y2: H - m.b, stroke: css("--ink-3"), "stroke-width": 1, visibility: "hidden" }, svg);
+      var dots = o.series.map(function (s) { return el("circle", { r: 4.5, fill: s.color, stroke: css("--surface"), "stroke-width": 2, visibility: "hidden" }, svg); });
+      var hit = el("rect", { x: m.l - 10, y: 0, width: W - m.l - m.r + 20, height: H, fill: "transparent" }, svg);
+      function move(ev) {
+        var box = svg.getBoundingClientRect(), p = ev.touches ? ev.touches[0] : ev;
+        var px = (p.clientX - box.left) * (W / box.width);
+        var i = Math.max(0, Math.min(n - 1, Math.round((px - m.l) / (W - m.l - m.r) * (n - 1))));
+        cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("visibility", "visible");
+        var rows = [];
+        o.series.forEach(function (s, k) {
+          var v = s.values[i];
+          dots[k].setAttribute("visibility", v == null ? "hidden" : "visible");
+          if (v != null) { dots[k].setAttribute("cx", X(i)); dots[k].setAttribute("cy", Y(v)); rows.push({ color: s.color, name: s.name, value: (o.yfmt || fmt)(v) }); }
+        });
+        (o.extra ? o.extra(i) : []).forEach(function (r) { rows.push(r); });
+        showTip(tipRows(o.x[i], rows), p.clientX, p.clientY);
+      }
+      function leave() { cross.setAttribute("visibility", "hidden"); dots.forEach(function (d) { d.setAttribute("visibility", "hidden"); }); hideTip(); }
+      hit.addEventListener("mousemove", move); hit.addEventListener("touchstart", move, { passive: true });
+      hit.addEventListener("touchmove", move, { passive: true }); hit.addEventListener("mouseleave", leave); hit.addEventListener("touchend", leave);
+    }
+    draw(); redraws.push(draw);
+  }
+  var redraws = [];
+  var timer; window.addEventListener("resize", function () { clearTimeout(timer); timer = setTimeout(function () { redraws.forEach(function (f) { f(); }); }, 120); });
+  if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () { redraws.forEach(function (f) { f(); }); });
+
+  function legend(host, series) {
+    host.innerHTML = series.map(function (s) { return '<span><i style="background:' + s.color + '"></i>' + esc(s.name) + "</span>"; }).join("");
+  }
+  function table(host, head, rows) {
+    host.innerHTML = "<table><thead><tr>" + head.map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + esc(c) + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table>";
+  }
+  function segmented(host, options, onPick) {
+    host.innerHTML = "";
+    options.forEach(function (opt, i) {
+      var b = document.createElement("button"); b.type = "button"; b.textContent = opt.label; b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+      b.addEventListener("click", function () { [].forEach.call(host.children, function (c) { c.setAttribute("aria-pressed", "false"); }); b.setAttribute("aria-pressed", "true"); onPick(opt.key); });
+      host.appendChild(b);
+    });
+    if (options.length < 2) host.style.display = "none";
+  }
+  var C1 = function () { return css("--series-1"); }, C2 = function () { return css("--series-2"); }, C3 = function () { return css("--series-3"); }, CN = function () { return css("--neutral"); };
+
+  // ---- header and tiles --------------------------------------------------------------------------------------------
+  var T = D.test, M = D.monitor, R = D.replay || [];
+  $("kicker").textContent = D.kicker;
+  $("title").textContent = D.title;
+  $("lede").textContent = D.tagline;
+  $("links").innerHTML = D.links.map(function (l) { return '<a href="' + esc(l.url) + '">' + esc(l.label) + "</a>"; }).join("");
+  var cand = T.models.filter(function (m) { return m.candidate; })[0];
+  var baselines = T.models.filter(function (m) { return !m.candidate; });
+  var best = baselines.slice().sort(function (a, b) { return a.mae - b.mae; })[0];
+  var gain = 100 * (1 - cand.mae / best.mae);
+  var lastM = M.months[M.months.length - 1];
+  var tiles = [
+    { label: "Error per admission (MAE)", value: CUR + fmt(cand.mae, 2), note: (gain >= 0 ? fmt(gain, 1) + "% below" : fmt(-gain, 1) + "% above") + " the best baseline (" + CUR + fmt(best.mae, 2) + ") on the test window" },
+    { label: "Error on the month's total", value: pct(cand.monthly_total_mape, 2), note: "mean over the months of the test window; the gate's ceiling is " + pct(M.rules.max_monthly_total_error, 0) },
+    { label: "Retraining recommended", value: M.fired ? "end of " + M.fired : "not in this window", note: M.rules.patience + " billed months in a row out of bounds; a person decides" },
+    { label: "Prices by " + lastM.period, value: pct(lastM.price_index_pct, 1, true), note: "against the prices the model last saw, for the same mix of procedures" }
+  ];
+  $("tiles").innerHTML = tiles.map(function (t) { return '<div class="tile"><div class="label">' + esc(t.label) + '</div><div class="value">' + esc(t.value) + '</div><div class="note">' + esc(t.note) + "</div></div>"; }).join("");
+
+  // ---- 01 test -----------------------------------------------------------------------------------------------------
+  var bestTotal = T.models.slice().sort(function (a, b) { return a.monthly_total_mape - b.monthly_total_mape; })[0];
+  $("test-finding").innerHTML = "The candidate " + (T.promoted ? "<b>passed the promotion gate</b>" : "<b>did not pass the gate</b>") + ": its error per admission is <b>" +
+    fmt(Math.abs(gain), 1) + "% " + (gain >= 0 ? "below" : "above") + "</b> the strongest baseline. " +
+    (bestTotal.candidate ? "It also has the smallest error on the month's total." :
+      "On the month's total, <b>" + esc(pretty(bestTotal.name)) + "</b> does better (" + pct(bestTotal.monthly_total_mape, 2) + " against " + pct(cand.monthly_total_mape, 2) +
+      "), while missing by " + CUR + fmt(bestTotal.mae, 0) + " per admission.");
+  var METRICS = {
+    mae: { label: "Error per admission", title: "Mean absolute error per admission (" + (D.currency || "currency") + ")", f: function (v) { return fmt(v, 2); } },
+    monthly_total_mape: { label: "Error on the month's total", title: "Mean error on the month's total (%)", f: function (v) { return pct(v, 2); } }
+  };
+  function drawTest(key) {
+    var mt = METRICS[key], rows = T.models.slice().sort(function (a, b) { return a[key] - b[key]; });
+    var max = Math.max.apply(null, rows.map(function (r) { return r[key]; }));
+    $("test-title").textContent = mt.title;
+    var host = $("test-bars"); host.innerHTML = "";
+    rows.forEach(function (r) {
+      var name = document.createElement("div"); name.className = "name" + (r.candidate ? " hl" : "");
+      name.innerHTML = esc(r.candidate ? D.candidate_label : pretty(r.name)) + (r.candidate && T.promoted ? "<small>in production</small>" : "");
+      var track = document.createElement("div"); track.className = "track";
+      track.innerHTML = '<div class="bar' + (r.candidate ? " hl" : "") + '" style="width:calc(' + (100 * r[key] / max).toFixed(2) + '% - 80px)"></div><span class="val">' + esc(mt.f(r[key])) + "</span>";
+      function tipIt(ev) {
+        showTip(tipRows(r.candidate ? D.candidate_label : pretty(r.name), [
+          { name: "MAE per admission", value: CUR + fmt(r.mae, 2) }, { name: "Error on the month's total", value: pct(r.monthly_total_mape, 2) },
+          { name: "Bias", value: pct(r.bias_pct, 2, true) }, { name: "MAE, top 10% most expensive", value: CUR + fmt(r.mae_top_decile, 2) }]), ev.clientX, ev.clientY);
+      }
+      track.addEventListener("mousemove", tipIt); track.addEventListener("mouseleave", hideTip);
+      host.appendChild(name); host.appendChild(track);
+    });
+  }
+  segmented($("test-seg"), [{ key: "mae", label: METRICS.mae.label }, { key: "monthly_total_mape", label: METRICS.monthly_total_mape.label }], drawTest);
+  drawTest("mae");
+  table($("test-table"), ["Model", "MAE", "Month's total error", "Bias", "MAE, top 10%"], T.models.slice().sort(function (a, b) { return a.mae - b.mae; }).map(function (r) {
+    return [r.candidate ? D.candidate_label : pretty(r.name), fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
+  }));
+
+  // ---- 02 monitor --------------------------------------------------------------------------------------------------
+  var mx = M.months.map(function (m) { return m.period; });
+  var firedIndex = M.fired ? mx.indexOf(M.fired) : -1;
+  var marker = firedIndex >= 0 ? { index: Math.min(mx.length - 1, firedIndex + 1), label: "retrain recommended (end of " + M.fired + ")" } : null;
+  $("rule-text").textContent = "Retrain rule: " + M.rules.patience + " billed months in a row with an error per admission more than " + fmt(100 * M.rules.mae_tolerance, 0) +
+    "% above the test error, or a month's total off by more than " + fmt(M.rules.max_monthly_total_error, 0) + "%. A month is judged " + M.rules.label_delay_months + " months after it ends.";
+  var types = M.types.slice(0, 2);
+  var step = { i: 1, d: -Infinity };
+  M.months.forEach(function (m, i) { if (i && m.price_index_pct - M.months[i - 1].price_index_pct > step.d) step = { i: i, d: m.price_index_pct - M.months[i - 1].price_index_pct }; });
+  var moved = types.map(function (t) {
+    var a = M.months[step.i - 1].types[t], b = M.months[step.i].types[t];
+    return { t: t, d: a && b ? b.total_error_pct - a.total_error_pct : 0, after: b ? b.total_error_pct : null };
+  }).sort(function (a, b) { return Math.abs(b.d) - Math.abs(a.d); });
+  $("monitor-finding").innerHTML = "The model under-predicts the month's total by <b>" + pct(Math.abs(M.months[0].total_error_pct), 1) + "</b> in " + mx[0] + " and by <b>" +
+    pct(Math.abs(lastM.total_error_pct), 1) + "</b> in " + lastM.period + ". " + (M.fired ? "The rule recommends retraining at the <b>end of " + M.fired + "</b>. " : "") +
+    "The largest step in prices is in <b>" + mx[step.i] + "</b> (" + pct(step.d, 1, true).replace("%", " points") + ")" +
+    (moved.length > 1 ? ", and it shows in <b>" + esc(moved[0].t) + "</b> admissions (error " + pct(moved[0].after, 1, true) + "), not in " + esc(moved[1].t) + " ones (" + pct(moved[1].after, 1, true) + ")." : ".");
+  function m1Series() {
+    var s = [{ name: "all admissions", color: css("--ink"), values: M.months.map(function (m) { return m.total_error_pct; }) }];
+    types.forEach(function (t, k) { s.push({ name: t, color: k ? C3() : C1(), values: M.months.map(function (m) { return m.types[t] ? m.types[t].total_error_pct : null; }) }); });
+    s.push({ name: "price level", color: C2(), values: M.months.map(function (m) { return m.price_index_pct; }) });
+    return s;
+  }
+  var m1 = { x: mx, zero: true, height: 320, yfmt: function (v) { return pct(v, 0, true); }, marker: marker, label: "Error on the month's total and price level by month" };
+  Object.defineProperty(m1, "series", { get: m1Series });
+  legend($("m1-legend"), m1Series()); lineChart($("m1"), m1);
+  table($("m1-table"), ["Month", "Admissions", "All"].concat(types).concat(["Price level"]), M.months.map(function (m) {
+    return [m.period, fmt(m.n), pct(m.total_error_pct, 2, true)].concat(types.map(function (t) { return m.types[t] ? pct(m.types[t].total_error_pct, 2, true) : "–"; })).concat([pct(m.price_index_pct, 2, true)]);
+  }));
+  var limit = (1 + M.rules.mae_tolerance) * M.reference_mae;
+  $("m2-sub").textContent = (D.currency || "") + " per admission, by admission month. Reference = the model's error on the test window.";
+  var m2 = { x: mx, height: 230, yfmt: function (v) { return fmt(v, 0); }, marker: marker, refs: [{ y: M.reference_mae, label: "reference " + fmt(M.reference_mae, 0) }, { y: limit, label: "retrain limit " + fmt(limit, 0) }], label: "MAE by month" };
+  Object.defineProperty(m2, "series", { get: function () { return [{ name: "MAE", color: C1(), values: M.months.map(function (m) { return m.mae; }) }]; } });
+  lineChart($("m2"), m2);
+  var m3 = { x: mx, height: 190, zero: true, min: 0, yfmt: function (v) { return fmt(v, 2); }, refs: [{ y: 0.25, label: "shift 0.25" }], label: "Largest PSI by month",
+    extra: function (i) { return [{ name: "most drifted input", value: pretty(M.months[i].most_drifted) }, { name: "PSI of the predicted cost", value: fmt(M.months[i].psi_predicted, 3) }]; } };
+  Object.defineProperty(m3, "series", { get: function () { return [{ name: "largest PSI", color: C1(), values: M.months.map(function (m) { return m.max_psi; }) }]; } });
+  lineChart($("m3"), m3);
+
+  // ---- 03 prices ---------------------------------------------------------------------------------------------------
+  var shifts = M.price_shifts || [];
+  if (!shifts.length) $("s-prices").style.display = "none";
+  else {
+    var jump = null;
+    shifts.forEach(function (s) {
+      mx.forEach(function (p, i) {
+        if (!i) return; var a = s.monthly_median[mx[i - 1]], b = s.monthly_median[p];
+        if (a && b && (!jump || b / a > jump.ratio)) jump = { code: s.code, from: a, to: b, month: p, ratio: b / a };
+      });
+    });
+    var extra = shifts.reduce(function (a, s) { return a + s.extra; }, 0);
+    $("prices-finding").innerHTML = "These " + shifts.length + " procedures were paid <b>" + CUR + fmt(extra / 1e6, 1) + " million</b> more than the same admissions would have cost at the prices the model last saw." +
+      (jump && jump.ratio > 1.3 ? " The sharpest change: procedure <b>" + esc(jump.code) + "</b>, whose median went from " + CUR + fmt(jump.from) + " to <b>" + CUR + fmt(jump.to) + "</b> in " + jump.month + "." : "");
+    var html = "<table><thead><tr><th>Procedure</th><th>Admissions</th><th>Extra paid (millions)</th><th>Model last saw</th>" + mx.map(function (p) { return "<th>" + esc(p.slice(2)) + "</th>"; }).join("") + "</tr></thead><tbody>";
+    shifts.forEach(function (s) {
+      html += "<tr><td>" + esc(s.code) + "</td><td>" + fmt(s.n) + "</td><td>" + fmt(s.extra / 1e6, 2) + "</td><td>" + fmt(s.reference_median) + "</td>";
+      mx.forEach(function (p) {
+        var v = s.monthly_median[p], ratio = v && s.reference_median ? v / s.reference_median : 1;
+        var a = Math.max(0, Math.min(0.5, (ratio - 1) / 2 * 0.5));
+        html += '<td class="cell" style="background:rgba(var(--heat),' + a.toFixed(3) + ')" title="' + (v ? fmt(100 * (ratio - 1), 0) + "% against what the model last saw" : "") + '">' + (v ? fmt(v) : "–") + "</td>";
+      });
+      html += "</tr>";
+    });
+    $("prices-table").innerHTML = html + "</tbody></table>";
+  }
+
+  // ---- 04 replay ---------------------------------------------------------------------------------------------------
+  if (!R.length) $("s-replay").style.display = "none";
+  else {
+    var POLICY_COLOR = { never: CN, rule: C1, monthly: C2 }, POLICY_NAME = { never: "never retrain", rule: "retrain when the rule fires", monthly: "try to retrain every month" };
+    var POLICY_SHORT = { never: "never", rule: "by the rule", monthly: "every month" };
+    var never = R.filter(function (r) { return r.policy === "never"; })[0];
+    var windows = []; R.forEach(function (r) { if (r.policy !== "never" && windows.indexOf(r.window) < 0) windows.push(r.window); });
+    var bestR = R.slice().sort(function (a, b) { return a.monthly_total_mape - b.monthly_total_mape; })[0];
+    $("replay-finding").innerHTML = (never ? "Never retraining leaves the month's total off by <b>" + pct(never.monthly_total_mape, 1) + "</b> on average. " : "") +
+      "The best policy here, <b>" + esc(POLICY_NAME[bestR.policy] || bestR.policy) + (bestR.policy === "never" ? "" : " on " + (bestR.window === "expanding" ? "all data so far" : bestR.window.replace("sliding", "the last"))) + "</b>, brings it to <b>" + pct(bestR.monthly_total_mape, 1) + "</b>, with " + bestR.promotions + " retrained model" + (bestR.promotions === 1 ? "" : "s") + " put in use.";
+    var current = windows[0];
+    var r1 = { x: R[0].monthly.map(function (m) { return m.period; }), zero: true, height: 300, yfmt: function (v) { return pct(v, 0, true); }, label: "Error on the month's total by retraining policy" };
+    function r1Series() {
+      return R.filter(function (r) { return r.policy === "never" || r.window === current; }).map(function (r) {
+        var periods = r.monthly.map(function (m) { return m.period; });
+        return { name: POLICY_NAME[r.policy] || r.policy, short: POLICY_SHORT[r.policy], color: (POLICY_COLOR[r.policy] || C3)(), values: r.monthly.map(function (m) { return m.total_error_pct; }),
+          events: r.serves.map(function (p) { return periods.indexOf(p); }).filter(function (i) { return i >= 0; }) };
+      });
+    }
+    Object.defineProperty(r1, "series", { get: r1Series });
+    var started = false;
+    function drawReplay() {
+      legend($("r1-legend"), r1Series().concat([{ name: "○ a retrained model starts serving", color: "transparent" }]));
+      if (started) redraws.forEach(function (f) { f(); }); else { lineChart($("r1"), r1); started = true; }
+    }
+    segmented($("replay-seg"), windows.map(function (w) { return { key: w, label: "Retrain on: " + (w === "expanding" ? "all data so far" : w.replace("sliding", "the last")) }; }), function (w) { current = w; drawReplay(); });
+    drawReplay();
+    table($("replay-table"), ["Policy", "MAE", "Month's total", "Attempts", "Put in use", "Serving from"], R.map(function (r) {
+      return [r.label, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), String(r.attempts), String(r.promotions), r.serves.join(", ") || "–"];
+    }));
+  }
+
+  // ---- footer ------------------------------------------------------------------------------------------------------
+  $("footer").innerHTML = "<p>Every number on this page is read from the reports generated by the pipeline (<span class=\"num\">costmodel site</span>, model version " + esc(String(M.version)) +
+    ", generated " + esc(D.generated) + "). Nothing is typed by hand, and no admission-level data is published: only monthly and per-procedure aggregates.</p>" +
+    (D.note ? "<p>" + esc(D.note) + "</p>" : "");
+})();
+</script>
+</body>
+</html>

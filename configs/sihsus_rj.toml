@@ -60,3 +60,14 @@ patience = 2
 policies = ["never", "rule", "monthly"]
 windows = [0, 24]  # 0 = all data known so far; 24 = only the last 24 months
 gate_months = 2
+
+[site]
+# Texts of the results page (`costmodel site` writes docs/index.html). Every number on it comes from the reports.
+title = "What will this hospital admission cost?"
+tagline = "A model that prices a hospital admission at the moment the patient is admitted, built on public SUS data and watched month by month the way a production model is."
+kicker = "SIH/SUS · Rio de Janeiro · 2018–2024 · 5.4 million admissions"
+note = "The target is what the SUS paid for the admission (the reimbursement), not what the care cost the hospital. The model is not for decisions about patients, people or hospitals; see the model card."
+repository = "https://github.com/mauryneto/hospital-cost-forecast"
+currency = "R$"
+candidate_label = "LightGBM"
+

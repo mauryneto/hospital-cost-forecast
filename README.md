@@ -36,6 +36,21 @@ and by 20–24% from July. The retrain rule fires at the end of September, as so
 Input drift (PSI) stayed flat while the error jumped: the admissions looked the same, but the prices paid for them
 went up.
 
+**What happened in July 2024: a price change in elective surgery.** The monitor compares what was paid with what the
+same admissions would cost at the prices the model last saw (mean per procedure in 2022, same mix):
+
+| | January–April | May–June | July–December |
+|---|---:|---:|---:|
+| Prices against the level the model last saw | +7.91% to +9.12% | +11.08% to +13.07% | +16.90% to +21.89% |
+| Error on the month's total, urgent admissions | −12.63% to −14.20% | −13.13% to −14.37% | −12.85% to −16.58% |
+| Error on the month's total, elective admissions | −13.79% to −17.75% | −20.15% to −21.35% | −28.25% to −34.10% |
+
+Urgent admissions were paid as before; elective ones were not. The median paid for cataract surgery
+(phacoemulsification, SIGTAP 0405050372) was R$ 772 in every month up to June and R$ 3,858 from July; for laparoscopic
+cholecystectomy (0407030034) it went from R$ 1,057 to between R$ 1,397 and R$ 2,026. A model trained on earlier prices
+cannot know this, and no input drift shows it. The rule behind the change was not identified; a payment complement
+for elective surgery is the likely kind of cause.
+
 **Retraining policies, replayed over 2024** with only the data known at each moment:
 
 | Policy | MAE (R$) | Error on the month's total |
@@ -79,10 +94,11 @@ docker compose up api
 | `costmodel eda` / `baselines` | Exploratory report; fit and compare the baselines on validation |
 | `costmodel train` | Search the candidate's settings on validation, refit, register it in MLflow as `staging` |
 | `costmodel evaluate` | Score `staging` once on test, run the gate, promote it to `production` if it passes |
-| `costmodel monitor` | Score the monitoring months: PSI per input, error once billed, and the retrain rule |
+| `costmodel monitor` | Score the monitoring months: PSI per input, error once billed, where the error comes from (admission type, price level), and the retrain rule |
 | `costmodel replay` | What-if of the retraining policies over the monitoring months (slow: it retrains) |
 | `costmodel score --month 2024-03` | Batch: price a month of admissions with `production` |
 | `costmodel serve` | HTTP API: `POST /predict`, `GET /health` |
+| `costmodel site` | One static page with the results ([`docs/index.html`](docs/index.html)), built from the reports |
 | `costmodel run` | `data`, `train`, `evaluate`, `monitor`, in order, stopping at the first failure |
 | `costmodel validate file.csv` | Check a file against the data contract and list every problem |
 
@@ -149,7 +165,8 @@ More in [ARCHITECTURE.md](ARCHITECTURE.md).
 ## Limitations
 
 - **SUS reimbursement, not cost of care,** and for Rio de Janeiro only. The target is what the SUS paid.
-- **It under-predicts when prices rise:** by 11% on 2023 and up to 24% in late 2024 without retraining.
+- **It under-predicts when prices rise:** by 11% on 2023 and up to 24% in late 2024 without retraining. A change
+  in payment rules, like the one for elective surgery in July 2024, is seen only after the bills arrive.
 - **Individual predictions for the most expensive admissions are low:** the top decile is under-predicted by about
   38% on average. What happens during the stay is not known at admission.
 - **The requested procedure is assumed to be as known at admission.** Public files hold the AIH as billed; if the
@@ -158,9 +175,28 @@ More in [ARCHITECTURE.md](ARCHITECTURE.md).
   be used for.
 - **The API is for local or internal use:** no authentication or rate limiting.
 
+## Roadmap
+
+Not done yet, in the order I would do them:
+
+- **Prediction intervals.** A range ("between X and Y") next to each predicted cost, from quantile models or conformal
+  prediction, with its coverage checked on the test year. It matters most for the expensive admissions, where a single
+  number is least reliable.
+- **A tabular foundation model in the results table.** Models such as NVIDIA's Kumo Tabular or TabPFN predict without
+  training, from examples given as context. Scored on the same windows and through the same gate, whichever way it goes
+  is a result. The open question is scale: they take tens of thousands of context rows, and this training set has 3.6
+  million rows with thousands of procedure, diagnosis and hospital codes.
+- **Kinds of prediction side by side on the results page:** point estimate, interval and month's total, per model.
+- **The retraining policy, tested on a new period.** The 2024 replay suggests retraining whenever a new billed month
+  exists, and a gate that weighs the month's total. Changing the rule on the same year that suggested it would be
+  fitting it to the result; it needs 2025 data.
+- **The rule behind the July 2024 price change,** and whether known payment-rule changes can be given to the model as
+  an input.
+- **Other states,** to see how much of the model is specific to Rio de Janeiro.
+
 ## Project
 
-Python 3.12, uv, LightGBM, pandera, MLflow (SQLite), FastAPI. Lint with ruff, tests with pytest; CI runs a secret scan
+Python 3.12, uv, LightGBM, pandera, MLflow (SQLite), FastAPI; the results page is plain HTML, CSS and JavaScript. Lint with ruff, tests with pytest; CI runs a secret scan
 (gitleaks), lint and the test suite, both directly and inside the Docker image. Only public data is used; raw data is never
 committed, only its checksums.
 

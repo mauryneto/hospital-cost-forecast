@@ -8,6 +8,11 @@ Two kinds of drift, available at different times:
   later, so judging a month earlier would make the error look smaller than it is. A month counts only once it is
   ``label_delay_months`` old ("mature").
 
+When the error grows, the report also says **where**: the error on the month's total by admission type, and how
+prices moved. The price level compares what was paid with what the same admissions would cost at the prices the model
+last saw (the mean per procedure in the last months of its data), so a change in mix does not count. A change in what
+is paid for the same procedure shows there and in no input drift.
+
 The **retrain rule** fires when the last ``patience`` mature months all breach: MAE more than ``mae_tolerance`` above the
 model's reference MAE (its error on the test window), or a monthly-total error above the gate's ceiling. The rule only
 *recommends*: retraining is a decision a person makes (``costmodel run`` with the new data). ``costmodel replay`` shows
@@ -28,11 +33,24 @@ import pandas as pd  # noqa: E402
 from costmodel import features as F  # noqa: E402
 from costmodel import registry  # noqa: E402
 from costmodel.config import Config  # noqa: E402
-from costmodel.drift import PSI_ALERT, PSI_STABLE, breaches, known_through, monthly_metrics, psi, should_retrain  # noqa: E402
+from costmodel.drift import (  # noqa: E402
+    PSI_ALERT,
+    PSI_STABLE,
+    breaches,
+    error_by_group,
+    known_through,
+    monthly_metrics,
+    price_level,
+    price_shifts,
+    psi,
+    should_retrain,
+)
 from costmodel.evaluate import to_markdown  # noqa: E402
 
 TIME_FEATURES = ["admission_month", "admission_period"]  # they drift by construction; not a signal
 DRIFT_FEATURES = [c for c in F.FEATURES if c not in TIME_FEATURES]
+RECENT_MONTHS = 12  # "what the model last saw": the last months of the data it was fitted on
+MIN_SHARE = 0.02  # admission types with a smaller share of the admissions are left out of the chart (too noisy)
 
 
 # --- the command ---------------------------------------------------------------------------------------------------
@@ -78,6 +96,19 @@ def run(cfg: Config) -> dict:
         m["psi"] = drift
         m["breaches"] = breaches(m, reference_mae, rules, ceiling)
 
+    # Where the error comes from: by admission type, and prices against the level the model last saw.
+    y_live = live[F.TARGET].to_numpy()
+    by_type = error_by_group(y_live, pred, live["period"], live["admission_type"])
+    ref_period = ref["admission_date"].dt.to_period("M")
+    recent = ref[ref_period > ref_period.max() - RECENT_MONTHS]
+    last_seen = recent.groupby(recent["requested_procedure"].astype("string"))[F.TARGET].agg(["mean", "median"])
+    prices = price_level(y_live, live["period"], live["requested_procedure"], last_seen["mean"])
+    for m, level in zip(months, prices, strict=True):
+        m["by_admission_type"] = by_type[m["period"]]
+        m["price_index_pct"] = level["price_index_pct"]
+        m["price_covered_pct"] = level["covered_pct"]
+    shifts = price_shifts(y_live, pred, live["period"], live["requested_procedure"], last_seen)
+
     # Replay time: at the end of each month, which months are mature, and what does the rule say?
     periods = [pd.Period(m["period"], "M") for m in months]
     timeline = []
@@ -95,6 +126,7 @@ def run(cfg: Config) -> dict:
         "reference_mae": reference_mae,
         "rules": rules.__dict__ | {"max_monthly_total_error": ceiling},
         "months": months,
+        "price_shifts": shifts,
         "timeline": timeline,
         "first_retrain_recommendation": fired_at,
     }
@@ -123,6 +155,30 @@ def write_report(cfg: Config, result: dict) -> None:
     months, rules = result["months"], result["rules"]
     ref = result["reference_mae"]
     chart(cfg, months, ref, rules, out / "monitor.png", result["first_retrain_recommendation"])
+    types = shown_types(months)
+    by_type = pd.DataFrame({"month": [m["period"] for m in months]})
+    for t in types:
+        by_type[f"{t}: total error %"] = [m["by_admission_type"].get(t, {}).get("total_error_pct") for m in months]
+    for t in types:
+        by_type[f"{t}: paid (millions)"] = [m["by_admission_type"].get(t, {}).get("actual", 0) / 1e6 for m in months]
+    by_type.insert(1, "prices vs last seen %", [m["price_index_pct"] for m in months])
+    shifts = result.get("price_shifts", [])
+    shift_table = pd.DataFrame(
+        [
+            {
+                "procedure": g["code"],
+                "n": g["n"],
+                "paid (millions)": g["paid"] / 1e6,
+                "at last-seen prices (millions)": g["at_reference_prices"] / 1e6,
+                "extra (millions)": g["extra"] / 1e6,
+                "predicted (millions)": g["predicted"] / 1e6,
+            }
+            for g in shifts
+        ]
+    )
+    median_table = pd.DataFrame(
+        [{"procedure": g["code"], "model last saw": g["reference_median"], **g["monthly_median"]} for g in shifts]
+    )
 
     table = pd.DataFrame(
         [
@@ -170,6 +226,22 @@ def write_report(cfg: Config, result: dict) -> None:
         "",
         to_markdown(psi_table.round(3)),
         "",
+        "## Where the error comes from",
+        "",
+        f"\"Prices vs last seen\" compares what was paid with what the same admissions would cost at the mean price per"
+        f" procedure in the last {RECENT_MONTHS} months of the model's data (same mix, so only price counts). Then the error"
+        " on the month's total by admission type (negative = under-predicted), and what was paid:",
+        "",
+        to_markdown(by_type.round(2), index=False),
+        "",
+        "The procedures that cost most above the prices the model last saw, over the whole window:",
+        "",
+        to_markdown(shift_table.round(2), index=False) if len(shift_table) else "-",
+        "",
+        "Median paid for each of them, by admission month. A jump is a change in what is paid for the same procedure:",
+        "",
+        to_markdown(median_table.round(0), index=False) if len(median_table) else "-",
+        "",
         "## When each decision could be made",
         "",
         to_markdown(pd.DataFrame(result["timeline"]), index=False),
@@ -177,11 +249,21 @@ def write_report(cfg: Config, result: dict) -> None:
     (out / "monitor.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
+def shown_types(months: list[dict]) -> list[str]:
+    """Admission types with enough admissions over the window to be read month by month, largest first."""
+    counts: dict[str, float] = {}
+    for m in months:
+        for name, v in m.get("by_admission_type", {}).items():
+            counts[name] = counts.get(name, 0) + v["n"]
+    total = sum(counts.values())
+    return [t for t, n in sorted(counts.items(), key=lambda kv: -kv[1]) if total and n / total >= MIN_SHARE]
+
+
 def chart(cfg: Config, months: list[dict], reference_mae: float, rules: dict, path, fired_at: str | None = None) -> None:
     from costmodel.eda import BLUE, INK, MUTED, ORANGE, SURFACE, _style
 
     x = [pd.Period(m["period"], "M").to_timestamp() for m in months]
-    fig, axes = plt.subplots(3, 1, figsize=(10, 7.5), sharex=True, facecolor=SURFACE)
+    fig, axes = plt.subplots(4, 1, figsize=(10, 9.8), sharex=True, facecolor=SURFACE)
     limit = (1 + rules["mae_tolerance"]) * reference_mae
     ax = axes[0]
     _style(ax)
@@ -201,6 +283,16 @@ def chart(cfg: Config, months: list[dict], reference_mae: float, rules: dict, pa
             ax.axhline(c, color=ORANGE, linewidth=1, linestyle="--")
     ax.set_title("Error on the month's total cost (%; negative = under-predicted)", loc="left", fontsize=11, color=INK)
     ax = axes[2]
+    _style(ax)
+    for name, color in zip(shown_types(months), [BLUE, "#1f9e74", "#8a5cd1", MUTED], strict=False):
+        ys = [m["by_admission_type"].get(name, {}).get("total_error_pct") for m in months]
+        ax.plot(x, ys, color=color, linewidth=2, marker="o", markersize=4, label=name)
+    ax.plot(x, [m["price_index_pct"] for m in months], color=ORANGE, linewidth=2, marker="o", markersize=4,
+            label="prices vs what the model last saw")  # fmt: skip
+    ax.axhline(0, color=MUTED, linewidth=0.8)
+    ax.legend(frameon=False, fontsize=8, ncol=4, loc="center left")
+    ax.set_title("The same error by admission type, and the price level (%)", loc="left", fontsize=11, color=INK)
+    ax = axes[3]
     _style(ax)
     ax.bar(x, [max(m["psi"].values()) for m in months], width=20, color=BLUE)
     ax.axhline(PSI_ALERT, color=ORANGE, linewidth=1, linestyle="--")

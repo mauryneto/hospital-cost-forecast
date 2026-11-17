@@ -140,8 +140,13 @@ judged only 3 months after it ends, when 98.7% of admissions and 95.4% of the mo
 ![Monitoring](reports/sihsus_rj/monitor.png)
 
 - **It under-predicts throughout 2024:** the month's total is about 14% low from January to April, 16–17% in May and June,
-  and 20–24% from July to December. The MAE steps up from about 850 to over 1,000 in July. A mid-year price update is
-  a plausible cause; it has not been verified.
+  and 20–24% from July to December. The MAE steps up from about 850 to over 1,000 in July.
+- **The cause is price, and the July step is in elective surgery.** Against the prices the model last saw (mean per
+  procedure in 2022, same mix), what was paid is 7.91–9.12% higher from January to April, 11.08–13.07% in May and June
+  and 16.90–21.89% from July. The error on urgent admissions stays between −12.63% and −16.58% all year; on elective
+  admissions it goes from −13.79% to −17.75% (January to April) to −28.25% to −34.10% (July to December). The median
+  paid for cataract surgery (SIGTAP 0405050372) is R$ 772 in every month up to June and R$ 3,858 from July. The rule
+  behind this change was not identified.
 - **The retrain rule fires at the end of September 2024.** May and June broke the limits (MAE more than 10% above
   the test MAE, or the month's total off by more than 15%), but their costs were known only in September.
 - **Input drift did not warn about it.** The largest PSI among the inputs stays between 0.24 and 0.28 all year, with no
@@ -164,6 +169,9 @@ these results.
 
 ## Known limitations
 
+- **Payment-rule changes are invisible until billed.** The July 2024 change in what is paid for elective surgery
+  could not be learned from earlier data, and showed in no input. The monitor's price level and its breakdown by
+  admission type show where such a change happened, three months later.
 - **Systematic under-prediction when prices rise.** The time input carries the latest price level forward but cannot
   anticipate increases. Without retraining, the error grows month after month.
 - **Requested procedure.** It is the strongest input and matches the performed procedure in 95.9% of admissions. The

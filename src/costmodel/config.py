@@ -56,6 +56,19 @@ class ReplayConfig:
 
 
 @dataclass(frozen=True)
+class SiteConfig:
+    """``costmodel site``: the texts of the results page. The numbers come from the reports, never from here."""
+
+    title: str = ""
+    tagline: str = ""
+    kicker: str = ""  # small line above the title, e.g. the data source
+    note: str = ""  # a closing note, e.g. what the target is and is not
+    repository: str = ""  # URL of the code repository, for the page's links
+    currency: str = ""
+    candidate_label: str = "LightGBM candidate"
+
+
+@dataclass(frozen=True)
 class Config:
     name: str
     source: dict
@@ -67,6 +80,7 @@ class Config:
     gate: GateRules = field(default_factory=GateRules)
     monitor: RetrainRules = field(default_factory=RetrainRules)
     replay: ReplayConfig = field(default_factory=lambda: ReplayConfig())
+    site: SiteConfig = field(default_factory=SiteConfig)
     path: Path | None = None
 
     @property
@@ -107,5 +121,6 @@ def load_config(path: str | Path) -> Config:
         gate=GateRules(**raw.get("gate", {})),
         monitor=RetrainRules(**raw.get("monitor", {})),
         replay=ReplayConfig(**{k: tuple(v) if isinstance(v, list) else v for k, v in raw.get("replay", {}).items()}),
+        site=SiteConfig(**raw.get("site", {})),
         path=path,
     )

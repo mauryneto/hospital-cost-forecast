@@ -20,6 +20,7 @@ def main(argv: list[str] | None = None) -> None:
         ("evaluate", "score 'staging' once on the test window, run the gate, promote it to 'production' if it passes"),
         ("monitor", "score the monitoring window month by month: drift (PSI), error, and the retrain rule"),
         ("replay", "what-if: replay the monitoring window under each retraining policy (slow: it retrains)"),
+        ("site", "one static page with the results (docs/index.html), built from the reports"),
         ("run", "the whole pipeline, in order: data, train, evaluate, monitor"),
     ]:
         cmd = sub.add_parser(name, help=help_text)
@@ -90,6 +91,10 @@ def main(argv: list[str] | None = None) -> None:
         run(cfg)
     elif args.command == "replay":
         from costmodel.replay import run
+
+        run(cfg)
+    elif args.command == "site":
+        from costmodel.site import run
 
         run(cfg)
     elif args.command == "score":

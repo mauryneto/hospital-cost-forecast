@@ -10,6 +10,7 @@
 #   docker compose run --rm costmodel run                                     # data + train + evaluate + monitor
 #   docker compose run --rm costmodel score --month 2024-03                   # batch: price a month with 'production'
 #   docker compose up api                                                     # POST /predict on http://127.0.0.1:8000
+#   docker compose run --rm costmodel site                                    # results page -> docker-work/docs/index.html
 #   docker compose up mlflow                                                  # experiment UI on http://127.0.0.1:5000
 #   docker compose run --rm costmodel synthetic                               # made-up plan data, contract format
 #   docker compose run --rm costmodel data --config configs/synthetic_plan.toml

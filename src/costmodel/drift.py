@@ -84,3 +84,82 @@ def monthly_metrics(y: np.ndarray, pred: np.ndarray, period: pd.Series) -> list[
     )
     g["total_error_pct"] = 100 * (g["predicted"] - g["actual"]) / g["actual"]
     return [{"period": str(p), **{k: float(v) for k, v in row.items()}} for p, row in g.iterrows()]
+
+
+def error_by_group(y: np.ndarray, pred: np.ndarray, period: pd.Series, group: pd.Series) -> dict[str, dict[str, dict]]:
+    """Per month and per group: admissions, paid and predicted totals, and the error on the total. {month: {group: ...}}"""
+    df = pd.DataFrame(
+        {
+            "y": np.asarray(y, dtype=float),
+            "pred": np.asarray(pred, dtype=float),
+            "period": period.to_numpy(),
+            "group": group.astype("string").fillna("NA").to_numpy(),
+        }
+    )
+    g = df.groupby(["period", "group"], sort=True).agg(n=("y", "size"), actual=("y", "sum"), predicted=("pred", "sum"))
+    g["total_error_pct"] = 100 * (g["predicted"] - g["actual"]) / g["actual"]
+    out: dict[str, dict[str, dict]] = {}
+    for (p, name), row in g.iterrows():
+        out.setdefault(str(p), {})[str(name)] = {k: float(v) for k, v in row.items()}
+    return out
+
+
+def price_level(y: np.ndarray, period: pd.Series, code: pd.Series, reference_mean: pd.Series) -> list[dict]:
+    """Per month: what was paid against what the same admissions would cost at the prices the model last saw.
+
+    ``reference_mean`` is the mean paid per code in the last months of the model's data. Holding the mix of codes
+    fixed, ``price_index_pct`` is how much dearer (+) or cheaper (-) the month is than that price level. Admissions whose
+    code the model never saw have no reference price and are left out; ``covered_pct`` is the share of money kept.
+    """
+    df = pd.DataFrame({"y": np.asarray(y, dtype=float), "period": period.to_numpy()})
+    df["ref"] = code.astype("string").map(reference_mean).to_numpy(dtype=float)
+    out = []
+    for p, g in df.groupby("period", sort=True):
+        known = g["ref"].notna()
+        paid, at_ref = float(g.loc[known, "y"].sum()), float(g.loc[known, "ref"].sum())
+        out.append(
+            {
+                "period": str(p),
+                "paid": paid,
+                "at_reference_prices": at_ref,
+                "price_index_pct": 100 * (paid / at_ref - 1) if at_ref else float("nan"),
+                "covered_pct": 100 * paid / float(g["y"].sum()),
+            }
+        )
+    return out
+
+
+def price_shifts(y: np.ndarray, pred: np.ndarray, period: pd.Series, code: pd.Series, reference: pd.DataFrame,
+                 top: int = 10) -> list[dict]:  # fmt: skip
+    """The codes that cost most above the prices the model last saw, with the median paid for each month by month.
+
+    ``reference`` has the ``mean`` and ``median`` paid per code in the last months of the model's data. ``extra`` is
+    what was paid minus what the same number of admissions would cost at that mean. A code whose monthly median jumps
+    is being paid differently than the model learned: a price change, which no input drift can show.
+    """
+    df = pd.DataFrame(
+        {
+            "y": np.asarray(y, dtype=float),
+            "pred": np.asarray(pred, dtype=float),
+            "period": period.to_numpy(),
+            "code": code.astype("string").to_numpy(),
+        }
+    )
+    g = df.groupby("code").agg(n=("y", "size"), paid=("y", "sum"), predicted=("pred", "sum"))
+    g = g.join(reference[["mean", "median"]], how="inner")  # codes the model saw
+    g["at_reference_prices"] = g["n"] * g["mean"]
+    g["extra"] = g["paid"] - g["at_reference_prices"]
+    monthly = df.groupby(["code", "period"])["y"].median()
+    return [
+        {
+            "code": str(name),
+            "n": int(row["n"]),
+            "paid": float(row["paid"]),
+            "at_reference_prices": float(row["at_reference_prices"]),
+            "extra": float(row["extra"]),
+            "predicted": float(row["predicted"]),
+            "reference_median": float(row["median"]),
+            "monthly_median": {str(p): float(v) for p, v in monthly[name].items()},
+        }
+        for name, row in g.sort_values("extra", ascending=False).head(top).iterrows()
+    ]

@@ -4,7 +4,18 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from costmodel.drift import PSI_ALERT, PSI_STABLE, RetrainRules, known_through, monthly_metrics, psi, should_retrain
+from costmodel.drift import (
+    PSI_ALERT,
+    PSI_STABLE,
+    RetrainRules,
+    error_by_group,
+    known_through,
+    monthly_metrics,
+    price_level,
+    price_shifts,
+    psi,
+    should_retrain,
+)
 
 rng = np.random.default_rng(0)
 
@@ -66,3 +77,53 @@ def test_monthly_metrics():
     assert out[0]["mae"] == pytest.approx(20.0)
     assert out[0]["total_error_pct"] == pytest.approx(-5.0)
     assert out[1]["mae"] == 0.0
+
+
+def repriced_year():
+    """Two procedures, 100 admissions of each per month. A is paid 100 all year; B doubles from 200 to 400 in July."""
+    rows = []
+    for month in range(1, 13):
+        for code, price in (("A", 100.0), ("B", 200.0 if month < 7 else 400.0)):
+            kind = "urgent" if code == "A" else "elective"
+            rows += [{"period": f"2024-{month:02d}", "code": code, "y": price, "type": kind}]
+    return pd.concat([pd.DataFrame(rows)] * 100, ignore_index=True)
+
+
+def test_error_by_group_separates_the_group_that_went_wrong():
+    df = repriced_year()
+    pred = df["code"].map({"A": 100.0, "B": 200.0}).to_numpy()  # a model that learned the old prices
+    out = error_by_group(df["y"].to_numpy(), pred, df["period"], df["type"])
+    assert out["2024-06"]["elective"]["total_error_pct"] == pytest.approx(0)
+    assert out["2024-07"]["elective"]["total_error_pct"] == pytest.approx(-50)
+    assert out["2024-07"]["urgent"]["total_error_pct"] == pytest.approx(0)
+    assert out["2024-07"]["urgent"]["n"] == 100
+
+
+def test_price_level_ignores_a_change_of_mix_and_shows_a_change_of_price():
+    df = repriced_year()
+    last_seen = pd.Series({"A": 100.0, "B": 200.0})
+    levels = {m["period"]: m for m in price_level(df["y"].to_numpy(), df["period"], df["code"], last_seen)}
+    assert levels["2024-06"]["price_index_pct"] == pytest.approx(0)
+    assert levels["2024-07"]["price_index_pct"] == pytest.approx(100 * (500 / 300 - 1))  # B doubled, A did not move
+    # More of the expensive procedure at the same prices is a change of mix, not of price.
+    more_b = pd.concat([df, df[(df["code"] == "B") & (df["period"] == "2024-03")]])
+    march = price_level(more_b["y"].to_numpy(), more_b["period"], more_b["code"], last_seen)[2]
+    assert march["period"] == "2024-03" and march["price_index_pct"] == pytest.approx(0)
+    # A procedure the model never saw has no reference price: it is left out and reported as not covered.
+    new = pd.concat([df, pd.DataFrame({"period": ["2024-01"] * 100, "code": ["NEW"] * 100, "y": [300.0] * 100})])
+    january = price_level(new["y"].to_numpy(), new["period"], new["code"], last_seen)[0]
+    assert january["price_index_pct"] == pytest.approx(0)
+    assert january["covered_pct"] == pytest.approx(50)
+
+
+def test_price_shifts_ranks_the_repriced_procedure_first():
+    df = repriced_year()
+    pred = df["code"].map({"A": 100.0, "B": 200.0}).to_numpy()
+    reference = pd.DataFrame({"mean": {"A": 100.0, "B": 200.0}, "median": {"A": 100.0, "B": 200.0}})
+    shifts = price_shifts(df["y"].to_numpy(), pred, df["period"], df["code"], reference)
+    assert [s["code"] for s in shifts] == ["B", "A"]
+    b = shifts[0]
+    assert b["extra"] == pytest.approx(6 * 100 * 200)  # six months, 100 admissions, 200 above the last-seen price
+    assert b["reference_median"] == 200
+    assert b["monthly_median"]["2024-06"] == 200 and b["monthly_median"]["2024-07"] == 400
+    assert shifts[1]["extra"] == pytest.approx(0)
