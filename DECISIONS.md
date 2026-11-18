@@ -26,6 +26,7 @@ and kept after review.
 | 12 | **If a plain average misses the month's total by 7%, why build all this? Is there a score that says whether the model is worth it?** | The results table showed a global mean almost tied with the model on the month's total. That deserved a straight answer, not a footnote. | `costmodel skill`: the error on totals for all admissions and for each hospital, specialty and procedure group, next to a plain average's, and how much smaller the model's is. Result: see below. |
 | 13 | **Show the final model on a screen like a BI tool: the whole state, admission type, procedure group, bed specialty, hospital and each admission, month by month.** | A table in a report answers one question. A screen with filters lets someone look for their own. | `costmodel explore` and the [explorer page](https://mauryneto.github.io/hospital-cost-forecast/explore.html). Each admission is shown only as distributions: no admission is published. |
 | 14 | **No prediction ranges. Next: a tabular foundation model; then cash flow; then the official price table as an input; other states and patient history later. No neural network.** | Whoever uses this wants a value, not a range. Several kinds of model were already compared, so the recent one that is missing comes first. | The roadmap in the README, in this order. |
+| 15 | **Before moving on to the cash-flow forecast, do the 2025 check.** | Every choice so far was made on 2022 and judged on 2023 and 2024, which were looked at more than once. A year no choice was made on is the only clean check left. | The protocol below, written and committed before any 2025 cost was read; then `costmodel fresh`, run once. |
 
 ## Fixed in the brief, before any code
 
@@ -61,6 +62,50 @@ recommended by the system and decided by a person, with nothing scheduled.
   model's outputs. The author's call.
 - **A year not used for any choice.** The second of the model's two numbers, and the gate rule written for it, were
   judged on years already seen (see "Two numbers instead of one"). 2025 is the check that is missing.
+
+## The 2025 check: written before looking
+
+This section was written and committed before any 2025 cost was read, by a model or by a person. Only the raw files
+were downloaded and their checksums recorded. The settings are in `configs/sihsus_rj_2025.toml`, a dataset of its
+own, so the reports of 2018-2024 do not change. The author approved this protocol as proposed by the assistant.
+
+**The model that is scored.** The two settings of version 3 (typical cost: least squares on log(cost), 255 leaves,
+324 trees; expected cost: Tweedie, 63 leaves, 303 trees), fitted at the end of December 2024 on the admissions whose
+costs were known by then (admission months up to September 2024, because of the 3-month billing delay). Nothing is
+searched or tuned. It prices every admission of 2025.
+
+**Four questions, each with what counts as confirmed.** Differences come with a 95% interval, from drawing the scored
+admissions again with replacement 1,000 times. A difference counts only when its interval leaves zero out.
+
+1. **Do the two numbers hold?** Confirmed if the typical cost has the lower error per admission and the expected
+   cost the lower error on the month's total, both beyond their intervals.
+2. **Is the model still worth it?** Confirmed if it passes the gate's rule against the best baseline (error per
+   admission at least 2% lower, month's total not worse, and the month's total within 15%) and its error on totals is
+   smaller than a plain average's at every level (all admissions, admission type, procedure group, bed specialty,
+   diagnosis chapter, procedure subgroup, hospital, each admission).
+3. **Do the ideas that looked good on 2022 repeat?** Each against the model above, fitted on the same admissions:
+   - *Recent months weigh more* (half-life of 12 months; on 2022: better on the month's total, worse per admission).
+     Confirmed if it is better on the month's total.
+   - *A typical-cost model of its own for surgical admissions* (107 trees, the number found on 2022; there: better
+     per admission). Confirmed if the error per admission over all admissions is lower.
+   - *TabPFN-2 reading 10,000 admissions of the last 12 known months, with code statistics from the rest* (on a 2022
+     sample: a tie per admission, better on the month's total). Scored on 30,000 admissions of 2025 drawn at random.
+     Confirmed if it is better on the month's total and not worse per admission.
+4. **Is retraining every month better than waiting for the rule?** The 2024 replay, on 2025: never retrain, retrain
+   when the rule fires, try every month, each with all known months or the last 24. Confirmed if "every month" on
+   all known months has a lower error on the month's total than "never" and than "rule" on the same window. This one
+   has no interval: the replay gives totals, not paired predictions.
+
+For the record, and not one of the four questions: version 3 exactly as it is in production (fitted on 2018-2022,
+never retrained) is scored on 2025 too.
+
+**Rules.**
+
+- One command (`costmodel fresh`), run once. The code is committed before it runs.
+- Whatever comes out is published, including what is not confirmed.
+- If a mistake in the code is found after the run, it is fixed, the run repeated and the fact stated here.
+- Nothing is adopted by this check. The model in production stays as it is; what to do with the result is the
+  author's decision.
 
 ## Result of decision 8
 
