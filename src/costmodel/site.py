@@ -5,6 +5,10 @@ data: the numbers are embedded when it is generated, read from ``reports/<datase
 where they exist, ``replay.json`` and the side comparisons. So the page cannot disagree with
 the reports, and regenerating it after a new run is one command. Only aggregates are embedded (per model, per month,
 per procedure); never an admission.
+
+When ``costmodel explore`` has run, a second page is written next to it, ``docs/explore.html``: the model in
+production group by group (hospital, specialty...) and month by month, with filters. It reuses the first page's
+styles and chart code, so the two cannot drift apart.
 """
 
 from __future__ import annotations
@@ -18,6 +22,9 @@ from costmodel.config import Config
 from costmodel.paths import HOME
 
 TEMPLATE = Path(__file__).with_name("site_template.html")
+EXPLORE_TEMPLATE = Path(__file__).with_name("explore_template.html")
+SHARED_JS = ("  // ==== shared with the explorer page: start ====\n", "  // ==== shared with the explorer page: end ====\n")
+EXPLORER_LINK = {"label": "Explorer: by hospital, specialty and month", "url": "explore.html"}
 TEST_METRICS = ("mae", "monthly_total_mape", "bias_pct", "mae_top_decile")
 SHIFT_FIELDS = ("code", "n", "extra", "reference_median", "monthly_median")
 FAMILY_FIELDS = ("family", "setting", "trees", "seconds", *TEST_METRICS)
@@ -62,6 +69,8 @@ def page_data(cfg: Config) -> dict:
         if repo
         else []
     )
+    if (cfg.reports_dir / "explore.json").exists():
+        links = [EXPLORER_LINK, *links]
     months = [
         {
             "period": m["period"],
@@ -167,6 +176,46 @@ def render(data: dict) -> str:
     return html.replace("__DATA__", payload)
 
 
+def explorer_data(cfg: Config) -> dict | None:
+    """What the explorer page shows (``costmodel explore``), or None if that has not run."""
+    explore = _read(cfg, "explore.json", required=False)
+    if explore is None:
+        return None
+    from costmodel.explore import MIN_ADMISSIONS, TOP_GROUPS
+
+    site = cfg.site
+    repo = site.repository.rstrip("/")
+    return {
+        "title": site.title or cfg.name,
+        "kicker": site.kicker or cfg.name,
+        "note": site.note,
+        "currency": site.currency,
+        "links": (
+            [{"label": "Code and README", "url": repo}, {"label": "Model card", "url": f"{repo}/blob/main/MODEL_CARD.md"}]
+            if repo
+            else []
+        ),
+        "generated": date.today().isoformat(),
+        "top_groups": TOP_GROUPS,
+        "min_admissions": MIN_ADMISSIONS,
+        "explore": explore,
+    }
+
+
+def _between(text: str, start: str, end: str) -> str:
+    return text[text.index(start) + len(start) : text.index(end)]
+
+
+def render_explorer(data: dict) -> str:
+    """The explorer page: its own layout, with the styles and the chart code of the main page."""
+    main = TEMPLATE.read_text(encoding="utf-8")
+    payload = json.dumps(_clean(data), ensure_ascii=False, allow_nan=False).replace("</", "<\\/")
+    html = EXPLORE_TEMPLATE.read_text(encoding="utf-8")
+    html = html.replace("__STYLE__", _between(main, "<style>\n", "</style>"))
+    html = html.replace("__SHARED_JS__", _between(main, *SHARED_JS))
+    return html.replace("__TITLE__", _escape(data["title"])).replace("__DATA__", payload)
+
+
 def _escape(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
@@ -176,4 +225,9 @@ def run(cfg: Config) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render(page_data(cfg)), encoding="utf-8", newline="\n")
     print(f"page written to {path}")
+    explorer = explorer_data(cfg)
+    if explorer is not None:
+        explore_path = path.with_name("explore.html")
+        explore_path.write_text(render_explorer(explorer), encoding="utf-8", newline="\n")
+        print(f"explorer written to {explore_path}")
     return path

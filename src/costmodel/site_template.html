@@ -294,6 +294,7 @@ footer p { margin: 0 0 10px; }
 (function () {
   "use strict";
   var D = JSON.parse(document.getElementById("data").textContent);
+  // ==== shared with the explorer page: start ====
   var $ = function (id) { return document.getElementById(id); };
   var NS = "http://www.w3.org/2000/svg";
   var CUR = D.currency ? D.currency + " " : "";
@@ -426,6 +427,7 @@ footer p { margin: 0 0 10px; }
     if (options.length < 2) host.style.display = "none";
   }
   var C1 = function () { return css("--series-1"); }, C2 = function () { return css("--series-2"); }, C3 = function () { return css("--series-3"); }, CN = function () { return css("--neutral"); };
+  // ==== shared with the explorer page: end ====
 
   // ---- header and tiles --------------------------------------------------------------------------------------------
   var T = D.test, M = D.monitor, R = D.replay || [];

@@ -146,3 +146,31 @@ def test_skill_scores_whatever_is_in_production_by_level(cfg):
     saved = json.loads((cfg.reports_dir / "skill_test.json").read_text())
     assert saved["version"] == str(registry.version_for(cfg, registry.PRODUCTION).version)
     assert "Is the model worth it over a plain average?" in (cfg.reports_dir / "skill_test.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.slow
+def test_explorer_numbers_are_the_monitors_and_the_page_is_written(cfg, tmp_path, monkeypatch):
+    from costmodel import explore, site
+
+    result = explore.run(cfg)
+    monitored = monitor.run(cfg)
+    assert [w["key"] for w in result["windows"]] == ["test", "monitor"]
+    everyone = result["levels"][0]["groups"][0]
+    july = result["months"].index("2024-07")
+    month = monitored["months"][0]
+    # The same model, the same month: the explorer's totals are the monitor's.
+    assert everyone["n"][july] == month["n"]
+    assert everyone["paid"][july] == pytest.approx(month["actual"], abs=1)
+    assert everyone["expected"][july] == pytest.approx(month["predicted"], abs=1)
+    assert everyone["abs_error"][july] / everyone["n"][july] == pytest.approx(month["mae"], rel=1e-3)
+    hospitals = next(lv for lv in result["levels"] if lv["key"] == "hospital")
+    assert sum(g["n"][july] or 0 for g in hospitals["groups"]) == month["n"]  # every admission is in exactly one group
+
+    holdout_report = cfg.reports_dir / "test.json"
+    assert holdout_report.exists()
+    monkeypatch.setattr(site, "HOME", tmp_path)
+    index = site.run(cfg)
+    page = index.with_name("explore.html").read_text(encoding="utf-8")
+    assert "__" not in page.split("<script id=")[0]  # no placeholder left in the page itself
+    assert "function lineChart" in page and "--series-1" in page  # the main page's chart code and styles
+    assert '"url": "explore.html"' in index.read_text(encoding="utf-8")  # the main page links to it

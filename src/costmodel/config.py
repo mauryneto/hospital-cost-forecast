@@ -66,6 +66,8 @@ class SiteConfig:
     repository: str = ""  # URL of the code repository, for the page's links
     currency: str = ""
     candidate_label: str = "LightGBM candidate"
+    # Names for the codes shown on the explorer page: feature column -> code -> name (codes without one show as is).
+    labels: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

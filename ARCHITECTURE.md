@@ -97,7 +97,11 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    version, not the alias, so the version they report is always the one that priced the admission; a promotion or a
    rollback reaches the API when it restarts. The API does not start without a `production` model, and it rejects any
    field the contract does not know at admission (the cost, the length of stay) instead of ignoring it.
-9. **Show.** `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
+9. **Show.** `costmodel explore` adds up, group by group and month by month (all admissions, admission type,
+   procedure group, bed specialty, hospital), what the model in production predicted and what was paid, over the test
+   and monitoring windows; small groups are pooled and no admission is listed. `costmodel site` then writes that as
+   `docs/explore.html`, a screen with filters, next to the main page.
+   `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
    monitoring months, where prices changed, the retraining replay and, when they were run, the side comparisons
    (other model families, the blend, one model per group, the recent price, the length of the history). The numbers
    are embedded when the page is generated, so it cannot disagree with the reports, and only aggregates are published.

@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explorer · __TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+__STYLE__
+/* ---- explorer ---- */
+.page.wide { max-width: 1180px; }
+h1 { max-width: 18ch; }
+.back { font: 500 12px var(--mono); letter-spacing: .04em; color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--rule-strong); }
+.back:hover { color: var(--ink); border-color: var(--ink); }
+.filters { display: flex; flex-wrap: wrap; align-items: end; gap: 14px 22px; padding: 26px 0 6px; }
+.filters label { display: block; font: 500 11px/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 6px; }
+.filters .seg { margin: 0; flex-wrap: wrap; }
+.filters select { font: 500 13px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 6px; padding: 7px 10px; max-width: 100%; min-width: 220px; }
+.filters select:focus-visible { outline: 2px solid var(--series-1); outline-offset: 1px; }
+.tiles.five { grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 900px) { .tiles.five { grid-template-columns: 1fr 1fr; } .tiles.five .tile { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); } .tiles.five .tile:nth-child(even) { padding-left: 20px; border-left: 1px solid var(--rule); } }
+.picked { font: 400 22px/1.3 var(--serif); margin: 26px 0 0; }
+.picked small { display: block; font: 13px/1.4 var(--sans); color: var(--ink-2); margin-top: 4px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.block { padding: 40px 0 8px; border-top: 1px solid var(--rule); margin-top: 8px; }
+.block > h2 { font: 400 28px/1.12 var(--serif); margin: 0 0 6px; letter-spacing: -.01em; }
+.block > p.sub { font-size: 14px; color: var(--ink-2); margin: 0 0 22px; max-width: 70ch; }
+table.pick tbody tr { cursor: pointer; }
+table.pick tbody tr:hover td { background: var(--surface-2); }
+table.pick tbody tr[aria-selected="true"] td { background: var(--surface-2); font-weight: 600; }
+table.pick tbody tr[aria-selected="true"] td:first-child { box-shadow: inset 3px 0 0 var(--series-1); padding-left: 10px; }
+table.pick th button { font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+table.pick th button[aria-sort]:after { content: " ↓"; }
+table.pick th button[aria-sort="ascending"]:after { content: " ↑"; }
+</style>
+</head>
+<body>
+<div class="page wide">
+  <header>
+    <div class="kicker" id="kicker"></div>
+    <h1>The model in production, group by group</h1>
+    <p class="lede">What the model predicted against what was paid, month by month, for all admissions or for one admission type, procedure group, bed specialty or hospital. These are months the model was not fitted on.</p>
+    <nav class="links" id="links"></nav>
+  </header>
+
+  <div class="filters" role="group" aria-label="Filters">
+    <div><label id="level-label">Look at</label><div class="seg" id="level-seg" role="group" aria-labelledby="level-label"></div></div>
+    <div id="group-box"><label for="group-select">Which one</label><select id="group-select"></select></div>
+    <div><label id="window-label">Months</label><div class="seg" id="window-seg" role="group" aria-labelledby="window-label"></div></div>
+  </div>
+
+  <p class="picked" id="picked"></p>
+  <div class="tiles five" id="tiles"></div>
+
+  <div class="block">
+    <div class="grid2">
+      <div class="figure">
+        <h3>Paid and predicted, each month</h3>
+        <p class="sub" id="c1-sub"></p>
+        <div class="legend" id="c1-legend"></div>
+        <div class="chart" id="c1"></div>
+      </div>
+      <div class="figure">
+        <h3>Error on the month's total</h3>
+        <p class="sub">Predicted total against paid total, in percent; negative = the model predicted less than was paid.</p>
+        <div class="chart" id="c2"></div>
+      </div>
+    </div>
+    <div class="figure">
+      <h3>Error per admission, each month</h3>
+      <p class="sub" id="c3-sub"></p>
+      <div class="chart" id="c3"></div>
+    </div>
+  </div>
+
+  <div class="block" id="table-block">
+    <h2 id="table-title"></h2>
+    <p class="sub">Click a row to see it above; click a column to sort. The error is the model's: it says how well the model prices a group, not how well the group works.</p>
+    <div class="tablewrap" id="groups-table"></div>
+  </div>
+
+  <div class="block">
+    <h2>Admission by admission</h2>
+    <p class="sub">No admission is listed here or anywhere on this site. These are distributions: admissions sorted by what was paid and cut into ten equal groups, and how far the typical cost fell from the amount paid.</p>
+    <div id="admissions"></div>
+  </div>
+
+  <footer id="footer"></footer>
+</div>
+<div class="tip" id="tip" role="status"></div>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var D = JSON.parse(document.getElementById("data").textContent);
+__SHARED_JS__
+  var E = D.explore, MONTHS = E.months;
+  // Amounts without the currency (the axes and labels of a chart, whose caption names it), and with it (tiles, tables).
+  function amount(v) {
+    if (v == null || isNaN(v)) return "–";
+    var a = Math.abs(v);
+    return a >= 1e9 ? fmt(v / 1e9, 2) + " bn" : a >= 1e6 ? fmt(v / 1e6, 1) + " M" : a >= 1e4 ? fmt(v / 1e3, 0) + " k" : fmt(v, 0);
+  }
+  function money(v) { return v == null || isNaN(v) ? "–" : CUR + amount(v); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function groupName(level, g) {
+    if (g.pooled) return "All others (" + fmt(g.pooled, 0) + " pooled)";
+    return (level.key === "hospital" ? "Hospital " : "") + g.label;
+  }
+
+  // ---- state ---------------------------------------------------------------------------------------------------------
+  var state = { level: E.levels[0], group: 0, window: "all", sort: "paid", asc: false };
+  function indices() {
+    if (state.window === "all") return MONTHS.map(function (_, i) { return i; });
+    var w = E.windows.filter(function (x) { return x.key === state.window; })[0];
+    return w.months.map(function (m) { return MONTHS.indexOf(m); });
+  }
+  function sumOver(values, idx) { var s = 0; idx.forEach(function (i) { s += values[i] || 0; }); return s; }
+  function summary(g, idx) {
+    var n = sumOver(g.n, idx), paid = sumOver(g.paid, idx), expected = sumOver(g.expected, idx), abs = sumOver(g.abs_error, idx);
+    return { n: n, paid: paid, expected: expected, error: paid ? 100 * (expected - paid) / paid : null, mae: n ? abs / n : null };
+  }
+  function series(g, idx, f) { return idx.map(function (i) { return g.n[i] == null ? null : f(i); }); }
+
+  // ---- header --------------------------------------------------------------------------------------------------------
+  $("kicker").textContent = D.kicker + " · model version " + E.version;
+  $("links").innerHTML = '<a href="index.html">← All results</a>' + D.links.map(function (l) { return '<a href="' + esc(l.url) + '">' + esc(l.label) + "</a>"; }).join("");
+
+  // ---- charts (built once; they read the current selection when drawn) -----------------------------------------------
+  function current() { return state.level.groups[state.group]; }
+  function boundary() {
+    if (state.window !== "all" || E.windows.length < 2) return null;
+    return { index: MONTHS.indexOf(E.windows[1].months[0]), label: E.windows[1].label.toLowerCase() + " starts" };
+  }
+  function chart(host, o, make) {
+    Object.defineProperty(o, "x", { get: function () { return indices().map(function (i) { return MONTHS[i]; }); } });
+    Object.defineProperty(o, "series", { get: function () { return make(current(), indices()); } });
+    Object.defineProperty(o, "marker", { get: boundary });
+    lineChart(host, o);
+  }
+  chart($("c1"), { height: 280, yfmt: amount, label: "Paid and predicted totals by month" }, function (g, idx) {
+    return [{ name: "Paid", short: "paid", color: CN(), values: series(g, idx, function (i) { return g.paid[i]; }) },
+            { name: "Predicted (expected cost)", short: "predicted", color: C1(), values: series(g, idx, function (i) { return g.expected[i]; }) }];
+  });
+  chart($("c2"), { height: 280, zero: true, yfmt: function (v) { return pct(v, 0, true); }, label: "Error on the month's total" }, function (g, idx) {
+    return [{ name: "Error on the month's total", color: C1(), values: series(g, idx, function (i) { return g.paid[i] ? 100 * (g.expected[i] - g.paid[i]) / g.paid[i] : null; }) }];
+  });
+  chart($("c3"), { height: 230, min: 0, yfmt: function (v) { return fmt(v, 0); }, label: "Mean absolute error per admission by month" }, function (g, idx) {
+    return [{ name: "Mean error per admission (typical cost)", color: C2(), values: series(g, idx, function (i) { return g.n[i] ? g.abs_error[i] / g.n[i] : null; }) }];
+  });
+  $("c1-sub").textContent = "Totals for the selection, in " + (D.currency || "currency") + ". The predicted total is the sum of the expected cost.";
+  $("c3-sub").textContent = "Mean absolute difference between the typical cost and what was paid, in " + (D.currency || "currency") + ".";
+  legend($("c1-legend"), [{ name: "Paid", color: CN() }, { name: "Predicted (expected cost)", color: C1() }]);
+
+  // ---- the selection: title, tiles, charts ---------------------------------------------------------------------------
+  function windowText() {
+    var idx = indices();
+    return MONTHS[idx[0]] + " to " + MONTHS[idx[idx.length - 1]] + " (" + idx.length + " months)";
+  }
+  function drawSelection() {
+    var g = current(), s = summary(g, indices());
+    $("picked").innerHTML = esc(groupName(state.level, g)) + "<small>" + esc(state.level.label) + " · " + esc(windowText()) + "</small>";
+    var tiles = [
+      { label: "Admissions", value: fmt(s.n, 0), note: "in the months selected" },
+      { label: "Paid", value: money(s.paid), note: "what was billed for them" },
+      { label: "Predicted", value: money(s.expected), note: "sum of the expected cost" },
+      { label: "Error on the total", value: pct(s.error, 1, true), note: s.error == null ? "" : s.error < 0 ? "the model predicted less than was paid" : "the model predicted more than was paid" },
+      { label: "Error per admission", value: s.mae == null ? "–" : CUR + fmt(s.mae, 2), note: "mean absolute error of the typical cost" }
+    ];
+    $("tiles").innerHTML = tiles.map(function (t) { return '<div class="tile"><div class="label">' + esc(t.label) + '</div><div class="value">' + esc(t.value) + '</div><div class="note">' + esc(t.note) + "</div></div>"; }).join("");
+    redraws.forEach(function (f) { f(); });
+  }
+
+  // ---- the table of groups at this level -----------------------------------------------------------------------------
+  var COLUMNS = [
+    { key: "name", label: "", text: function (r) { return r.name; } },
+    { key: "n", label: "Admissions", text: function (r) { return fmt(r.n, 0); } },
+    { key: "paid", label: "Paid", text: function (r) { return money(r.paid); } },
+    { key: "expected", label: "Predicted", text: function (r) { return money(r.expected); } },
+    { key: "error", label: "Error on the total", text: function (r) { return pct(r.error, 1, true); } },
+    { key: "mae", label: "Error per admission", text: function (r) { return r.mae == null ? "–" : fmt(r.mae, 2); } }
+  ];
+  function drawTable() {
+    var level = state.level, idx = indices();
+    $("table-block").style.display = level.groups.length > 1 ? "" : "none";
+    $("table-title").textContent = "Every " + level.label.toLowerCase();
+    var rows = level.groups.map(function (g, i) { var s = summary(g, idx); s.name = groupName(level, g); s.index = i; return s; });
+    rows.sort(function (a, b) {
+      var x = a[state.sort], y = b[state.sort], d = state.sort === "name" ? String(x).localeCompare(String(y)) : (x == null ? -Infinity : x) - (y == null ? -Infinity : y);
+      return state.asc ? d : -d;
+    });
+    var html = '<table class="pick"><thead><tr>' + COLUMNS.map(function (c) {
+      var sorted = c.key === state.sort ? ' aria-sort="' + (state.asc ? "ascending" : "descending") + '"' : "";
+      return '<th><button type="button" data-sort="' + c.key + '"' + sorted + ">" + esc(c.label || level.label) + "</button></th>";
+    }).join("") + "</tr></thead><tbody>" + rows.map(function (r) {
+      return '<tr tabindex="0" data-index="' + r.index + '" aria-selected="' + (r.index === state.group) + '">' + COLUMNS.map(function (c) { return "<td>" + esc(c.text(r)) + "</td>"; }).join("") + "</tr>";
+    }).join("") + "</tbody></table>";
+    var host = $("groups-table"); host.innerHTML = html;
+    [].forEach.call(host.querySelectorAll("th button"), function (b) {
+      b.addEventListener("click", function () {
+        var key = b.getAttribute("data-sort");
+        if (state.sort === key) state.asc = !state.asc; else { state.sort = key; state.asc = key === "name"; }
+        drawTable();
+      });
+    });
+    [].forEach.call(host.querySelectorAll("tbody tr"), function (tr) {
+      function pick() { state.group = Number(tr.getAttribute("data-index")); $("group-select").value = String(state.group); drawSelection(); drawTable(); }
+      tr.addEventListener("click", pick);
+      tr.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(); } });
+    });
+  }
+
+  // ---- filters -------------------------------------------------------------------------------------------------------
+  function fillGroups() {
+    var select = $("group-select"), level = state.level;
+    select.innerHTML = level.groups.map(function (g, i) { return '<option value="' + i + '">' + esc(groupName(level, g)) + "</option>"; }).join("");
+    select.value = "0";
+    $("group-box").style.display = level.groups.length > 1 ? "" : "none";
+  }
+  segmented($("level-seg"), E.levels.map(function (l) { return { key: l.key, label: l.label }; }), function (key) {
+    state.level = E.levels.filter(function (l) { return l.key === key; })[0]; state.group = 0;
+    fillGroups(); drawSelection(); drawTable();
+  });
+  $("group-select").addEventListener("change", function () { state.group = Number(this.value); drawSelection(); drawTable(); });
+  segmented($("window-seg"), [{ key: "all", label: "All months" }].concat(E.windows.map(function (w) { return { key: w.key, label: w.label + " (" + w.months[0].slice(0, 4) + ")" }; })), function (key) {
+    state.window = key; drawSelection(); drawTable();
+  });
+  fillGroups(); drawSelection(); drawTable();
+
+  // ---- admission by admission ----------------------------------------------------------------------------------------
+  var host = $("admissions"), parts = [];
+  E.windows.forEach(function (w, k) {
+    if (!E.admissions[w.key]) return;
+    parts.push('<div class="grid2"><div class="figure"><h3>' + esc(w.label) + ": mean paid and mean predicted, by tenth of the amount paid</h3>" +
+      '<p class="sub">1 = the cheapest tenth of the admissions, 10 = the most expensive; amounts in ' + esc(D.currency || "currency") + ". The model pulls both ends towards the middle.</p>" +
+      '<div class="legend" id="d-legend-' + k + '"></div><div class="chart" id="d-chart-' + k + '"></div>' +
+      '<details><summary>Table</summary><div class="tablewrap" id="d-table-' + k + '"></div></details></div>' +
+      '<div class="figure"><h3>' + esc(w.label) + ": how far the typical cost is from what was paid</h3>" +
+      '<p class="sub" id="b-sub-' + k + '"></p><div class="bars" id="b-bars-' + k + '"></div></div></div>');
+  });
+  host.innerHTML = parts.join("");
+  E.windows.forEach(function (w, k) {
+    var a = E.admissions[w.key]; if (!a) return;
+    var make = function () {
+      return [{ name: "Paid", short: "paid", color: CN(), values: a.deciles.map(function (d) { return d.mean_paid; }) },
+              { name: "Typical cost", short: "typical", color: C2(), values: a.deciles.map(function (d) { return d.mean_typical; }) },
+              { name: "Expected cost", short: "expected", color: C1(), values: a.deciles.map(function (d) { return d.mean_expected; }) }];
+    };
+    var o = { x: a.deciles.map(function (d) { return String(d.decile); }), height: 280, min: 0, yfmt: function (v) { return fmt(v, 0); }, label: "Mean paid and predicted by decile" };
+    Object.defineProperty(o, "series", { get: make });
+    lineChart($("d-chart-" + k), o);
+    legend($("d-legend-" + k), make());
+    table($("d-table-" + k), ["Tenth", "Mean paid", "Mean typical cost", "Mean expected cost", "Mean error (typical)"], a.deciles.map(function (d) {
+      return [String(d.decile), fmt(d.mean_paid, 2), fmt(d.mean_typical, 2), fmt(d.mean_expected, 2), fmt(d.mae, 2)];
+    }));
+    $("b-sub-" + k).textContent = "Share of the " + fmt(a.n, 0) + " admissions by size of the error, as a fraction of the amount paid. Half of them are within " +
+      CUR + fmt(a.median_error, 0) + "; the mean error is " + CUR + fmt(a.mae, 2) + ".";
+    var max = Math.max.apply(null, a.error_bands.map(function (b) { return b.share_pct; }));
+    $("b-bars-" + k).innerHTML = a.error_bands.map(function (b) {
+      return '<div class="name">' + esc(cap(b.label)) + '</div><div class="track"><div class="bar hl" style="width:' + (78 * b.share_pct / max).toFixed(2) + '%"></div><span class="val">' + esc(pct(b.share_pct, 1)) + "</span></div>";
+    }).join("");
+  });
+
+  // ---- footer --------------------------------------------------------------------------------------------------------
+  $("footer").innerHTML = "<p>Every number on this page is read from <span class=\"num\">costmodel explore</span> (model version " + esc(String(E.version)) + ", generated " + esc(D.generated) +
+    "). Only aggregates are published: at each level the " + fmt(D.top_groups, 0) + " groups that received most money are shown by name, and the others, like any group with fewer than " + fmt(D.min_admissions, 0) + " admissions, are pooled.</p>" + (D.note ? "<p>" + esc(D.note) + "</p>" : "");
+})();
+</script>
+</body>
+</html>

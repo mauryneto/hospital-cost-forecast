@@ -9,6 +9,8 @@ The pipeline does not depend on SUS: it reads one canonical admissions table def
 the first source; a health plan can fill the same table with its own claims and run the same commands.
 
 **[Results page](https://mauryneto.github.io/hospital-cost-forecast/)**: the numbers below as interactive charts.
+**[Explorer](https://mauryneto.github.io/hospital-cost-forecast/explore.html)**: the model in production against what was paid, month by month, for all admissions
+or for one admission type, procedure group, bed specialty or hospital.
 
 ![The production model, month by month through 2024](reports/sihsus_rj/monitor.png)
 
@@ -236,7 +238,8 @@ docker compose up api
 | `costmodel recent-price` | Does the model do better when given each procedure's recent billed price? On validation |
 | `costmodel base-window` | How much billed history should each retrain use? Retrained every 3 months, on validation |
 | `costmodel skill` | Is the production model worth it over a plain average? Totals by hospital, specialty and more, on test |
-| `costmodel site` | One static page with the results ([`docs/index.html`](docs/index.html)), built from the reports |
+| `costmodel explore` | The production model group by group and month by month (hospital, specialty and more): the data of the explorer page |
+| `costmodel site` | The static pages with the results ([`docs/index.html`](docs/index.html) and, after `explore`, [`docs/explore.html`](docs/explore.html)), built from the reports |
 | `costmodel run` | `data`, `train`, `evaluate`, `monitor`, in order, stopping at the first failure |
 | `costmodel validate file.csv` | Check a file against the data contract and list every problem |
 
@@ -324,28 +327,36 @@ More in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Roadmap
 
-Not done yet, in the order I would do them:
+Not done yet, in the order planned:
+
+1. **A tabular foundation model in the results table.** Models such as NVIDIA's Kumo Tabular or TabPFN predict without
+   training, from examples given as context. Several kinds of model were already compared here; this is the recent
+   one that is missing. Scored on the same windows, whichever way it goes is a result. The open question is scale:
+   they take tens of thousands of context rows, and this training set has 3.6 million rows with thousands of
+   procedure, diagnosis and hospital codes.
+2. **When the money goes out.** The model prices an admission in the month the patient is admitted, but bills arrive
+   over the following months (about a third of the money in the same month, a third one month later, the rest after
+   that, the expensive bills last). Spreading each month's expected cost over the months it will be billed in gives a
+   cash-flow forecast.
+3. **The official price table as an input.** The SUS publishes the table price of every procedure, and it is known
+   before the admission. It may let the model follow a published price change at once instead of months later. The
+   July 2024 change looks like a complement paid outside the table, so it may not be caught; finding the rule behind
+   it belongs here.
+4. **Other states,** to see how much of the model is specific to Rio de Janeiro.
+5. **The patient's history** (earlier admissions). It usually helps a cost model a great deal, but the public SUS files
+   do not identify the patient across admissions; this is for a payer's own data.
+
+Checks still owed, whatever comes first:
 
 - **A fresh year.** Every choice so far was made on 2022 and judged on 2023 and 2024, which have now been looked at
   more than once. 2025 would be the first year untouched by any choice: the place to confirm the two numbers, the
   gate's new rule and the ideas that looked good on 2022 (weighing recent months more, a model of its own for surgery).
-- **Prediction intervals.** A range ("between X and Y") next to the typical and the expected cost, from quantile
-  models or conformal prediction, with its coverage checked on a year not used to build it. It matters most for the
-  expensive admissions, where a single number is least reliable.
-- **A tabular foundation model in the results table.** Models such as NVIDIA's Kumo Tabular or TabPFN predict without
-  training, from examples given as context. Scored on the same windows and through the same gate, whichever way it goes
-  is a result. The open question is scale: they take tens of thousands of context rows, and this training set has 3.6
-  million rows with thousands of procedure, diagnosis and hospital codes.
-- **When the money goes out.** The model prices an admission in the month the patient is admitted, but bills arrive
-  over the following months (about a third of the money in the same month, a third one month later, the rest after
-  that, the expensive bills last). Spreading each month's expected cost over the months it will be billed in gives a
-  cash-flow forecast.
 - **The retraining policy, tested on a new period.** The 2024 replay suggests retraining whenever a new billed month
-  exists. Changing the retrain rule on the same year that suggested it would be fitting it to the result; it needs
-  2025 data.
-- **The rule behind the July 2024 price change,** and whether known payment-rule changes can be given to the model as
-  an input.
-- **Other states,** to see how much of the model is specific to Rio de Janeiro.
+  exists. Changing the retrain rule on the same year that suggested it would be fitting it to the result.
+
+Decided against: **prediction ranges** ("between X and Y"). Whoever uses this wants a value to work with, and the
+model already says which value is for what (the typical cost and the expected cost). And a **neural network with
+embeddings**, the family furthest from trees, whose gain on this kind of table is unlikely.
 
 ## How this was built
 

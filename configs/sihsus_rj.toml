@@ -74,3 +74,30 @@ repository = "https://github.com/mauryneto/hospital-cost-forecast"
 currency = "R$"
 candidate_label = "LightGBM"
 
+# Names for the codes on the explorer page (`costmodel explore`). Codes left out are shown as they are.
+[site.labels.admission_type]
+urgent = "Urgent"
+elective = "Elective"
+other = "Other"
+
+[site.labels.procedure_prefix2]  # SIGTAP groups
+"02" = "Diagnostic procedures"
+"03" = "Clinical procedures"
+"04" = "Surgical procedures"
+"05" = "Transplants"
+
+[site.labels.bed_specialty]  # SIH/SUS bed specialty (ESPEC)
+"01" = "Surgical"
+"02" = "Obstetric"
+"03" = "Clinical"
+"04" = "Chronic care"
+"05" = "Psychiatry"
+"06" = "Tuberculosis and lung disease"
+"07" = "Paediatric"
+"08" = "Rehabilitation"
+"09" = "Day bed: surgical"
+"10" = "Day bed: AIDS"
+"11" = "Day bed: cystic fibrosis"
+"12" = "Day bed: after transplant"
+"13" = "Day bed: geriatric"
+"14" = "Day bed: mental health"

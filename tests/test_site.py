@@ -86,6 +86,7 @@ def test_page_is_filled_from_the_reports(cfg):
     assert data["test"]["numbers"] == []  # a candidate that gives one number per admission
     assert data["test"]["skill"] == []  # skill_test.json is optional
     assert data["links"][0]["url"] == "https://example.org/repo"
+    assert not (cfg.reports_dir / "explore.json").exists() and not site.run(cfg).with_name("explore.html").exists()
 
 
 def test_page_embeds_the_replay_when_there_is_one(cfg):

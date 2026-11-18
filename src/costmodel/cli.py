@@ -26,6 +26,7 @@ def main(argv: list[str] | None = None) -> None:
         ("recent-price", "does the model do better when given each procedure's recent billed price? on validation"),
         ("base-window", "how much billed history should each retrain use? retrained every 3 months, on validation"),
         ("skill", "is the production model worth it over a plain average? totals by hospital, specialty..., on test"),
+        ("explore", "the production model group by group (hospital, specialty...), month by month: data for the explorer"),
         ("site", "one static page with the results (docs/index.html), built from the reports"),
         ("run", "the whole pipeline, in order: data, train, evaluate, monitor"),
     ]:
@@ -121,6 +122,10 @@ def main(argv: list[str] | None = None) -> None:
         run(cfg)
     elif args.command == "skill":
         from costmodel.skill import run
+
+        run(cfg)
+    elif args.command == "explore":
+        from costmodel.explore import run
 
         run(cfg)
     elif args.command == "site":

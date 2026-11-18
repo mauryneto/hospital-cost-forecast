@@ -24,6 +24,8 @@ and kept after review.
 | 10 | **Everything is predicted by one model for all admissions. Would one model per kind of admission be better?** | A model fitted to one group could learn that group better; it could also lose what the groups have in common. Not obvious either way. | `costmodel segments`: the chosen setting fitted per admission type and per procedure group. Result: see below. |
 | 11 | **Prices change every quarter, so train on only the last 3 or 4 months and predict the next 3. And an admission is paid months later: is that accounted for?** | People who work in health care say a long history teaches old prices. And part of what is paid in a month comes from admissions of two or three months before. | `costmodel base-window`: retrained before every quarter with only the months already billed, with histories of 4, 12 and 24 months and all of them. Result: see below. The billing delay was measured again on the data; a cash-flow forecast went to the roadmap. |
 | 12 | **If a plain average misses the month's total by 7%, why build all this? Is there a score that says whether the model is worth it?** | The results table showed a global mean almost tied with the model on the month's total. That deserved a straight answer, not a footnote. | `costmodel skill`: the error on totals for all admissions and for each hospital, specialty and procedure group, next to a plain average's, and how much smaller the model's is. Result: see below. |
+| 13 | **Show the final model on a screen like a BI tool: the whole state, admission type, procedure group, bed specialty, hospital and each admission, month by month.** | A table in a report answers one question. A screen with filters lets someone look for their own. | `costmodel explore` and the [explorer page](https://mauryneto.github.io/hospital-cost-forecast/explore.html). Each admission is shown only as distributions: no admission is published. |
+| 14 | **No prediction ranges. Next: a tabular foundation model; then cash flow; then the official price table as an input; other states and patient history later. No neural network.** | Whoever uses this wants a value, not a range. Several kinds of model were already compared, so the recent one that is missing comes first. | The roadmap in the README, in this order. |
 
 ## Fixed in the brief, before any code
 
@@ -162,8 +164,9 @@ What changed:
 - **The test year was scored a second time,** to judge the expected cost. The typical cost's numbers on 2023 are
   those of the first and only look (MAE 778.62). The expected cost's are new: 6.53% on the month's total, against
   11.32% for the typical cost. Version 3 passed the gate and replaced version 2.
-- **The monitor's alarm moved.** With a better number for totals, May and June 2024 are no longer out of bounds, and
-  the retrain rule fires at the end of November instead of September.
+- **The monitor's alarm moved.** With a better number for totals, June 2024 is no longer out of bounds (May still
+  is, on the error per admission). The first two months in a row out of bounds are now July and August, so the
+  retrain rule fires at the end of November instead of September.
 
 What this does not settle: the expected cost and the new gate rule were judged on years that had already been looked
 at, after seeing what the first version did on them. That is the reason for the open item on a fresh year.
