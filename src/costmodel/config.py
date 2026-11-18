@@ -56,6 +56,20 @@ class ReplayConfig:
 
 
 @dataclass(frozen=True)
+class FreshConfig:
+    """``costmodel fresh``: a year no choice was made on, scored once by settings fixed before it was read."""
+
+    window: tuple[str, str] | None = None  # first and last day of the year that is scored
+    # The model in production was fitted on admissions up to this date; its recipe is scored too, for the record.
+    production_fit_until: str | None = None
+    # The two settings, nothing searched: objective, num_leaves, trees, use_time.
+    typical: dict = field(default_factory=dict)
+    expected: dict = field(default_factory=dict)
+    # One group that gets a typical-cost model of its own: column, value, trees. Empty = not tried.
+    own_model: dict = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class SiteConfig:
     """``costmodel site``: the texts of the results page. The numbers come from the reports, never from here."""
 
@@ -83,6 +97,7 @@ class Config:
     monitor: RetrainRules = field(default_factory=RetrainRules)
     replay: ReplayConfig = field(default_factory=lambda: ReplayConfig())
     site: SiteConfig = field(default_factory=SiteConfig)
+    fresh: FreshConfig = field(default_factory=FreshConfig)
     path: Path | None = None
 
     @property
@@ -124,5 +139,6 @@ def load_config(path: str | Path) -> Config:
         monitor=RetrainRules(**raw.get("monitor", {})),
         replay=ReplayConfig(**{k: tuple(v) if isinstance(v, list) else v for k, v in raw.get("replay", {}).items()}),
         site=SiteConfig(**raw.get("site", {})),
+        fresh=FreshConfig(**{k: tuple(v) if isinstance(v, list) else v for k, v in raw.get("fresh", {}).items()}),
         path=path,
     )

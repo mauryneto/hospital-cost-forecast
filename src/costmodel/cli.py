@@ -27,6 +27,7 @@ def main(argv: list[str] | None = None) -> None:
         ("base-window", "how much billed history should each retrain use? retrained every 3 months, on validation"),
         ("foundation", "a tabular foundation model (TabPFN) against the candidate, on a sample of validation"),
         ("skill", "is the production model worth it over a plain average? totals by hospital, specialty..., on test"),
+        ("fresh", "a year no choice was made on, scored once by the settings in [fresh] (slow: it retrains)"),
         ("explore", "the production model group by group (hospital, specialty...), month by month: data for the explorer"),
         ("site", "one static page with the results (docs/index.html), built from the reports"),
         ("run", "the whole pipeline, in order: data, train, evaluate, monitor"),
@@ -127,6 +128,10 @@ def main(argv: list[str] | None = None) -> None:
         run(cfg)
     elif args.command == "skill":
         from costmodel.skill import run
+
+        run(cfg)
+    elif args.command == "fresh":
+        from costmodel.fresh import run
 
         run(cfg)
     elif args.command == "explore":
