@@ -65,6 +65,10 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    months, built only from bills already known at admission (the monitor's billing delay decides which).
    `costmodel base-window` retrains before every block of three months with histories of different lengths (the
    last 4, 12 or 24 billed months, all of them, all of them with recent months weighing more).
+   `costmodel foundation` puts a tabular foundation model (TabPFN-2, the checkpoint with open weights) next to the
+   candidate. It is not fitted: it reads 10,000 admissions as context and prices a random sample of the validation
+   window, on which LightGBM is scored too, both with all the training rows and with those same 10,000. It needs
+   `uv sync --extra foundation` (PyTorch) and a GPU.
 5. **Gate** (`costmodel evaluate`). The `staging` model is loaded back from the registry and scored on the test
    window, next to every baseline refitted on the same data and the current `production` model, if any. Each of its
    two numbers is judged by the metric it is for: the typical cost by the MAE, the expected cost by the error on the
@@ -103,7 +107,8 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    `docs/explore.html`, a screen with filters, next to the main page.
    `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
    monitoring months, where prices changed, the retraining replay and, when they were run, the side comparisons
-   (other model families, the blend, one model per group, the recent price, the length of the history). The numbers
+   (other model families, a tabular foundation model, the blend, one model per group, the recent price, the length
+   of the history). The numbers
    are embedded when the page is generated, so it cannot disagree with the reports, and only aggregates are published.
 
 ## Leakage control is part of the contract

@@ -68,6 +68,35 @@ test year (weighted by money, so the first row is close to, but not the same as,
 - For any total smaller than everything, the plain average is off by 15% to 49% and the model by 7% to 11%. A payer
   budgets by hospital, by specialty and by case, which is where the model earns its place.
 
+**A tabular foundation model on the validation year (2022).** A foundation model is not trained on this data: it
+reads labelled admissions as context and prices the others in one pass. TabPFN-2, the TabPFN checkpoint with open
+weights, reads 10,000 rows; the training window has 2.8 million. Every row below is scored on the same 30,000
+admissions, drawn at random from 2022, so the numbers compare with each other and not with the other tables
+([foundation_valid.md](reports/sihsus_rj/foundation_valid.md)):
+
+| Model | What it learns from | MAE per admission (R$) | Error on the month's total | MAE against the first row (95% interval) |
+|---|---|---:|---:|---:|
+| LightGBM, as in production | all 2,819,848 training admissions | 787.13 | 11.69% | |
+| LightGBM | 10,000 admissions of the last 12 months | 965.15 | 19.69% | +178.01 (+161.43 to +197.58) |
+| LightGBM | the same, plus code statistics | 882.57 | 19.35% | +95.43 (+80.42 to +110.67) |
+| TabPFN-2 | the same 10,000 admissions | 877.30 | 10.84% | +90.16 (+76.19 to +103.73) |
+| TabPFN-2 | the same, plus code statistics | 792.38 | 9.35% | +5.25 (-6.00 to +16.93) |
+
+"Code statistics" are three more inputs: the mean log(cost) of the admission's procedure, diagnosis and hospital over
+the training admissions outside the context, a way of telling a model that reads few rows what the other rows say.
+
+- With the same rows and the same inputs, TabPFN-2 is 9% to 10% better per admission than LightGBM. Reading examples
+  beats fitting trees when there are few rows.
+- With 10,000 rows alone it is 11.5% worse than the model in production. The rows it cannot read matter.
+- With the code statistics it ties with the model in production per admission (the interval contains zero) and
+  misses the month's total by 2.34 points less (interval: 1.30 to 3.04).
+- **Not adopted.** This is one sample of one year, one draw of the context, and the best of four TabPFN variants
+  picked on that same sample. It needs a GPU and took 10 to 13 minutes to price 30,000 admissions, against seconds.
+  And a new candidate would have to face a test year that has already been looked at twice. It stays as the first
+  thing to confirm on a fresh year.
+- The newer TabPFN checkpoints read up to a million rows, which is the limit that hurt here. They need an account
+  and a non-commercial licence that also covers the model's outputs, so they were not used.
+
 **Why LightGBM: other model families on the validation year (2022).** Same training admissions, same inputs, same
 two metrics ([families_valid.md](reports/sihsus_rj/families_valid.md)):
 
@@ -236,6 +265,7 @@ docker compose up api
 | `costmodel blend` | Average the candidate's best per-admission and best month's-total settings, on validation |
 | `costmodel segments` | One model for every admission, or one per admission type / procedure group? On validation |
 | `costmodel recent-price` | Does the model do better when given each procedure's recent billed price? On validation |
+| `costmodel foundation` | A tabular foundation model (TabPFN-2) against the candidate, on a sample of validation; needs `uv sync --extra foundation` and a GPU |
 | `costmodel base-window` | How much billed history should each retrain use? Retrained every 3 months, on validation |
 | `costmodel skill` | Is the production model worth it over a plain average? Totals by hospital, specialty and more, on test |
 | `costmodel explore` | The production model group by group and month by month (hospital, specialty and more): the data of the explorer page |
@@ -329,11 +359,10 @@ More in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Not done yet, in the order planned:
 
-1. **A tabular foundation model in the results table.** Models such as NVIDIA's Kumo Tabular or TabPFN predict without
-   training, from examples given as context. Several kinds of model were already compared here; this is the recent
-   one that is missing. Scored on the same windows, whichever way it goes is a result. The open question is scale:
-   they take tens of thousands of context rows, and this training set has 3.6 million rows with thousands of
-   procedure, diagnosis and hospital codes.
+1. **A newer tabular foundation model, if its licence is accepted.** TabPFN-2, with open weights, was compared
+   (see Results): reading 10,000 admissions and statistics of the codes, it ties with the model in production per
+   admission and does better on the month's total, on a sample of validation. The newer checkpoints read up to a
+   million rows but need an account and a non-commercial licence. The author's call.
 2. **When the money goes out.** The model prices an admission in the month the patient is admitted, but bills arrive
    over the following months (about a third of the money in the same month, a third one month later, the rest after
    that, the expensive bills last). Spreading each month's expected cost over the months it will be billed in gives a
@@ -350,7 +379,8 @@ Checks still owed, whatever comes first:
 
 - **A fresh year.** Every choice so far was made on 2022 and judged on 2023 and 2024, which have now been looked at
   more than once. 2025 would be the first year untouched by any choice: the place to confirm the two numbers, the
-  gate's new rule and the ideas that looked good on 2022 (weighing recent months more, a model of its own for surgery).
+  gate's new rule and the ideas that looked good on 2022 (weighing recent months more, a model of its own for surgery,
+  a foundation model reading recent admissions and code statistics).
 - **The retraining policy, tested on a new period.** The 2024 replay suggests retraining whenever a new billed month
   exists. Changing the retrain rule on the same year that suggested it would be fitting it to the result.
 

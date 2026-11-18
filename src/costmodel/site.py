@@ -28,6 +28,8 @@ EXPLORER_LINK = {"label": "Explorer: by hospital, specialty and month", "url": "
 TEST_METRICS = ("mae", "monthly_total_mape", "bias_pct", "mae_top_decile")
 SHIFT_FIELDS = ("code", "n", "extra", "reference_median", "monthly_median")
 FAMILY_FIELDS = ("family", "setting", "trees", "seconds", *TEST_METRICS)
+FOUNDATION_GAPS = ("mae_gap", "mae_gap_low", "mae_gap_high", "total_gap", "total_gap_low", "total_gap_high")
+FOUNDATION_FIELDS = ("model", "reads", "setting", "rows", "seconds", *TEST_METRICS, *FOUNDATION_GAPS)
 BLEND_FIELDS = ("weight", *TEST_METRICS)
 SEGMENT_FIELDS = ("scheme", "models", *TEST_METRICS)
 RECENT_PRICE_FIELDS = ("variant", "window", *TEST_METRICS)
@@ -51,6 +53,7 @@ def page_data(cfg: Config) -> dict:
     skill = _read(cfg, "skill_test.json", required=False) or {"rows": []}  # `costmodel skill`, on the test window
     base_window = _read(cfg, "base_window_valid.json", required=False) or {"rows": []}
     families = _read(cfg, "families_valid.json", required=False) or []
+    foundation = _read(cfg, "foundation_valid.json", required=False)
     blend = _read(cfg, "blend_valid.json", required=False)
     segments = _read(cfg, "segments_valid.json", required=False) or {"schemes": []}
     if "price_shifts" not in monitor:
@@ -137,6 +140,12 @@ def page_data(cfg: Config) -> dict:
         ],
         # The first row of the family comparison is always the setting the search chose.
         "families": [{"candidate": i == 0, **{k: row[k] for k in FAMILY_FIELDS}} for i, row in enumerate(families)],
+        # `costmodel foundation`: the first row is the model in production; all rows share one sample of validation.
+        "foundation": foundation
+        and {
+            **{k: foundation[k] for k in ("checkpoint", "context_rows", "eval_rows", "valid_rows", "train_rows")},
+            "rows": [{k: row[k] for k in FOUNDATION_FIELDS} for row in foundation["rows"]],
+        },
         "blend": blend
         and {
             "per_admission": blend["per_admission"],

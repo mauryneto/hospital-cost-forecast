@@ -56,6 +56,9 @@ recommended by the system and decided by a person, with nothing scheduled.
 - **The retraining policy.** The 2024 replay suggests retraining whenever a new billed month exists. The retrain rule
   was fixed before looking at 2024 and has not been changed, because changing it on the year that suggested the
   change would be fitting it to the result. It needs a new period to test. The author's call.
+- **The licence of the newer foundation models.** TabPFN-2.5 and later read up to a million rows instead of 10,000,
+  the limit that hurt in the comparison. They need an account and a non-commercial licence that also covers the
+  model's outputs. The author's call.
 - **A year not used for any choice.** The second of the model's two numbers, and the gate rule written for it, were
   judged on years already seen (see "Two numbers instead of one"). 2025 is the check that is missing.
 
@@ -170,6 +173,39 @@ What changed:
 
 What this does not settle: the expected cost and the new gate rule were judged on years that had already been looked
 at, after seeing what the first version did on them. That is the reason for the open item on a fresh year.
+
+## Result of decision 14, first step: a tabular foundation model
+
+The author approved installing TabPFN and downloading its pre-trained model. Two things were found before running
+anything, and decided by the assistant within that approval:
+
+- The newest checkpoints (TabPFN-2.5 to 3.5, which read up to a million rows) need an account and the acceptance of
+  a non-commercial licence that also covers the model's outputs. That is the author's decision to make, so the
+  comparison used **TabPFN-2**, the checkpoint with open weights, which reads 10,000 rows.
+- A new release of the package had come out the day before. The version installed is one that had been public for
+  five weeks.
+
+`costmodel foundation` ([foundation_valid.md](reports/sihsus_rj/foundation_valid.md)), on 30,000 admissions drawn at
+random from 2022, the same for every row:
+
+| | MAE per admission (R$) | Error on the month's total |
+|---|---:|---:|
+| LightGBM as in production, all 2,819,848 training admissions | 787.13 | 11.69% |
+| LightGBM, 10,000 admissions of the last 12 months | 965.15 | 19.69% |
+| LightGBM, the same plus code statistics | 882.57 | 19.35% |
+| TabPFN-2, the same 10,000 admissions | 877.30 | 10.84% |
+| TabPFN-2, the same plus code statistics | 792.38 | 9.35% |
+
+On equal terms (same rows, same inputs) the foundation model is 9% to 10% better per admission than LightGBM. Against
+the model in production, which learns from 280 times more rows, it is 11.5% worse alone. Given statistics of the
+codes computed on the rest of the training window, it is R$ 5.25 worse per admission with a 95% interval of -6.00 to
++16.93, which is a tie, and 2.34 points better on the month's total (interval 1.30 to 3.04).
+
+Not adopted, for four reasons: it is one sample of one year with one draw of the context; the best of four variants
+was picked on that same sample; it needs a GPU and minutes where LightGBM needs seconds; and a new candidate would
+face a test year already looked at twice. The assistant's reading is that this is the most promising result among
+the side comparisons, and that it deserves a fresh year more than a quick adoption. Whether to accept the licence of
+the newer checkpoints is open, and the author's call.
 
 ## Tried and not adopted: the recent price of each procedure as an input
 

@@ -105,6 +105,8 @@ th { font: 500 11px var(--mono); letter-spacing: .04em; text-transform: uppercas
 th:first-child, td:first-child { text-align: left; padding-left: 0; }
 td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 td:first-child { font-family: var(--sans); }
+#fo-table th:nth-child(2), #fo-table td:nth-child(2) { text-align: left; font-family: var(--sans); }
+#fo-table td:nth-child(-n+2) { white-space: normal; min-width: 20ch; }
 details { margin-top: 8px; }
 details > summary { font-size: 13px; color: var(--ink-2); cursor: pointer; width: fit-content; }
 details[open] > summary { margin-bottom: 8px; }
@@ -237,7 +239,7 @@ footer p { margin: 0 0 10px; }
     <div class="side">
       <div class="no">05</div>
       <h2>Other kinds of model</h2>
-      <p>Is this the right kind of model? Other families, an average of two settings of the candidate, one model per group of admissions, the recent price of each procedure as an input, and shorter histories for each retrain, all on the same admissions.</p>
+      <p>Is this the right kind of model? Other families, a tabular foundation model, an average of two settings of the candidate, one model per group of admissions, the recent price of each procedure as an input, and shorter histories for each retrain, all on the same admissions.</p>
       <p>Measured on the validation window, where choices are made. The test window was not looked at again.</p>
     </div>
     <div class="main">
@@ -249,6 +251,14 @@ footer p { margin: 0 0 10px; }
           <p class="sub">Lower is better. The highlighted bar is the setting the search chose among several; each other family got two settings.</p>
           <div class="bars" id="fam-bars"></div>
           <details><summary>Table</summary><div class="tablewrap" id="fam-table"></div></details>
+        </div>
+      </div>
+      <div id="fo-block">
+        <p class="finding" id="fo-finding"></p>
+        <div class="figure">
+          <h3>A tabular foundation model, which reads examples instead of being trained</h3>
+          <p class="sub" id="fo-sub"></p>
+          <div class="tablewrap" id="fo-table"></div>
         </div>
       </div>
       <div id="blend-block">
@@ -622,7 +632,9 @@ footer p { margin: 0 0 10px; }
   if (RP.length < 2) $("rp-block").style.display = "none";
   var BW = (D.base_window && D.base_window.rows) || [];
   if (BW.length < 3) $("bw-block").style.display = "none";
-  if (FAM.length < 2 && !B && SEG.length < 2 && RP.length < 2 && BW.length < 3) $("s-families").style.display = "none";
+  var FO = D.foundation && D.foundation.rows.length > 1 ? D.foundation : null;
+  if (!FO) $("fo-block").style.display = "none";
+  if (FAM.length < 2 && !FO && !B && SEG.length < 2 && RP.length < 2 && BW.length < 3) $("s-families").style.display = "none";
   if (FAM.length >= 2) {
     var chosen = FAM.filter(isCandidate)[0];
     var others = FAM.filter(function (r) { return !r.candidate; }).sort(function (a, b) { return a.mae - b.mae; });
@@ -643,6 +655,33 @@ footer p { margin: 0 0 10px; }
     drawFam("mae");
     table($("fam-table"), ["Family", "Setting", "MAE", "Month's total error", "Bias", "MAE, top 10%", "Trees", "Time to fit"], FAM.slice().sort(function (a, b) { return a.mae - b.mae; }).map(function (r) {
       return [r.family, r.setting, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2), fmt(r.trees, 0), took(r)];
+    }));
+  }
+  if (FO) {
+    var isTab = function (r) { return r.model.indexOf("TabPFN") === 0; };
+    var hasStats = function (r) { return r.setting.indexOf("statistics") >= 0; };
+    var foFull = FO.rows[0], foTabs = FO.rows.filter(isTab);
+    var foTab = foTabs.slice().sort(function (a, b) { return a.mae - b.mae; })[0];
+    var foTotal = foTabs.slice().sort(function (a, b) { return a.monthly_total_mape - b.monthly_total_mape; })[0];
+    var foSame = FO.rows.filter(function (r) { return !isTab(r) && r !== foFull && r.reads === foTab.reads && hasStats(r) === hasStats(foTab); })[0];
+    var signed = function (v, d) { return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + fmt(Math.abs(v), d); };
+    var span = function (r, k, d, unit) { return r[k] == null ? "\u2013" : signed(r[k], d) + unit + " (" + signed(r[k + "_low"], d) + " to " + signed(r[k + "_high"], d) + ")"; };
+    var tied = function (r, k) { return r[k + "_low"] <= 0 && r[k + "_high"] >= 0; };
+    var share = function (a, b) { return fmt(Math.abs(100 * (a.mae / b.mae - 1)), 1) + "%"; };
+    var foTook = function (r) { return r.seconds < 120 ? fmt(r.seconds, 0) + " s" : fmt(r.seconds / 60, 0) + " min"; };
+    $("fo-finding").innerHTML = "Reading " + fmt(FO.context_rows, 0) + " admissions as context" + (hasStats(foTab) ? ", plus statistics of each code taken from the rest of the training window" : "") +
+      ", <b>" + esc(FO.checkpoint) + "</b> " +
+      (tied(foTab, "mae_gap") ? "<b>cannot be told apart per admission</b> from the model in production, which learned from " + fmt(FO.train_rows, 0) + " (" + CUR + span(foTab, "mae_gap", 2, "") + ")." :
+        "is <b>" + share(foTab, foFull) + (foTab.mae_gap > 0 ? " worse" : " better") + " per admission</b> than the model in production, which learned from " + fmt(FO.train_rows, 0) + ".") +
+      (foSame ? " Against LightGBM given the same rows and inputs, it is " + share(foTab, foSame) + (foTab.mae > foSame.mae ? " worse." : " better.") : "") +
+      " On the month's total its best row misses by <b>" + pct(foTotal.monthly_total_mape, 2) + "</b>, against " + pct(foFull.monthly_total_mape, 2) + " for the model in production" +
+      (tied(foTotal, "total_gap") ? ", a difference this sample cannot tell from zero." : " (" + span(foTotal, "total_gap", 2, " points") + ").");
+    $("fo-sub").textContent = "Every row is scored on the same " + fmt(FO.eval_rows, 0) + " admissions, drawn at random from the " + fmt(FO.valid_rows, 0) +
+      " of the validation window: compare these rows with each other, not with the other tables. The error per admission is measured on the typical cost (for " + FO.checkpoint +
+      ", the median of the distribution it predicts); the month's total and the bias on the expected cost (its mean). The last two columns are each row minus the first, with the 95% interval" +
+      " from drawing the admissions again: an interval that contains zero is a difference this sample cannot show.";
+    table($("fo-table"), ["Model and what it learns from", "Setting", "MAE", "Month's total error", "Bias", "MAE, top 10%", "Time", "MAE against the first row", "Month's total against the first row"], FO.rows.map(function (r) {
+      return [r.model + ": " + r.reads, r.setting, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2), foTook(r), span(r, "mae_gap", 2, ""), span(r, "total_gap", 2, " pts")];
     }));
   }
   if (B) {

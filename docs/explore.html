@@ -104,6 +104,8 @@ th { font: 500 11px var(--mono); letter-spacing: .04em; text-transform: uppercas
 th:first-child, td:first-child { text-align: left; padding-left: 0; }
 td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 td:first-child { font-family: var(--sans); }
+#fo-table th:nth-child(2), #fo-table td:nth-child(2) { text-align: left; font-family: var(--sans); }
+#fo-table td:nth-child(-n+2) { white-space: normal; min-width: 20ch; }
 details { margin-top: 8px; }
 details > summary { font-size: 13px; color: var(--ink-2); cursor: pointer; width: fit-content; }
 details[open] > summary { margin-bottom: 8px; }

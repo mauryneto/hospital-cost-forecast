@@ -113,7 +113,7 @@ def test_page_embeds_the_replay_when_there_is_one(cfg):
 def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     data = embedded(site.run(cfg).read_text(encoding="utf-8"))
     assert data["families"] == [] and data["blend"] is None and data["segments"] == []  # all optional
-    assert data["recent_price"] == [] and data["base_window"]["rows"] == []
+    assert data["recent_price"] == [] and data["base_window"]["rows"] == [] and data["foundation"] is None
 
     metrics = {"mae": 10.0, "rmse": 30.0, "bias_pct": -5.0, "mae_top_decile": 80.0, "monthly_total_mape": 6.0}
     families = [
@@ -135,6 +135,12 @@ def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     rows = [{"history": h, "retrains": r, "mean_rows": n, "mean_trees": 50.0, **metrics} for h, r, n in histories]
     base = {"horizon": 3, "rows": rows, "blocks": {"last 4 billed months": [{"block": "2024-01 to 2024-03"}]}}
     (cfg.reports_dir / "base_window_valid.json").write_text(json.dumps(base), encoding="utf-8")
+    readers = [("LightGBM", "every training admission", 9000), ("TabPFN-2", "300 admissions", 300)]
+    gaps = dict.fromkeys(site.FOUNDATION_GAPS, 1.5)
+    read = [{"model": m, "reads": r, "setting": "s", "rows": n, "seconds": 4.0, **metrics, **gaps} for m, r, n in readers]
+    sizes = {"checkpoint": "TabPFN-2", "context_rows": 300, "eval_rows": 200, "valid_rows": 800, "train_rows": 9000}
+    found = {**sizes, "typical_setting": "a", "expected_setting": "b", "rows": read}
+    (cfg.reports_dir / "foundation_valid.json").write_text(json.dumps(found), encoding="utf-8")
     data = embedded(site.run(cfg).read_text(encoding="utf-8"))
     assert [(r["family"], r["candidate"]) for r in data["families"]] == [
         ("LightGBM (gradient boosting)", True),  # the first row is the setting the search chose
@@ -146,6 +152,9 @@ def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     assert "urgent" not in json.dumps(data["segments"])  # the per-group detail stays in the report
     assert [(r["variant"], r["window"]) for r in data["recent_price"]] == [("as is", "-"), ("input", "3")]
     assert data["base_window"]["horizon"] == 3
+    assert data["foundation"]["eval_rows"] == 200 and "typical_setting" not in data["foundation"]
+    assert [(r["model"], r["rows"]) for r in data["foundation"]["rows"]] == [("LightGBM", 9000), ("TabPFN-2", 300)]
+    assert data["foundation"]["rows"][1]["mae_gap_low"] == 1.5
     assert [(r["history"], r["mean_rows"]) for r in data["base_window"]["rows"]] == [(h, n) for h, _, n in histories]
 
 
