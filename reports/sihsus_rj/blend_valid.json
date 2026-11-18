@@ -1,0 +1,47 @@
+{
+  "per_admission": "log_l2, 255 leaves, expanding, with time",
+  "monthly_total": "tweedie, 63 leaves, expanding, with time",
+  "best_weight": 0.25,
+  "rows": [
+    {
+      "weight": 0.0,
+      "mae": 792.1481993509,
+      "rmse": 2931.1110499231,
+      "mae_top_decile": 5098.0182062039,
+      "bias_pct": -14.9849371321,
+      "monthly_total_mape": 14.9834520255
+    },
+    {
+      "weight": 0.25,
+      "mae": 786.9977126898,
+      "rmse": 2889.2047634401,
+      "mae_top_decile": 4953.3568184589,
+      "bias_pct": -13.783215501,
+      "monthly_total_mape": 13.7838062087
+    },
+    {
+      "weight": 0.5,
+      "mae": 787.4680505148,
+      "rmse": 2860.2968390777,
+      "mae_top_decile": 4834.387688466,
+      "bias_pct": -12.5814938699,
+      "monthly_total_mape": 12.5841603919
+    },
+    {
+      "weight": 0.75,
+      "mae": 793.8896807524,
+      "rmse": 2844.7835620025,
+      "mae_top_decile": 4744.4958869534,
+      "bias_pct": -11.3797722387,
+      "monthly_total_mape": 11.5199837291
+    },
+    {
+      "weight": 1.0,
+      "mae": 807.8631012829,
+      "rmse": 2842.884219607,
+      "mae_top_decile": 4689.5941361616,
+      "bias_pct": -10.1780506076,
+      "monthly_total_mape": 10.6879819724
+    }
+  ]
+}

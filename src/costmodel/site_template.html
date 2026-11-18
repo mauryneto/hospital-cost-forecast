@@ -222,6 +222,35 @@ footer p { margin: 0 0 10px; }
     </div>
   </section>
 
+  <section id="s-families">
+    <div class="side">
+      <div class="no">05</div>
+      <h2>Other kinds of model</h2>
+      <p>Is this the right kind of model? Other families, and an average of two settings of the candidate, on the same admissions and inputs.</p>
+      <p>Measured on the validation window, where choices are made. The test window was not looked at again.</p>
+    </div>
+    <div class="main">
+      <div id="fam-block">
+        <p class="finding" id="fam-finding"></p>
+        <div class="seg" id="fam-seg" role="group" aria-label="Metric"></div>
+        <div class="figure">
+          <h3 id="fam-title"></h3>
+          <p class="sub">Lower is better. The highlighted bar is the setting the search chose among several; each other family got two settings.</p>
+          <div class="bars" id="fam-bars"></div>
+          <details><summary>Table</summary><div class="tablewrap" id="fam-table"></div></details>
+        </div>
+      </div>
+      <div id="blend-block">
+        <p class="finding" id="blend-finding"></p>
+        <div class="figure">
+          <h3>Averaging two settings of the candidate</h3>
+          <p class="sub" id="blend-sub"></p>
+          <div class="tablewrap" id="blend-table"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer id="footer"></footer>
 </div>
 <div class="tip" id="tip" role="status"></div>
@@ -393,24 +422,29 @@ footer p { margin: 0 0 10px; }
     mae: { label: "Error per admission", title: "Mean absolute error per admission (" + (D.currency || "currency") + ")", f: function (v) { return fmt(v, 2); } },
     monthly_total_mape: { label: "Error on the month's total", title: "Mean error on the month's total (%)", f: function (v) { return pct(v, 2); } }
   };
-  function drawTest(key) {
-    var mt = METRICS[key], rows = T.models.slice().sort(function (a, b) { return a[key] - b[key]; });
-    var max = Math.max.apply(null, rows.map(function (r) { return r[key]; }));
-    $("test-title").textContent = mt.title;
-    var host = $("test-bars"); host.innerHTML = "";
-    rows.forEach(function (r) {
-      var name = document.createElement("div"); name.className = "name" + (r.candidate ? " hl" : "");
-      name.innerHTML = esc(r.candidate ? D.candidate_label : pretty(r.name)) + (r.candidate && T.promoted ? "<small>in production</small>" : "");
+  function metricRows(r) {
+    return [{ name: "MAE per admission", value: CUR + fmt(r.mae, 2) }, { name: "Error on the month's total", value: pct(r.monthly_total_mape, 2) },
+      { name: "Bias", value: pct(r.bias_pct, 2, true) }, { name: "MAE, top 10% most expensive", value: CUR + fmt(r.mae_top_decile, 2) }];
+  }
+  // Horizontal bars, sorted by the metric. o.name(r), o.small(r) (a second line, may be empty), o.hl(r), o.more(r) (extra tooltip rows).
+  function bars(host, rows, key, o) {
+    var mt = METRICS[key], max = Math.max.apply(null, rows.map(function (r) { return r[key]; }));
+    host.innerHTML = "";
+    rows.slice().sort(function (a, b) { return a[key] - b[key]; }).forEach(function (r) {
+      var name = document.createElement("div"); name.className = "name" + (o.hl(r) ? " hl" : "");
+      name.innerHTML = esc(o.name(r)) + (o.small(r) ? "<small>" + esc(o.small(r)) + "</small>" : "");
       var track = document.createElement("div"); track.className = "track";
-      track.innerHTML = '<div class="bar' + (r.candidate ? " hl" : "") + '" style="width:calc(' + (100 * r[key] / max).toFixed(2) + '% - 80px)"></div><span class="val">' + esc(mt.f(r[key])) + "</span>";
-      function tipIt(ev) {
-        showTip(tipRows(r.candidate ? D.candidate_label : pretty(r.name), [
-          { name: "MAE per admission", value: CUR + fmt(r.mae, 2) }, { name: "Error on the month's total", value: pct(r.monthly_total_mape, 2) },
-          { name: "Bias", value: pct(r.bias_pct, 2, true) }, { name: "MAE, top 10% most expensive", value: CUR + fmt(r.mae_top_decile, 2) }]), ev.clientX, ev.clientY);
-      }
+      track.innerHTML = '<div class="bar' + (o.hl(r) ? " hl" : "") + '" style="width:calc(' + (100 * r[key] / max).toFixed(2) + '% - 80px)"></div><span class="val">' + esc(mt.f(r[key])) + "</span>";
+      function tipIt(ev) { showTip(tipRows(o.name(r), metricRows(r).concat(o.more ? o.more(r) : [])), ev.clientX, ev.clientY); }
       track.addEventListener("mousemove", tipIt); track.addEventListener("mouseleave", hideTip);
       host.appendChild(name); host.appendChild(track);
     });
+  }
+  function isCandidate(r) { return r.candidate; }
+  function testName(r) { return r.candidate ? D.candidate_label : pretty(r.name); }
+  function drawTest(key) {
+    $("test-title").textContent = METRICS[key].title;
+    bars($("test-bars"), T.models, key, { hl: isCandidate, name: testName, small: function (r) { return r.candidate && T.promoted ? "in production" : ""; } });
   }
   segmented($("test-seg"), [{ key: "mae", label: METRICS.mae.label }, { key: "monthly_total_mape", label: METRICS.monthly_total_mape.label }], drawTest);
   drawTest("mae");
@@ -513,6 +547,46 @@ footer p { margin: 0 0 10px; }
     drawReplay();
     table($("replay-table"), ["Policy", "MAE", "Month's total", "Attempts", "Put in use", "Serving from"], R.map(function (r) {
       return [r.label, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), String(r.attempts), String(r.promotions), r.serves.join(", ") || "–"];
+    }));
+  }
+
+  // ---- 05 other kinds of model ---------------------------------------------------------------------------------------
+  var FAM = D.families || [], B = D.blend && D.blend.rows.length > 1 ? D.blend : null;
+  if (FAM.length < 2) $("fam-block").style.display = "none";
+  if (!B) $("blend-block").style.display = "none";
+  if (FAM.length < 2 && !B) $("s-families").style.display = "none";
+  if (FAM.length >= 2) {
+    var chosen = FAM.filter(isCandidate)[0];
+    var others = FAM.filter(function (r) { return !r.candidate; }).sort(function (a, b) { return a.mae - b.mae; });
+    var famTotal = FAM.slice().sort(function (a, b) { return a.monthly_total_mape - b.monthly_total_mape; })[0];
+    var gap = 100 * (others[0].mae / chosen.mae - 1);
+    var famName = function (r) { return r.candidate ? r.family : r.family + " (" + r.setting + ")"; };
+    var took = function (r) { return r.seconds < 120 ? fmt(r.seconds, 0) + " s" : fmt(r.seconds / 60, 0) + " min"; };
+    $("fam-finding").innerHTML = (gap > 0 ? "No other family beats the chosen model per admission: the closest, <b>" + esc(famName(others[0])) + "</b>, is <b>" + fmt(gap, 1) + "% worse</b>. " :
+      "<b>" + esc(famName(others[0])) + "</b> beats the chosen model per admission by <b>" + fmt(-gap, 1) + "%</b>. ") +
+      (famTotal.candidate ? "The chosen model also has the smallest error on the month's total." :
+        "On the month's total, <b>" + esc(famName(famTotal)) + "</b> does better (" + pct(famTotal.monthly_total_mape, 2) + " against " + pct(chosen.monthly_total_mape, 2) + ").");
+    var drawFam = function (key) {
+      $("fam-title").textContent = METRICS[key].title;
+      bars($("fam-bars"), FAM, key, { hl: isCandidate, name: function (r) { return r.family; }, small: function (r) { return r.setting; },
+        more: function (r) { return [{ name: "Trees", value: fmt(r.trees, 0) }, { name: "Time to fit", value: took(r) }]; } });
+    };
+    segmented($("fam-seg"), [{ key: "mae", label: METRICS.mae.label }, { key: "monthly_total_mape", label: METRICS.monthly_total_mape.label }], drawFam);
+    drawFam("mae");
+    table($("fam-table"), ["Family", "Setting", "MAE", "Month's total error", "Bias", "MAE, top 10%", "Trees", "Time to fit"], FAM.slice().sort(function (a, b) { return a.mae - b.mae; }).map(function (r) {
+      return [r.family, r.setting, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2), fmt(r.trees, 0), took(r)];
+    }));
+  }
+  if (B) {
+    var alone = B.rows[0], bestB = B.rows.filter(function (r) { return r.weight === B.best_weight; })[0] || alone;
+    var share = function (w) { return fmt(100 * w, 0) + "%"; };
+    $("blend-finding").innerHTML = bestB === alone ?
+      "Averaging two settings of the candidate <b>does not beat the chosen one alone</b> under the search's rule (lowest error per admission, with the month's total within " + pct(M.rules.max_monthly_total_error, 0) + ")." :
+      "Averaging two settings of the candidate <b>does better on both metrics</b>: with " + share(bestB.weight) + " of the second, the error per admission goes from " + CUR + fmt(alone.mae, 2) +
+      " to <b>" + CUR + fmt(bestB.mae, 2) + "</b> and the error on the month's total from " + pct(alone.monthly_total_mape, 2) + " to <b>" + pct(bestB.monthly_total_mape, 2) + "</b>.";
+    $("blend-sub").textContent = "First: " + B.per_admission + " (the chosen setting). Second: " + B.monthly_total + " (lowest error on the month's total in the search). The share is the weight of the second in the average.";
+    table($("blend-table"), ["Share of the second", "MAE", "Month's total error", "Bias", "MAE, top 10%"], B.rows.map(function (r) {
+      return [share(r.weight) + (r === bestB && bestB !== alone ? "  ◂ best" : ""), fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
     }));
   }
 

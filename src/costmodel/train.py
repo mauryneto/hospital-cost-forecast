@@ -34,6 +34,11 @@ def window_label(months: int) -> str:
     return "expanding" if months == EXPANDING else f"sliding {months} months"
 
 
+def setting_label(row) -> str:
+    """One row of the search in words: 'log_l2, 255 leaves, expanding, with time'."""
+    return f"{row['objective']}, {int(row['num_leaves'])} leaves, {row['window']}{', with time' if row['use_time'] else ''}"
+
+
 def last_months(df: pd.DataFrame, months: int) -> pd.DataFrame:
     """Keep the last ``months`` whole calendar months of admissions (all of them for the expanding window)."""
     if months == EXPANDING:

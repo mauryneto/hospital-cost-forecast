@@ -21,6 +21,7 @@ def main(argv: list[str] | None = None) -> None:
         ("monitor", "score the monitoring window month by month: drift (PSI), error, and the retrain rule"),
         ("replay", "what-if: replay the monitoring window under each retraining policy (slow: it retrains)"),
         ("families", "compare other model families (random forest, CatBoost) with the candidate on validation"),
+        ("blend", "average the candidate's best per-admission and best month's-total settings, on validation"),
         ("site", "one static page with the results (docs/index.html), built from the reports"),
         ("run", "the whole pipeline, in order: data, train, evaluate, monitor"),
     ]:
@@ -96,6 +97,10 @@ def main(argv: list[str] | None = None) -> None:
         run(cfg)
     elif args.command == "families":
         from costmodel.families import run
+
+        run(cfg)
+    elif args.command == "blend":
+        from costmodel.blend import run
 
         run(cfg)
     elif args.command == "site":

@@ -28,7 +28,7 @@ from costmodel import registry
 from costmodel.candidate import CostModel
 from costmodel.config import Config
 from costmodel.evaluate import summary, to_markdown
-from costmodel.train import choose, load_splits
+from costmodel.train import choose, load_splits, setting_label
 
 FOREST_TREES = 300
 FOREST_LEAVES = 4095  # forests want deep trees; each tree may use up to this many leaves
@@ -169,8 +169,7 @@ def run(cfg: Config) -> pd.DataFrame:
     rows = [
         {
             "family": "LightGBM (gradient boosting)",
-            "setting": f"{best['objective']}, {int(best['num_leaves'])} leaves, {best['window']}"
-            f"{', with time' if best['use_time'] else ''}; chosen among {len(search)} settings",
+            "setting": f"{setting_label(best)}; chosen among {len(search)} settings",
             "trees": int(best["trees"]),
             **{k: float(best[k]) for k in ("mae", "rmse", "mae_top_decile", "bias_pct", "monthly_total_mape")},
             "seconds": float(best["seconds"]),

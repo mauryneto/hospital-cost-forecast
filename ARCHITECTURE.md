@@ -58,7 +58,8 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    `costmodel families` is a side check, outside `costmodel run`: it fits other model families (random forest,
    CatBoost) on the same windows and features and reports them next to the chosen setting. It reads only the
    validation window and registers nothing; a family that won there would enter the search as a candidate and face
-   the same gate.
+   the same gate. `costmodel blend` is the same kind of check for an average of two settings from the search: the one
+   chosen for the error per admission and the one with the lowest error on the month's total.
 5. **Gate** (`costmodel evaluate`). The `staging` model is loaded back from the registry and scored once on the test
    window, next to every baseline refitted on the same data and the current `production` model, if any. It is promoted
    (the `production` alias moves to it) only if it beats each of them on MAE by the configured margin **and** does not
@@ -84,7 +85,8 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    rollback reaches the API when it restarts. The API does not start without a `production` model, and it rejects any
    field the contract does not know at admission (the cost, the length of stay) instead of ignoring it.
 9. **Show.** `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
-   monitoring months, where prices changed, and the retraining replay. The numbers are embedded when the page is
+   monitoring months, where prices changed, the retraining replay and, when they were run, the side comparisons
+   (other model families, the blend). The numbers are embedded when the page is
    generated, so it cannot disagree with the reports, and only aggregates are published.
 
 ## Leakage control is part of the contract

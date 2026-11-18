@@ -8,6 +8,8 @@ The pipeline does not depend on SUS: it reads one canonical admissions table def
 [data contract](DATA_CONTRACT.md). Public SIH/SUS data (state of Rio de Janeiro, 2018–2024, 5.4 million admissions) is
 the first source; a health plan can fill the same table with its own claims and run the same commands.
 
+**[Results page](https://mauryneto.github.io/hospital-cost-forecast/)**: the numbers below as interactive charts.
+
 ![The production model, month by month through 2024](reports/sihsus_rj/monitor.png)
 
 ## Results
@@ -50,6 +52,23 @@ two metrics ([families_valid.md](reports/sihsus_rj/families_valid.md)):
   was still improving when it reached its limit of 1,000 trees. More tuning would narrow the gap; at 30 to 40 minutes
   per fit against 75 seconds, it was not pursued.
 - Nothing was promoted from this comparison, and the test year was not looked at again.
+
+**Averaging two settings of LightGBM** ([blend_valid.md](reports/sihsus_rj/blend_valid.md)). The setting chosen for the
+error per admission (least squares on log(cost)) and the one with the lowest error on the month's total in the search
+(Tweedie), fitted as in the search and averaged, on the same validation year:
+
+| Share of the Tweedie model | MAE per admission (R$) | Error on the month's total |
+|---|---:|---:|
+| 0% (the chosen setting alone) | 792.15 | 14.98% |
+| 25% | **787.00** | 13.78% |
+| 50% | 787.47 | 12.58% |
+| 75% | 793.89 | 11.52% |
+| 100% (the Tweedie setting alone) | 807.86 | **10.69%** |
+
+Half and half is better than the chosen setting on both metrics: by 0.6% per admission and by 2.4 points on the
+month's total. The model in production was not changed. The gate asks a new model to be 2% better per admission than
+the one in production, and this gain is mostly on the total, so as the rule stands the average would not replace it
+(see the roadmap).
 
 **Monitoring (2024, simulated production).** The model under-predicts the month's total by about 14% early in 2024
 and by 20–24% from July. The retrain rule fires at the end of September, as soon as the bad months have been billed.
@@ -119,6 +138,7 @@ docker compose up api
 | `costmodel score --month 2024-03` | Batch: price a month of admissions with `production` |
 | `costmodel serve` | HTTP API: `POST /predict`, `GET /health` |
 | `costmodel families` | Compare other model families (random forest, CatBoost) with the chosen candidate on validation; CatBoost needs `uv sync --extra families` |
+| `costmodel blend` | Average the candidate's best per-admission and best month's-total settings, on validation |
 | `costmodel site` | One static page with the results ([`docs/index.html`](docs/index.html)), built from the reports |
 | `costmodel run` | `data`, `train`, `evaluate`, `monitor`, in order, stopping at the first failure |
 | `costmodel validate file.csv` | Check a file against the data contract and list every problem |
@@ -207,6 +227,9 @@ Not done yet, in the order I would do them:
   training, from examples given as context. Scored on the same windows and through the same gate, whichever way it goes
   is a result. The open question is scale: they take tens of thousands of context rows, and this training set has 3.6
   million rows with thousands of procedure, diagnosis and hospital codes.
+- **The average of two settings as a candidate.** On validation it is a little better per admission and clearly
+  better on the month's total. Serving it means packaging the two models as one and passing the gate, and the gate
+  would have to weigh the month's total (the retraining policy item below) for the gain to count.
 - **Kinds of prediction side by side on the results page:** point estimate, interval and month's total, per model.
 - **The retraining policy, tested on a new period.** The 2024 replay suggests retraining whenever a new billed month
   exists, and a gate that weighs the month's total. Changing the rule on the same year that suggested it would be

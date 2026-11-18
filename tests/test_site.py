@@ -107,6 +107,28 @@ def test_page_embeds_the_replay_when_there_is_one(cfg):
     assert data["replay"][1]["serves"] == ["2024-02"]
 
 
+def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
+    data = embedded(site.run(cfg).read_text(encoding="utf-8"))
+    assert data["families"] == [] and data["blend"] is None  # both are optional
+
+    metrics = {"mae": 10.0, "rmse": 30.0, "bias_pct": -5.0, "mae_top_decile": 80.0, "monthly_total_mape": 6.0}
+    families = [
+        {"family": "LightGBM (gradient boosting)", "setting": "chosen", "trees": 100, "seconds": 5.0, **metrics},
+        {"family": "random forest", "setting": "on the cost", "trees": 300, "seconds": 9.0, **metrics | {"mae": 11.0}},
+    ]
+    blend = {"per_admission": "a", "monthly_total": "b", "best_weight": 0.5,
+             "rows": [{"weight": w, **metrics} for w in (0.0, 0.5, 1.0)]}  # fmt: skip
+    (cfg.reports_dir / "families_valid.json").write_text(json.dumps(families), encoding="utf-8")
+    (cfg.reports_dir / "blend_valid.json").write_text(json.dumps(blend), encoding="utf-8")
+    data = embedded(site.run(cfg).read_text(encoding="utf-8"))
+    assert [(r["family"], r["candidate"]) for r in data["families"]] == [
+        ("LightGBM (gradient boosting)", True),  # the first row is the setting the search chose
+        ("random forest", False),
+    ]
+    assert "rmse" not in data["families"][0]  # only what the page shows is embedded
+    assert data["blend"]["best_weight"] == 0.5 and [r["weight"] for r in data["blend"]["rows"]] == [0.0, 0.5, 1.0]
+
+
 def test_embedded_text_cannot_close_the_script_block(cfg):
     html = site.render(site.page_data(cfg) | {"note": "</script><b>x"})
     assert html.count("</script>") == 2  # the data block and the page's own script

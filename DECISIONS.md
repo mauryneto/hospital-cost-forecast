@@ -18,7 +18,7 @@ and kept after review.
 | 4 | **Nothing counts as working until it has run in Docker.** | "How can it go public if it was never tested?" | The Docker image, the test suite running inside it in CI, and a real bug found that way (the full run died when every step shared one process). |
 | 5 | **The public repository holds only what is meant to be public.** | No internal notes, no personal details, no old history. | The repository was recreated with a clean history and scanned for secrets and personal data before the first push. |
 | 6 | **Before publishing, look at what is new and at what others have done.** | To check the project against the current state of the field instead of assuming it was finished. | The roadmap in the README (prediction intervals, tabular foundation models), and a closer look at 2024, which located the July step in elective surgery. |
-| 7 | **Show the results on a page, not only in Markdown.** | Results should be visible without reading reports. | `costmodel site`: a static page generated from the reports. |
+| 7 | **Show the results on a page, not only in Markdown.** | Results should be visible without reading reports. | `costmodel site`: a [static page](https://mauryneto.github.io/hospital-cost-forecast/) generated from the reports. |
 | 8 | **Is one model family enough? Test others.** | The candidate had only been compared with simple rules and with other settings of itself. | `costmodel families`: random forest and CatBoost on the same split, features and metrics. Result: see below. |
 | 9 | **Make visible which decisions were the author's.** | The commits show that an assistant wrote the code. They do not show who decided what. | This file. |
 
@@ -50,6 +50,8 @@ recommended by the system and decided by a person, with nothing scheduled.
   weighs the month's total more. The rule was fixed before looking at 2024 and has not been changed, because changing
   it on the year that suggested the change would be fitting it to the result. It needs a new period to test. The
   author's call.
+- **Whether the average of two settings replaces the model in production** (see the end of this file). It depends on
+  the gate weighing the month's total, and on a period that has not been used to choose anything.
 
 ## Result of decision 8
 
@@ -71,3 +73,10 @@ more work, but nothing here suggests it would close.
 The question still paid off, in a different place: the models fitted on the cost itself miss the month's total by
 9–11%, against 15% for the chosen one. That is the same trade-off as in the open item above (error per admission
 against error on the total), and it now shows up across three families instead of one.
+
+That led to one more experiment, proposed by the assistant and approved by the author: averaging the chosen setting
+with the Tweedie setting that has the lowest error on the month's total
+([blend_valid.md](reports/sihsus_rj/blend_valid.md)). Half and half is better on both metrics on 2022: 787.47 against
+792.15 per admission, and 12.58% against 14.98% on the month's total. The model in production was not changed. The
+gain per admission (0.6%) is below the 2% the gate asks, so whether the average replaces it depends on the open item
+above: how much the gate should weigh the month's total.

@@ -5,6 +5,7 @@
 #   docker compose run --rm costmodel baselines
 #   docker compose run --rm costmodel train                                   # candidate -> MLflow registry ('staging')
 #   docker compose run --rm costmodel families                                # other model families on validation (forest only: CatBoost is not in the image)
+#   docker compose run --rm costmodel blend                                   # average of two candidate settings, on validation
 #   docker compose run --rm costmodel evaluate                                # test year + gate -> 'production'?
 #   docker compose run --rm costmodel monitor                                 # monitoring window: drift, error, retrain rule
 #   docker compose run --rm costmodel replay                                  # what-if of retraining policies (slow)

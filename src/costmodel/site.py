@@ -2,8 +2,9 @@
 
 The page (``docs/index.html`` in the work folder, which GitHub Pages can serve) has no server behind it and loads no
 data: the numbers are embedded when it is generated, read from ``reports/<dataset>/test.json``, ``monitor.json`` and,
-if it exists, ``replay.json``. So the page cannot disagree with the reports, and regenerating it after a new run is
-one command. Only aggregates are embedded (per model, per month, per procedure); never an admission.
+where they exist, ``replay.json``, ``families_valid.json`` and ``blend_valid.json``. So the page cannot disagree with
+the reports, and regenerating it after a new run is one command. Only aggregates are embedded (per model, per month,
+per procedure); never an admission.
 """
 
 from __future__ import annotations
@@ -19,6 +20,8 @@ from costmodel.paths import HOME
 TEMPLATE = Path(__file__).with_name("site_template.html")
 TEST_METRICS = ("mae", "monthly_total_mape", "bias_pct", "mae_top_decile")
 SHIFT_FIELDS = ("code", "n", "extra", "reference_median", "monthly_median")
+FAMILY_FIELDS = ("family", "setting", "trees", "seconds", *TEST_METRICS)
+BLEND_FIELDS = ("weight", *TEST_METRICS)
 
 
 def _read(cfg: Config, name: str, required: bool = True):
@@ -33,6 +36,9 @@ def _read(cfg: Config, name: str, required: bool = True):
 def page_data(cfg: Config) -> dict:
     """Everything the page shows, taken from the reports."""
     test, monitor, replay = _read(cfg, "test.json"), _read(cfg, "monitor.json"), _read(cfg, "replay.json", required=False)
+    # Optional side comparisons on the validation window (`costmodel families`, `costmodel blend`).
+    families = _read(cfg, "families_valid.json", required=False) or []
+    blend = _read(cfg, "blend_valid.json", required=False)
     if "price_shifts" not in monitor:
         raise RuntimeError("monitor.json has no price breakdown; run `costmodel monitor` again")
     from costmodel.monitor import shown_types
@@ -105,6 +111,15 @@ def page_data(cfg: Config) -> dict:
             }
             for r in (replay or [])
         ],
+        # The first row of the family comparison is always the setting the search chose.
+        "families": [{"candidate": i == 0, **{k: row[k] for k in FAMILY_FIELDS}} for i, row in enumerate(families)],
+        "blend": blend
+        and {
+            "per_admission": blend["per_admission"],
+            "monthly_total": blend["monthly_total"],
+            "best_weight": blend["best_weight"],
+            "rows": [{k: row[k] for k in BLEND_FIELDS} for row in blend["rows"]],
+        },
     }
 
 
