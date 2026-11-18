@@ -141,3 +141,50 @@ class CostModel:
         """Total gain per feature: how much each column reduced the loss over all trees."""
         gain = self.booster_.booster_.feature_importance(importance_type="gain", iteration=self.best_iteration_)
         return pd.Series(gain, index=self.columns).sort_values(ascending=False)
+
+
+TYPICAL, EXPECTED = "typical_cost", "expected_cost"
+
+
+class CostPair:
+    """Two fitted models behind one registered version, one for each question a cost prediction answers.
+
+    * ``typical``: what this admission should cost. Chosen for the lowest error per admission.
+    * ``expected``: the number to add up. Chosen for the lowest error on the month's total.
+
+    On a right-skewed cost no single number is best at both. The one closest to each admission sits near the typical
+    case; the one that sums right sits near the mean, which the few expensive admissions pull up. When the search
+    finds one setting that is best at both, the two are the same model.
+    """
+
+    def __init__(self, typical: CostModel, expected: CostModel):
+        self.typical, self.expected = typical, expected
+
+    @property
+    def name(self) -> str:
+        return self.typical.name if self.expected is self.typical else f"{self.typical.name}+{self.expected.name}"
+
+    def fit(self, X: pd.DataFrame, y) -> CostPair:
+        self.typical.fit(X, y)
+        if self.expected is not self.typical:
+            self.expected.fit(X, y)
+        return self
+
+    def predict(self, X: pd.DataFrame) -> np.ndarray:
+        """The typical cost: what code that wants one number per admission gets."""
+        return self.typical.predict(X)
+
+    def predict_both(self, X: pd.DataFrame) -> pd.DataFrame:
+        typical = self.typical.predict(X)
+        expected = typical if self.expected is self.typical else self.expected.predict(X)
+        return pd.DataFrame({TYPICAL: typical, EXPECTED: expected}, index=X.index)
+
+
+def predict_both(model, X: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    """(typical, expected) from any model. One that gives a single number (a baseline, an older version) gives it
+    for both."""
+    if hasattr(model, "predict_both"):
+        both = model.predict_both(X)
+        return both[TYPICAL].to_numpy(dtype=float), both[EXPECTED].to_numpy(dtype=float)
+    pred = np.asarray(model.predict(X), dtype=float)
+    return pred, pred

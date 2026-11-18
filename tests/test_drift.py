@@ -11,11 +11,13 @@ from costmodel.drift import (
     error_by_group,
     known_through,
     monthly_metrics,
+    pair_monthly_metrics,
     price_level,
     price_shifts,
     psi,
     should_retrain,
 )
+from costmodel.evaluate import pair_summary, summary
 
 rng = np.random.default_rng(0)
 
@@ -127,3 +129,18 @@ def test_price_shifts_ranks_the_repriced_procedure_first():
     assert b["reference_median"] == 200
     assert b["monthly_median"]["2024-06"] == 200 and b["monthly_median"]["2024-07"] == 400
     assert shifts[1]["extra"] == pytest.approx(0)
+
+
+def test_two_numbers_are_each_judged_by_their_own_metric():
+    # Ten admissions in one month: nine cost 500 and one 10,500. The typical cost is 500, the expected cost 1,500.
+    y = np.array([500.0] * 9 + [10_500.0])
+    period = pd.Series(["2024-01"] * 10)
+    typical, expected = np.full(10, 500.0), np.full(10, 1_500.0)
+    months = pair_monthly_metrics(y, typical, expected, period)
+    assert months[0]["mae"] == 1_000.0  # from the typical cost (the expected cost would miss by 1,800)
+    assert months[0]["predicted"] == 15_000.0 and months[0]["total_error_pct"] == 0.0  # from the expected cost
+    assert monthly_metrics(y, typical, period)[0]["total_error_pct"] == pytest.approx(-66.67, abs=0.01)
+
+    both = pair_summary(y, typical, expected, period)
+    assert both["mae"] == 1_000.0 and both["monthly_total_mape"] == 0.0 and both["bias_pct"] == 0.0
+    assert pair_summary(y, typical, typical, period) == summary(y, typical, period)  # one number: nothing changes

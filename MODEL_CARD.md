@@ -1,22 +1,29 @@
-# Model card: `cost-sihsus_rj` version 2
+# Model card: `cost-sihsus_rj` version 3
 
 Predicts, at the moment of admission, how much the SUS will pay for a hospital admission in the state of Rio de
 Janeiro. It is the model currently in `production` in the MLflow registry. All numbers below come from the reports in
 [`reports/sihsus_rj/`](reports/sihsus_rj/) and can be regenerated with the commands in the [README](README.md).
 
+It gives **two numbers for every admission**, because one number cannot do both jobs on a skewed cost (the 10% most
+expensive admissions take 57% of the money):
+
+- the **typical cost**: what this admission should cost. It is the number closest to each admission.
+- the **expected cost**: the number to add up. Summed over many admissions it comes closest to what is paid.
+
 ## Model details
 
 | | |
 |---|---|
-| Type | Gradient-boosted trees (LightGBM), regression |
-| Objective | Least squares on log(cost), returned to reais with Duan's smearing factor (so predictions estimate the mean, not the median) |
-| Size | 255 leaves per tree, 324 trees (chosen by early stopping on 2022), learning rate 0.1, seed 42 |
+| Type | Two gradient-boosted tree models (LightGBM, regression), registered as one version |
+| Typical cost | Least squares on log(cost), returned to reais with Duan's smearing factor; 255 leaves per tree, 324 trees |
+| Expected cost | Tweedie objective (predicts the mean directly); 63 leaves per tree, 303 trees |
+| Common settings | Learning rate 0.1, seed 42, trees chosen by early stopping on 2022, the admission date as an input |
 | Trained on | 3,606,614 admissions from 2018-01-01 to 2022-12-31 (training + validation windows, refitted after the search) |
-| Chosen by | Lowest MAE on 2022 among 16 settings whose monthly-total error stayed at or under 15% ([train_valid.md](reports/sihsus_rj/train_valid.md)) |
-| Alternatives tried | Random forest and CatBoost on the same 2022 validation year: 5–6% worse per admission ([families_valid.md](reports/sihsus_rj/families_valid.md)). An average of this setting with a Tweedie one: 0.6% better per admission and 2.4 points better on the month's total, not promoted ([blend_valid.md](reports/sihsus_rj/blend_valid.md)). One model per procedure group: 1.8% better per admission, 1.5 points worse on the month's total, not adopted ([segments_valid.md](reports/sihsus_rj/segments_valid.md)). The recent billed price of each procedure as an input: no gain per admission, not adopted ([recent_price_valid.md](reports/sihsus_rj/recent_price_valid.md)). Retraining on only the last 4, 12 or 24 billed months instead of all of them: worse per admission ([base_window_valid.md](reports/sihsus_rj/base_window_valid.md)) |
-| Promoted by | The gate on 2023, scored once ([test.md](reports/sihsus_rj/test.md)) |
+| Chosen by | Among 16 settings measured on 2022: for the typical cost, the lowest MAE with a monthly-total error at or under 15%; for the expected cost, the lowest monthly-total error ([train_valid.md](reports/sihsus_rj/train_valid.md)) |
+| Alternatives tried | Random forest and CatBoost on the same 2022 validation year: 5–6% worse per admission ([families_valid.md](reports/sihsus_rj/families_valid.md)). An average of the two settings above: 0.6% better per admission and 2.4 points better on the month's total than the typical cost alone ([blend_valid.md](reports/sihsus_rj/blend_valid.md)); serving both numbers was preferred to averaging them. One model per procedure group: 1.8% better per admission, 1.5 points worse on the month's total, not adopted ([segments_valid.md](reports/sihsus_rj/segments_valid.md)). The recent billed price of each procedure as an input: no gain per admission, not adopted ([recent_price_valid.md](reports/sihsus_rj/recent_price_valid.md)). Retraining on only the last 4, 12 or 24 billed months instead of all of them: worse per admission ([base_window_valid.md](reports/sihsus_rj/base_window_valid.md)) |
+| Promoted by | The gate on 2023 ([test.md](reports/sihsus_rj/test.md)); see "How many times the test year was looked at" below |
 | Packaging | MLflow pyfunc that takes the raw admission columns and builds its own features, so callers cannot build them differently |
-| Served by | `costmodel score` (a month in batch) and `costmodel serve` (`POST /predict`) |
+| Served by | `costmodel score` (a month in batch) and `costmodel serve` (`POST /predict`); both return `typical_cost` and `expected_cost` |
 
 **Inputs**, all known when the patient is admitted ([DATA_CONTRACT.md](DATA_CONTRACT.md)): admission date, age, sex,
 main diagnosis (ICD-10), requested procedure (SIGTAP code), admission type (elective or urgent), hospital, municipality
@@ -24,20 +31,24 @@ of residence, bed specialty. The model derives coarser groups from the codes (IC
 group and subgroup), the month of year, and the admission date as a number of months. The last one lets the trees
 apply the most recent price level to new admissions.
 
-**What it relies on** (share of the trees' gain): requested procedure 48%, diagnosis category 21%, procedure subgroup
-13%, hospital 11%, everything else under 5% each.
+**What it relies on** (share of the trees' gain). Typical cost: requested procedure 48%, diagnosis category 21%,
+procedure subgroup 13%, hospital 11%, everything else under 5% each. Expected cost: diagnosis category 31%, requested
+procedure 21%, hospital 20%, procedure subgroup 16%, diagnosis chapter 6%, everything else under 5% each.
 
-**Output:** the expected amount paid, in reais.
+**Output:** two amounts in reais per admission, `typical_cost` and `expected_cost`.
 
 ## Intended use
 
-- **Forecasting money, not cases.** Summing the predictions of a month's admissions estimates what those admissions will
-  cost months before the bills arrive (SUS hospitals bill up to about 5 months later). This is the use the gate and the
-  monitor measure ("error on the month's total").
-- **A first estimate per admission**, for planning and for prioritising which admissions to look at, with an error of
-  about R$ 780 per admission on 2023 (see below).
+- **Forecasting money, not cases.** Summing the **expected cost** of a month's admissions estimates what those
+  admissions will cost months before the bills arrive (SUS hospitals bill up to about 5 months later). This is the use
+  the gate and the monitor measure ("error on the month's total").
+- **A first estimate per admission**, for planning and for prioritising which admissions to look at: the **typical
+  cost**, with an error of about R$ 780 per admission on 2023 (see below).
 - **A reference implementation.** The same pipeline can be trained on another payer's own admissions (see the README).
   This model itself applies only to SUS admissions in Rio de Janeiro.
+
+Do not add up typical costs to forecast a total (they come out about 11% low on 2023), and do not read the expected
+cost as the likely cost of one admission (on average it is further from each admission's cost).
 
 ## Out of scope: do not use it to
 
@@ -51,7 +62,7 @@ apply the most recent price level to new admissions.
 - **Estimate what an admission costs the hospital.** The target is what the SUS paid (`VAL_TOT`, the reimbursement),
   which can be far from the real cost of care.
 - **Predict private-plan, other-state or post-2024 costs without retraining.** Codes, prices and mix differ, and the
-  model is already more than 20% low on late 2024 (see "Monitoring").
+  model is already almost 20% low on the totals of late 2024 (see "Monitoring").
 
 ## Data
 
@@ -70,30 +81,69 @@ Public SIH/SUS hospital admission files (RD), state of Rio de Janeiro, downloade
   performed procedure, death, discharge, secondary diagnoses, complexity and the reason for discharge. A test fails
   the build if any of them reaches the features.
 
-## Performance on the test year (2023, scored once)
+## Performance on the test year (2023)
 
-All models were fitted on the same data (2018–2022) and scored on the same 877,760 admissions.
+All models were fitted on the same data (2018–2022) and scored on the same 877,760 admissions. In the model's row,
+the error per admission is the typical cost's and the error on the month's total (and the bias) is the expected
+cost's: each number is judged by the metric it is for.
 
 | Model | MAE (R$) | Error on the month's total | Bias | MAE, top 10% most expensive |
 |---|---:|---:|---:|---:|
-| **This model** | **778.62** | 11.32% | −11.42% | **4,724.83** |
+| **This model** | **778.62** | **6.53%** | −6.64% | **4,724.83** |
 | Median by procedure × age band × admission type | 872.80 | 40.81% | −40.89% | 6,191.20 |
 | Median by procedure | 886.29 | 41.53% | −41.61% | 6,283.98 |
 | Linear regression on log(cost) | 937.81 | 12.89% | −12.89% | 5,848.08 |
 | Mean by procedure × age band × admission type | 972.10 | 13.44% | −13.57% | 5,376.14 |
 | Mean by procedure | 1,003.53 | 13.50% | −13.63% | 5,546.33 |
-| Global mean | 1,579.64 | **7.15%** | −7.36% | 7,763.69 |
+| Global mean | 1,579.64 | 7.15% | −7.36% | 7,763.69 |
 
 "Error on the month's total" is the mean, over the 12 months, of |predicted total − paid total| / paid total.
 
-- The model has the lowest error per admission, 10.8% below the strongest baseline (the business-rule median by
-  procedure, age and admission type), and the lowest error on the most expensive admissions.
-- **On the month's total, a global mean does better (7.2% against 11.3%).** That is a coincidence of mix (cheaper and
-  dearer procedures shifting in opposite directions), not skill: the same global mean is off by R$ 1,580 per
-  admission. Anyone who needs only the monthly total should still compare against a simple average.
-- The model under-predicts 2023 by 11%: prices kept rising after the training data ended.
+Each of the model's two numbers on every metric:
 
-### Error by segment (MAE, R$)
+| | MAE (R$) | Error on the month's total | Bias | MAE, top 10% most expensive |
+|---|---:|---:|---:|---:|
+| Typical cost | **778.62** | 11.32% | −11.42% | 4,724.83 |
+| Expected cost | 819.17 | **6.53%** | −6.64% | **4,471.24** |
+
+- The typical cost has the lowest error per admission, 10.8% below the strongest baseline (the business-rule median
+  by procedure, age and admission type).
+- The expected cost has the lowest error on the month's total, at R$ 40.55 more per admission than the typical cost.
+- **A global mean is almost as good on the month's total (7.15% against 6.53%).** Prices rose while the mix moved to
+  cheaper procedures; a global mean ignores both, and the two mistakes partly cancel. Anyone who needs only the
+  monthly total of all admissions should still compare against a simple average. For any smaller total it is not
+  enough (next table).
+- Both numbers under-predict 2023 (the expected cost by 6.64%): prices kept rising after the training data ended.
+
+### Is it worth it over a plain average?
+
+Error on the totals of each month, for groups of different sizes ([skill_test.md](reports/sihsus_rj/skill_test.md)).
+The error is weighted by money, so the first row is close to, but not the same as, the monthly-total error above.
+
+| Totals of each month, for | How many totals | Plain average | Mean per procedure | This model | Model's error is smaller by |
+|---|---:|---:|---:|---:|---:|
+| All admissions | 12 | 7.36% | 13.63% | 6.64% | 10% |
+| Each admission type | 36 | 17.61% | 13.63% | 6.65% | 62% |
+| Each procedure group | 48 | 14.90% | 13.68% | 6.66% | 55% |
+| Each bed specialty | 138 | 28.11% | 15.08% | 6.83% | 76% |
+| Each diagnosis chapter | 255 | 39.07% | 13.94% | 7.18% | 82% |
+| Each procedure subgroup | 360 | 41.57% | 13.84% | 7.64% | 82% |
+| Each hospital | 2,885 | 49.25% | 29.58% | 11.16% | 77% |
+| *Each admission (MAE, R$)* | 877,760 | *1,579.64* | *1,003.53* | *778.62* | *51%* |
+
+The model adds little to the total of all admissions and a great deal to every smaller total. This table was
+computed after the model was promoted; nothing was chosen with it.
+
+### How many times the test year was looked at
+
+Twice. Version 2 of this model gave one number, the typical cost above, and was scored on 2023 once: MAE 778.62,
+month's-total error 11.32%. The expected cost was added afterwards, with its setting chosen on 2022 only, and 2023
+was scored again to judge it. The typical cost is the same model as in version 2 and its numbers did not change. The
+expected cost's numbers therefore come from a year that had already been seen, and the gate's rule for replacing a
+model in production was written for this change (see the README). A year not used for any choice (2025) is the next
+check.
+
+### Error by segment (MAE of the typical cost, R$)
 
 | Segment | Admissions | Mean paid | This model | Best baseline |
 |---|---:|---:|---:|---:|
@@ -120,36 +170,38 @@ where the model errs, not a fairness audit.
 
 Grouping 2023 admissions by decile of what was actually paid:
 
-| Decile of amount paid | Mean paid (R$) | Mean predicted (R$) |
-|---:|---:|---:|
-| 1 (cheapest) | 138.16 | 238.93 |
-| 5 | 629.21 | 837.38 |
-| 9 | 2,251.76 | 2,332.75 |
-| 10 (most expensive) | 9,279.05 | 5,724.60 |
+| Decile of amount paid | Mean paid (R$) | Mean typical cost (R$) | Mean expected cost (R$) |
+|---:|---:|---:|---:|
+| 1 (cheapest) | 138.16 | 238.93 | 284.64 |
+| 5 | 629.21 | 837.38 | 853.01 |
+| 9 | 2,251.76 | 2,332.75 | 2,543.66 |
+| 10 (most expensive) | 9,279.05 | 5,724.60 | 5,917.61 |
 
 Like any model of this kind, it pulls extremes towards the middle: it over-predicts cheap admissions and
-under-predicts the most expensive ones by about 38% on average. What happens during an expensive stay (complications,
-ICU) is not known at admission. Individual predictions for high-cost cases should be read as "this is likely to be
-expensive", not as an amount.
+under-predicts the most expensive ones by about 38% on average (36% for the expected cost). What happens during an
+expensive stay (complications, ICU) is not known at admission. Individual predictions for high-cost cases should be
+read as "this is likely to be expensive", not as an amount.
 
 ## Monitoring (2024, simulated production)
 
 The model priced every month of 2024 as if it were live ([monitor.md](reports/sihsus_rj/monitor.md)). A month is
 judged only 3 months after it ends, when 98.7% of admissions and 95.4% of the money have been billed (measured on
-2018–2021).
+2018–2021). The MAE below is the typical cost's; every total, and its error, is the expected cost's.
 
 ![Monitoring](reports/sihsus_rj/monitor.png)
 
-- **It under-predicts throughout 2024:** the month's total is about 14% low from January to April, 16–17% in May and June,
-  and 20–24% from July to December. The MAE steps up from about 850 to over 1,000 in July.
+- **It under-predicts throughout 2024:** the month's total is 9–10% low from January to April, 12–13% in May and
+  June, and 17–20% from July to December. The MAE steps up from about 850 to over 1,000 in July.
 - **The cause is price, and the July step is in elective surgery.** Against the prices the model last saw (mean per
   procedure in 2022, same mix), what was paid is 7.91–9.12% higher from January to April, 11.08–13.07% in May and June
-  and 16.90–21.89% from July. The error on urgent admissions stays between −12.63% and −16.58% all year; on elective
-  admissions it goes from −13.79% to −17.75% (January to April) to −28.25% to −34.10% (July to December). The median
+  and 16.90–21.89% from July. The error on urgent admissions stays between −5.50% and −9.14% all year; on elective
+  admissions it goes from −12.74% to −16.35% (January to April) to −27.31% to −33.25% (July to December). The median
   paid for cataract surgery (SIGTAP 0405050372) is R$ 772 in every month up to June and R$ 3,858 from July. The rule
   behind this change was not identified.
-- **The retrain rule fires at the end of September 2024.** May and June broke the limits (MAE more than 10% above
-  the test MAE, or the month's total off by more than 15%), but their costs were known only in September.
+- **The retrain rule fires at the end of November 2024.** July and August were the first two months in a row to break
+  the limits (MAE more than 10% above the test MAE, or the month's total off by more than 15%), and their costs were
+  known only in November. With version 2, whose single number was further off on totals, the rule fired at the end of
+  September: a better number for totals also means a later alarm.
 - **Input drift did not warn about it.** The largest PSI among the inputs stays between 0.24 and 0.28 all year, with no
   change when the error jumps, and the PSI of the predicted cost stays around 0.01. Admissions looked the same; what
   changed was the price paid for them (concept drift). Only the error, known after billing, shows it.
@@ -160,13 +212,14 @@ replay of 2024 under three policies, using only data known at each moment
 
 | Policy | MAE (R$) | Error on the month's total | Retrained models put in use |
 |---|---:|---:|---|
-| Never retrain | 904.69 | 19.03% | none |
-| Retrain when the rule fires (all data / last 24 months) | 905.55 / 907.55 | 16.72% / 16.57% | 1, from October |
-| Try to retrain every month (all data / last 24 months) | 898.11 / 903.10 | 11.75% / 11.30% | 2, from February and September |
+| Never retrain | 904.69 | 14.71% | none |
+| Retrain when the rule fires (all data / last 24 months) | 898.72 / 898.55 | 13.46% / 13.47% | 1, from December |
+| Try to retrain every month (all data / last 24 months) | 898.11 / 903.10 | 8.55% / 8.57% | 2, from February and September |
 
 The rule reacts late to a steady price rise; retraining whenever new billed data exist cuts the error on the month's
-total from 19% to 11–12%. The rule and the gate thresholds were fixed before looking at 2024 and have not been changed to fit
-these results.
+total from 15% to 9%. The retrain rule was fixed before looking at 2024 and has not been changed to fit these
+results. The gate's rule against the model in use is the new one (see "How many times the test year was looked
+at"), so this replay is a description of 2024 under that rule, not an independent test of it.
 
 ## Known limitations
 
@@ -175,6 +228,7 @@ these results.
   admission type show where such a change happened, three months later.
 - **Systematic under-prediction when prices rise.** The time input carries the latest price level forward but cannot
   anticipate increases. Without retraining, the error grows month after month.
+- **The expected cost was judged on a year already seen** (see "How many times the test year was looked at").
 - **Requested procedure.** It is the strongest input and matches the performed procedure in 95.9% of admissions. The
   public files hold the AIH as billed, so it cannot be confirmed that this field was never amended after admission.
   If it was, the measured error is somewhat optimistic.

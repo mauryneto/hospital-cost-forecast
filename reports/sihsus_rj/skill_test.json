@@ -1,0 +1,81 @@
+{
+  "version": "3",
+  "rules": {
+    "global_mean": "plain average",
+    "mean_by_proc": "mean per procedure"
+  },
+  "rows": [
+    {
+      "level": "all admissions, each month",
+      "what": "error on totals (%)",
+      "model": 6.6440816235,
+      "totals": 12,
+      "global_mean": 7.3636478788,
+      "mean_by_proc": 13.6346709744,
+      "gain_pct": 9.7718721373
+    },
+    {
+      "level": "admission type x month",
+      "what": "error on totals (%)",
+      "model": 6.6544393326,
+      "totals": 36,
+      "global_mean": 17.6125592472,
+      "mean_by_proc": 13.6346709744,
+      "gain_pct": 62.2176468549
+    },
+    {
+      "level": "procedure group x month",
+      "what": "error on totals (%)",
+      "model": 6.6576470438,
+      "totals": 48,
+      "global_mean": 14.9047581818,
+      "mean_by_proc": 13.6809953959,
+      "gain_pct": 55.3320693797
+    },
+    {
+      "level": "bed specialty x month",
+      "what": "error on totals (%)",
+      "model": 6.8334344049,
+      "totals": 138,
+      "global_mean": 28.1128183743,
+      "mean_by_proc": 15.0819357186,
+      "gain_pct": 75.692816302
+    },
+    {
+      "level": "diagnosis chapter x month",
+      "what": "error on totals (%)",
+      "model": 7.1768105391,
+      "totals": 255,
+      "global_mean": 39.0747097479,
+      "mean_by_proc": 13.9377636585,
+      "gain_pct": 81.6331059516
+    },
+    {
+      "level": "procedure subgroup x month",
+      "what": "error on totals (%)",
+      "model": 7.6391470297,
+      "totals": 360,
+      "global_mean": 41.5711622814,
+      "mean_by_proc": 13.8447050194,
+      "gain_pct": 81.6239272358
+    },
+    {
+      "level": "hospital x month",
+      "what": "error on totals (%)",
+      "model": 11.1592878717,
+      "totals": 2885,
+      "global_mean": 49.2468232689,
+      "mean_by_proc": 29.5753729854,
+      "gain_pct": 77.3400858553
+    },
+    {
+      "level": "each admission",
+      "what": "mean absolute error",
+      "model": 778.6236713671,
+      "totals": 877760,
+      "global_mean": 1579.6352958638,
+      "mean_by_proc": 1003.5290901969,
+      "gain_pct": 50.7086431022
+    }
+  ]
+}

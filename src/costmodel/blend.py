@@ -21,7 +21,7 @@ from costmodel import registry
 from costmodel.candidate import CostModel
 from costmodel.config import Config
 from costmodel.evaluate import summary, to_markdown
-from costmodel.train import choose, last_months, load_splits, setting_label
+from costmodel.train import choose, choose_for_totals, last_months, load_splits, setting_label
 
 WEIGHTS = (0.0, 0.25, 0.5, 0.75, 1.0)  # share of the month's-total model in the average
 KEEP = ("mae", "rmse", "mae_top_decile", "bias_pct", "monthly_total_mape")
@@ -29,7 +29,7 @@ KEEP = ("mae", "rmse", "mae_top_decile", "bias_pct", "monthly_total_mape")
 
 def pair(search: pd.DataFrame, cfg: Config) -> tuple[pd.Series, pd.Series]:
     """The setting the search chose, and the one with the lowest error on the month's total."""
-    return choose(search, cfg), search.sort_values(["monthly_total_mape", "mae"]).iloc[0]
+    return choose(search, cfg), choose_for_totals(search)
 
 
 def fit_setting(cfg: Config, row: pd.Series, train: pd.DataFrame, X_valid: pd.DataFrame, y_valid) -> CostModel:

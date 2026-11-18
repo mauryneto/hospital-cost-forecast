@@ -65,15 +65,21 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    months, built only from bills already known at admission (the monitor's billing delay decides which).
    `costmodel base-window` retrains before every block of three months with histories of different lengths (the
    last 4, 12 or 24 billed months, all of them, all of them with recent months weighing more).
-5. **Gate** (`costmodel evaluate`). The `staging` model is loaded back from the registry and scored once on the test
-   window, next to every baseline refitted on the same data and the current `production` model, if any. It is promoted
-   (the `production` alias moves to it) only if it beats each of them on MAE by the configured margin **and** does not
-   make the monthly-total error worse, staying under an absolute ceiling. If it fails and nothing is in production
-   yet, the best baseline is registered and put in production, so there is always a model to serve. The decision and
-   its reasons go to the model version's tags, an MLflow run and `reports/<dataset>/test.md`.
+5. **Gate** (`costmodel evaluate`). The `staging` model is loaded back from the registry and scored on the test
+   window, next to every baseline refitted on the same data and the current `production` model, if any. Each of its
+   two numbers is judged by the metric it is for: the typical cost by the MAE, the expected cost by the error on the
+   month's total. It is promoted (the `production` alias moves to it) only if it beats the best baseline on MAE by
+   the configured margin **and** is not worse than it on the monthly total; if, against the model in production, at
+   least one of the two numbers is better by its margin and the other is not worse; and if its monthly-total error
+   stays under an absolute ceiling. If it fails and nothing is in production yet, the best baseline is registered
+   and put in production, so there is always a model to serve. The decision and its reasons go to the model version's
+   tags, an MLflow run and `reports/<dataset>/test.md`. `costmodel skill` then answers "is it worth it over a plain
+   average?" for the model in production: the error on each month's totals for all admissions, and for each hospital,
+   specialty, procedure group and so on, next to a plain average's.
 6. **Monitor** (`costmodel monitor`). The production model prices the monitoring months one by one. Data drift (PSI of
    each input, and of the predicted cost, against the data the model was fitted on) is known as soon as admissions
-   arrive. Performance (MAE, error on the month's total) is known only once costs are billed, so a month is judged only
+   arrive. Performance (the MAE of the typical cost, the error of the expected cost on the month's total) is known
+   only once costs are billed, so a month is judged only
    `label_delay_months` after it ends (3 for SIH/SUS: 98.7% of admissions and 95.4% of the money are billed by then;
    expensive stays bill later, so judging earlier would understate the error). When the error grows, the report
    also says where: the error by admission type, and the price level, which compares what was paid with what the same
@@ -85,14 +91,16 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    done over the monitoring window, using only data known at each moment.
 8. **Serve.** `costmodel score --month YYYY-MM` prices a month of admissions (from the table or from a file without
    the cost) and writes one file per month to `data/predictions/<dataset>/`, with the model version on every row.
-   `costmodel serve` starts the HTTP API (`POST /predict`, `GET /health`, docs at `/docs`). Both load one exact model
+   `costmodel serve` starts the HTTP API (`POST /predict`, `GET /health`, docs at `/docs`). Both return a
+   `typical_cost` and an `expected_cost` for every admission (the same number twice, if the model in production gives
+   only one: a baseline, or a version registered before the two numbers existed). Both load one exact model
    version, not the alias, so the version they report is always the one that priced the admission; a promotion or a
    rollback reaches the API when it restarts. The API does not start without a `production` model, and it rejects any
    field the contract does not know at admission (the cost, the length of stay) instead of ignoring it.
 9. **Show.** `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
    monitoring months, where prices changed, the retraining replay and, when they were run, the side comparisons
-   (other model families, the blend, one model per group, the recent price, the length of the history). The numbers are embedded when the page is
-   generated, so it cannot disagree with the reports, and only aggregates are published.
+   (other model families, the blend, one model per group, the recent price, the length of the history). The numbers
+   are embedded when the page is generated, so it cannot disagree with the reports, and only aggregates are published.
 
 ## Leakage control is part of the contract
 

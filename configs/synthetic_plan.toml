@@ -22,6 +22,7 @@ sliding_months = [24]
 
 [gate]
 min_mae_gain = 0.02
+min_total_gain = 0.10
 max_monthly_total_mape = 15.0
 
 [monitor]

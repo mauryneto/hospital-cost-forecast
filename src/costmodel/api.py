@@ -20,6 +20,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from costmodel import contract
+from costmodel.candidate import EXPECTED, TYPICAL
 from costmodel.config import Config
 from costmodel.score import Scorer
 
@@ -50,7 +51,8 @@ class PredictRequest(BaseModel):
 
 class Prediction(BaseModel):
     admission_id: str
-    predicted_cost: float
+    typical_cost: float = Field(description="What this admission should cost.")
+    expected_cost: float = Field(description="The number to add up: summed over many admissions, close to what is paid.")
 
 
 class PredictResponse(BaseModel):
@@ -106,8 +108,8 @@ def create_app(cfg: Config, scorer: Scorer | None = None) -> FastAPI:
             model=s.model_name,
             model_version=s.version,
             predictions=[
-                Prediction(admission_id=a.admission_id, predicted_cost=round(float(p), 2))
-                for a, p in zip(request.admissions, predicted, strict=True)
+                Prediction(admission_id=a.admission_id, typical_cost=round(float(t), 2), expected_cost=round(float(e), 2))
+                for a, t, e in zip(request.admissions, predicted[TYPICAL], predicted[EXPECTED], strict=True)
             ],
         )
 

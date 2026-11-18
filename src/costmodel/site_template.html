@@ -141,7 +141,7 @@ footer p { margin: 0 0 10px; }
   <section id="s-test">
     <div class="side">
       <div class="no">01</div>
-      <h2>The test window, scored once</h2>
+      <h2>The test window</h2>
       <p>Every model was fitted on the same data and scored on the same admissions, after all choices were made on an earlier window.</p>
       <p>Two metrics, because money is counted in totals: the error per admission, and the error on each month's total.</p>
     </div>
@@ -153,6 +153,17 @@ footer p { margin: 0 0 10px; }
         <p class="sub">Lower is better. The highlighted bar is the candidate model; the others are baselines.</p>
         <div class="bars" id="test-bars"></div>
         <details><summary>Table</summary><div class="tablewrap" id="test-table"></div></details>
+      </div>
+      <div class="figure" id="numbers-block">
+        <h3>Two numbers for every admission</h3>
+        <p class="sub">Costs are skewed: a few admissions cost many times the usual. The number closest to each admission (the typical cost) is not the one that adds up to the month's total (the expected cost), so the model gives both, and each is judged by the metric it is for. Here is each of them on both metrics.</p>
+        <div class="tablewrap" id="numbers-table"></div>
+      </div>
+      <div class="figure" id="skill-block">
+        <h3>Is it worth it over a plain average?</h3>
+        <p class="sub">A plain average gives every admission the same amount. For the total of all admissions that can come close; for a hospital, a specialty or one admission it cannot. Error on each month's totals at each level (weighted by money), and how much smaller the model's is.</p>
+        <p class="finding" id="skill-finding"></p>
+        <div class="tablewrap" id="skill-table"></div>
       </div>
     </div>
   </section>
@@ -427,9 +438,10 @@ footer p { margin: 0 0 10px; }
   var best = baselines.slice().sort(function (a, b) { return a.mae - b.mae; })[0];
   var gain = 100 * (1 - cand.mae / best.mae);
   var lastM = M.months[M.months.length - 1];
+  var two = (T.numbers || []).length >= 2;  // the model gives a typical and an expected cost
   var tiles = [
-    { label: "Error per admission (MAE)", value: CUR + fmt(cand.mae, 2), note: (gain >= 0 ? fmt(gain, 1) + "% below" : fmt(-gain, 1) + "% above") + " the best baseline (" + CUR + fmt(best.mae, 2) + ") on the test window" },
-    { label: "Error on the month's total", value: pct(cand.monthly_total_mape, 2), note: "mean over the months of the test window; the gate's ceiling is " + pct(M.rules.max_monthly_total_error, 0) },
+    { label: "Error per admission (MAE)", value: CUR + fmt(cand.mae, 2), note: (two ? "of the typical cost; " : "") + (gain >= 0 ? fmt(gain, 1) + "% below" : fmt(-gain, 1) + "% above") + " the best baseline (" + CUR + fmt(best.mae, 2) + ") on the test window" },
+    { label: "Error on the month's total", value: pct(cand.monthly_total_mape, 2), note: (two ? "of the expected cost; " : "") + "mean over the months of the test window; the gate's ceiling is " + pct(M.rules.max_monthly_total_error, 0) },
     { label: "Retraining recommended", value: M.fired ? "end of " + M.fired : "not in this window", note: M.rules.patience + " billed months in a row out of bounds; a person decides" },
     { label: "Prices by " + lastM.period, value: pct(lastM.price_index_pct, 1, true), note: "against the prices the model last saw, for the same mix of procedures" }
   ];
@@ -475,6 +487,30 @@ footer p { margin: 0 0 10px; }
   table($("test-table"), ["Model", "MAE", "Month's total error", "Bias", "MAE, top 10%"], T.models.slice().sort(function (a, b) { return a.mae - b.mae; }).map(function (r) {
     return [r.candidate ? D.candidate_label : pretty(r.name), fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
   }));
+
+  var NUM = T.numbers || [];
+  if (NUM.length < 2) $("numbers-block").style.display = "none";
+  else {
+    var NUMBER_NAME = { typical_cost: "Typical cost: what this admission should cost", expected_cost: "Expected cost: the number to add up" };
+    table($("numbers-table"), ["", "MAE", "Month's total error", "Bias", "MAE, top 10%"], NUM.map(function (r) {
+      return [NUMBER_NAME[r.name] || pretty(r.name), fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
+    }));
+  }
+
+  var SK = T.skill || [];
+  if (!SK.length) $("skill-block").style.display = "none";
+  else {
+    var isMae = function (r) { return r.what === "mean absolute error"; };
+    var show = function (r, v) { return isMae(r) ? CUR + fmt(v, 2) : pct(v, 2); };
+    var all = SK[0], groups = SK.filter(function (r) { return !isMae(r) && r !== all; });
+    var most = groups.slice().sort(function (a, b) { return b.gain_pct - a.gain_pct; })[0];
+    $("skill-finding").innerHTML = "For all admissions together the model's error is only <b>" + fmt(all.gain_pct, 0) + "% smaller</b> than a plain average's (" +
+      pct(all.model, 2) + " against " + pct(all.global_mean, 2) + ")." + (most ? " For the totals of each <b>" + esc(most.level.replace(" x month", "")) + "</b> it is <b>" +
+      fmt(most.gain_pct, 0) + "% smaller</b> (" + pct(most.model, 2) + " against " + pct(most.global_mean, 2) + ")." : "");
+    table($("skill-table"), ["Totals of", "How many", "Plain average", "Mean per procedure", "This model", "Gain over the plain average"], SK.map(function (r) {
+      return [r.level.charAt(0).toUpperCase() + r.level.slice(1), fmt(r.totals, 0), show(r, r.global_mean), show(r, r.mean_by_proc), show(r, r.model), pct(r.gain_pct, 0)];
+    }));
+  }
 
   // ---- 02 monitor --------------------------------------------------------------------------------------------------
   var mx = M.months.map(function (m) { return m.period; });

@@ -60,3 +60,13 @@ def summary(y: np.ndarray, pred: np.ndarray, period: pd.Series) -> dict[str, flo
     months = monthly_totals(y, pred, period)
     out["monthly_total_mape"] = float(months["error_pct"].abs().mean())
     return out
+
+
+def pair_summary(y: np.ndarray, typical: np.ndarray, expected: np.ndarray, period: pd.Series) -> dict[str, float]:
+    """``summary`` for a model that gives two numbers, each judged by what it is for: the per-admission metrics come
+    from the typical cost, the bias and the error on the month's total from the expected cost."""
+    out = summary(y, typical, period)
+    if expected is not typical:
+        totals = summary(y, expected, period)
+        out |= {"bias_pct": totals["bias_pct"], "monthly_total_mape": totals["monthly_total_mape"]}
+    return out

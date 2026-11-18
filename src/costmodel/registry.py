@@ -3,7 +3,9 @@
 * **Tracking:** a SQLite file, ``mlflow.db`` in the work folder (``$MLFLOW_TRACKING_URI`` overrides it). Model files go to
   ``mlartifacts/`` next to it. Both are ignored by Git.
 * **Packaging:** the registered model takes the *raw admission columns* (as in the contract) and builds the features
-  itself, so whoever calls it (the API, a batch job) cannot build them differently from training.
+  itself, so whoever calls it (the API, a batch job) cannot build them differently from training. A candidate gives
+  two numbers per admission, the typical cost and the expected cost (see ``candidate.CostPair``); a baseline, or a
+  version registered before that, gives one, which then counts as both.
 * **Aliases:** ``staging`` points at the latest trained candidate; ``production`` at the version that passed the gate.
   Moving an alias is the deploy; moving it back is the rollback. Versions are never deleted.
 """
@@ -24,6 +26,7 @@ from mlflow.exceptions import MlflowException
 from mlflow.models import infer_signature
 
 from costmodel import features as F
+from costmodel.candidate import EXPECTED, TYPICAL
 from costmodel.config import Config
 from costmodel.paths import HOME
 
@@ -50,7 +53,8 @@ def setup(cfg: Config) -> str:
 
 
 class CostModelPyfunc(mlflow.pyfunc.PythonModel):
-    """MLflow wrapper: raw admission columns in, predicted cost out."""
+    """MLflow wrapper: raw admission columns in; out, the typical and the expected cost (or one cost, from a model
+    that gives a single number)."""
 
     def load_context(self, context):
         with open(context.artifacts["cost_model"], "rb") as f:
@@ -59,7 +63,9 @@ class CostModelPyfunc(mlflow.pyfunc.PythonModel):
     # The type hint keeps MLflow quiet (it warns on every import without one); the input schema itself is the explicit
     # signature set in ``log_model``.
     def predict(self, context, model_input: pd.DataFrame, params=None):
-        return self.model.predict(F.build_features(pd.DataFrame(model_input)))
+        X = F.build_features(pd.DataFrame(model_input))
+        both = getattr(self.model, "predict_both", None)
+        return both(X).reset_index(drop=True) if both is not None else self.model.predict(X)
 
 
 def unwrap(loaded) -> object:
@@ -75,7 +81,9 @@ def input_columns(df: pd.DataFrame) -> list[str]:
 def log_model(cfg: Config, model, example: pd.DataFrame) -> str:
     """Log ``model`` in the active run and register it as a new version. Returns the version number."""
     example = example[input_columns(example)].head(200)
-    signature = infer_signature(example, model.predict(F.build_features(example)))
+    X = F.build_features(example)
+    output = model.predict_both(X).reset_index(drop=True) if hasattr(model, "predict_both") else model.predict(X)
+    signature = infer_signature(example, output)
     with tempfile.TemporaryDirectory() as tmp, warnings.catch_warnings():
         warnings.simplefilter("ignore")
         path = Path(tmp) / "cost_model.pkl"
@@ -128,6 +136,16 @@ def load_version(cfg: Config, version: str):
         return mlflow.pyfunc.load_model(f"models:/{cfg.model_name}/{version}")
 
 
+def predict_both(model, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    """Score admissions with a loaded registry model, passing only the columns it was registered with. Returns the
+    typical and the expected cost; a model that gives a single number gives it for both."""
+    out = model.predict(df[input_columns(df)])
+    if isinstance(out, pd.DataFrame):
+        return out[TYPICAL].to_numpy(dtype=float), out[EXPECTED].to_numpy(dtype=float)
+    out = np.asarray(out, dtype=float)
+    return out, out
+
+
 def predict(model, df: pd.DataFrame) -> np.ndarray:
-    """Score admissions with a loaded registry model, passing only the columns it was registered with."""
-    return np.asarray(model.predict(df[input_columns(df)]), dtype=float)
+    """The typical cost of each admission (one number per admission)."""
+    return predict_both(model, df)[0]

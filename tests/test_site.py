@@ -83,6 +83,8 @@ def test_page_is_filled_from_the_reports(cfg):
     assert data["monitor"]["months"][0]["most_drifted"] == "requested_procedure"
     assert [m["name"] for m in data["test"]["models"] if m["candidate"]] == ["candidate"]
     assert data["replay"] == []  # replay.json is optional
+    assert data["test"]["numbers"] == []  # a candidate that gives one number per admission
+    assert data["test"]["skill"] == []  # skill_test.json is optional
     assert data["links"][0]["url"] == "https://example.org/repo"
 
 
@@ -144,6 +146,27 @@ def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     assert [(r["variant"], r["window"]) for r in data["recent_price"]] == [("as is", "-"), ("input", "3")]
     assert data["base_window"]["horizon"] == 3
     assert [(r["history"], r["mean_rows"]) for r in data["base_window"]["rows"]] == [(h, n) for h, _, n in histories]
+
+
+def test_page_shows_both_numbers_of_a_candidate_that_has_them(cfg):
+    path = cfg.reports_dir / "test.json"
+    test = json.loads(path.read_text(encoding="utf-8"))
+    metrics = test["metrics"]["candidate"]
+    typical, expected = metrics | {"monthly_total_mape": 9.0}, metrics | {"mae": 12.0}
+    test["metrics"]["production"] = typical  # the version this candidate replaced was scored too
+    test["candidate_numbers"] = {"typical_cost": typical, "expected_cost": expected}
+    path.write_text(json.dumps(test), encoding="utf-8")
+    row = {"level": "hospital x month", "what": "error on totals (%)", "totals": 9, "model": 5.0, "global_mean": 20.0,
+           "mean_by_proc": 10.0, "gain_pct": 75.0}  # fmt: skip
+    (cfg.reports_dir / "skill_test.json").write_text(json.dumps({"version": "3", "rows": [row]}), encoding="utf-8")
+    page = embedded(site.run(cfg).read_text(encoding="utf-8"))["test"]
+    assert [m["name"] for m in page["models"]] == ["candidate", "global_mean"]  # not a baseline: left to the report
+    assert page["skill"] == [row]
+    numbers = page["numbers"]
+    assert [(n["name"], n["mae"], n["monthly_total_mape"]) for n in numbers] == [
+        ("typical_cost", 10.0, 9.0),
+        ("expected_cost", 12.0, 6.0),
+    ]
 
 
 def test_embedded_text_cannot_close_the_script_block(cfg):

@@ -86,6 +86,16 @@ def monthly_metrics(y: np.ndarray, pred: np.ndarray, period: pd.Series) -> list[
     return [{"period": str(p), **{k: float(v) for k, v in row.items()}} for p, row in g.iterrows()]
 
 
+def pair_monthly_metrics(y: np.ndarray, typical: np.ndarray, expected: np.ndarray, period: pd.Series) -> list[dict]:
+    """``monthly_metrics`` for a model that gives two numbers: the month's total (and its error) from the expected
+    cost, the MAE from the typical cost."""
+    months = monthly_metrics(y, expected, period)
+    if expected is not typical:
+        for month, per_admission in zip(months, monthly_metrics(y, typical, period), strict=True):
+            month["mae"] = per_admission["mae"]
+    return months
+
+
 def error_by_group(y: np.ndarray, pred: np.ndarray, period: pd.Series, group: pd.Series) -> dict[str, dict[str, dict]]:
     """Per month and per group: admissions, paid and predicted totals, and the error on the total. {month: {group: ...}}"""
     df = pd.DataFrame(

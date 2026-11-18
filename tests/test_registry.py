@@ -5,7 +5,7 @@ import pytest
 
 from costmodel import features as F
 from costmodel import registry
-from costmodel.candidate import CostModel
+from costmodel.candidate import CostModel, CostPair
 from costmodel.config import Config
 from costmodel.synthetic import generate
 
@@ -36,3 +36,15 @@ def test_register_alias_and_load_back(tmp_path, monkeypatch):
     registry.set_alias(cfg, registry.STAGING, v2)
     assert str(registry.version_for(cfg, registry.PRODUCTION).version) == v1
     assert str(registry.version_for(cfg, registry.STAGING).version) == v2
+
+    # A candidate with two numbers per admission is one version; a model with one number gives it for both.
+    X = F.build_features(df)
+    pair = CostPair(CostModel("log_l2", 7, 0.1, 50, 5), CostModel("tweedie", 7, 0.1, 50, 5)).fit(X, df[F.TARGET])
+    with registry.mlflow.start_run():
+        v3 = registry.log_model(cfg, pair, df)
+    typical, expected = registry.predict_both(registry.load_version(cfg, v3), df)
+    np.testing.assert_allclose(typical, pair.typical.predict(X))
+    np.testing.assert_allclose(expected, pair.expected.predict(X))
+    np.testing.assert_allclose(registry.predict(registry.load_version(cfg, v3), df), typical)
+    single_typical, single_expected = registry.predict_both(registry.load_version(cfg, v1), df)
+    np.testing.assert_array_equal(single_typical, single_expected)

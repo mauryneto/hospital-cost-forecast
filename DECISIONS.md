@@ -23,6 +23,7 @@ and kept after review.
 | 9 | **Make visible which decisions were the author's.** | The commits show that an assistant wrote the code. They do not show who decided what. | This file. |
 | 10 | **Everything is predicted by one model for all admissions. Would one model per kind of admission be better?** | A model fitted to one group could learn that group better; it could also lose what the groups have in common. Not obvious either way. | `costmodel segments`: the chosen setting fitted per admission type and per procedure group. Result: see below. |
 | 11 | **Prices change every quarter, so train on only the last 3 or 4 months and predict the next 3. And an admission is paid months later: is that accounted for?** | People who work in health care say a long history teaches old prices. And part of what is paid in a month comes from admissions of two or three months before. | `costmodel base-window`: retrained before every quarter with only the months already billed, with histories of 4, 12 and 24 months and all of them. Result: see below. The billing delay was measured again on the data; a cash-flow forecast went to the roadmap. |
+| 12 | **If a plain average misses the month's total by 7%, why build all this? Is there a score that says whether the model is worth it?** | The results table showed a global mean almost tied with the model on the month's total. That deserved a straight answer, not a footnote. | `costmodel skill`: the error on totals for all admissions and for each hospital, specialty and procedure group, next to a plain average's, and how much smaller the model's is. Result: see below. |
 
 ## Fixed in the brief, before any code
 
@@ -42,18 +43,19 @@ recommended by the system and decided by a person, with nothing scheduled.
 - The price level in the monitor (same admissions at the prices the model last saw), which located the July 2024 step
   in elective surgery.
 - Generating the results page from the reports, so that it cannot disagree with them.
+- Giving two numbers for every admission instead of one, and the gate's rule for replacing a model that has them
+  (see "Two numbers instead of one").
 - Rejecting LazyPredict, PCA and Naive Bayes for decision 8, in favour of a controlled comparison: the first cannot
   handle this data size or report the month's total, the second would destroy the information in the procedure codes,
   and the third is a classifier.
 
 ## Open
 
-- **The retraining policy.** The 2024 replay suggests retraining whenever a new billed month exists, and a gate that
-  weighs the month's total more. The rule was fixed before looking at 2024 and has not been changed, because changing
-  it on the year that suggested the change would be fitting it to the result. It needs a new period to test. The
-  author's call.
-- **Whether the average of two settings replaces the model in production** (see the end of this file). It depends on
-  the gate weighing the month's total, and on a period that has not been used to choose anything.
+- **The retraining policy.** The 2024 replay suggests retraining whenever a new billed month exists. The retrain rule
+  was fixed before looking at 2024 and has not been changed, because changing it on the year that suggested the
+  change would be fitting it to the result. It needs a new period to test. The author's call.
+- **A year not used for any choice.** The second of the model's two numbers, and the gate rule written for it, were
+  judged on years already seen (see "Two numbers instead of one"). 2025 is the check that is missing.
 
 ## Result of decision 8
 
@@ -73,15 +75,15 @@ LightGBM stays. The other families are 5–6% worse per admission, and CatBoost 
 more work, but nothing here suggests it would close.
 
 The question still paid off, in a different place: the models fitted on the cost itself miss the month's total by
-9–11%, against 15% for the chosen one. That is the same trade-off as in the open item above (error per admission
-against error on the total), and it now shows up across three families instead of one.
+9–11%, against 15% for the chosen one. That is a trade-off between the error per
+admission and the error on the total, and it now shows up across three families instead of one.
 
 That led to one more experiment, proposed by the assistant and approved by the author: averaging the chosen setting
 with the Tweedie setting that has the lowest error on the month's total
 ([blend_valid.md](reports/sihsus_rj/blend_valid.md)). Half and half is better on both metrics on 2022: 787.47 against
-792.15 per admission, and 12.58% against 14.98% on the month's total. The model in production was not changed. The
-gain per admission (0.6%) is below the 2% the gate asks, so whether the average replaces it depends on the open item
-above: how much the gate should weigh the month's total.
+792.15 per admission, and 12.58% against 14.98% on the month's total. The gain per admission (0.6%) was below the 2%
+the gate asked, so the average was not promoted. The two settings ended up being served side by side instead (see
+"Two numbers instead of one").
 
 ## Result of decision 10
 
@@ -96,7 +98,7 @@ On the same validation year ([segments_valid.md](reports/sihsus_rj/segments_vali
 The single model stays. By admission type nothing changes. By procedure group the error per admission falls 1.8%,
 all of it in surgery (R$ 575 against R$ 628), and the error on the month's total rises above the gate's ceiling.
 It is the same trade-off for the third time: what helps each admission does not help the total. Surgery with a
-model of its own is the lead worth following, once the gate question is settled.
+model of its own is the lead worth following, on a year not used for any choice.
 
 ## Result of decision 11
 
@@ -120,6 +122,51 @@ explains the first.
 The idea is not dismissed for other data. SUS prices move slowly; a payer with quarterly contract prices and faster
 bills can run the same command and may get the opposite answer. Weighing recent months more, the middle ground the
 assistant added, gave the lowest error on the month's total.
+
+## Result of decision 12
+
+On the test year ([skill_test.md](reports/sihsus_rj/skill_test.md)):
+
+| Totals of each month, for | Plain average | This model | Model's error is smaller by |
+|---|---:|---:|---:|
+| All admissions | 7.36% | 6.64% | 10% |
+| Each admission type | 17.61% | 6.65% | 62% |
+| Each bed specialty | 28.11% | 6.83% | 76% |
+| Each hospital | 49.25% | 11.16% | 77% |
+| *Each admission (MAE, R$)* | *1,579.64* | *778.62* | *51%* |
+
+The author's doubt was right for the one total it was about: for all admissions together, a plain average is nearly
+enough, because a price rise and a shift to cheaper procedures partly cancelled. It stops being enough for any
+smaller total, which is what a payer budgets by. The score is now part of the reports and of the results page, so
+the question is answered where the numbers are.
+
+## Two numbers instead of one
+
+After five experiments on 2022 (decisions 8, 10 and 11, the average of two settings and the recent price), the error
+per admission had moved by 1.8% at most, and every change that helped it hurt the error on the month's total. The
+author asked what else could improve the cost prediction before moving on. The assistant's answer was that the two
+metrics pull apart for a structural reason, the skew of the costs, and proposed giving two numbers instead of
+looking for one: a typical cost for a single admission and an expected cost to add up. The author asked how the error
+on the total is computed and what the API would return, and approved.
+
+What changed:
+
+- **The model** is two settings from the same search, registered as one version: the one with the lowest error per
+  admission (typical cost) and the one with the lowest error on the month's total (expected cost). The API and the
+  batch job return both.
+- **The gate** judges each number by its own metric. The rule against the best baseline did not change. The rule
+  against the model in production did, and this wording was the assistant's: a new version replaces it when at least
+  one of the two numbers is better by its margin (2% for the error per admission, 10% for the month's total) and
+  the other is not worse. Under the old rule (2% better per admission) the new version could not have entered,
+  because its typical cost is the same model as before. The margins were set before running anything.
+- **The test year was scored a second time,** to judge the expected cost. The typical cost's numbers on 2023 are
+  those of the first and only look (MAE 778.62). The expected cost's are new: 6.53% on the month's total, against
+  11.32% for the typical cost. Version 3 passed the gate and replaced version 2.
+- **The monitor's alarm moved.** With a better number for totals, May and June 2024 are no longer out of bounds, and
+  the retrain rule fires at the end of November instead of September.
+
+What this does not settle: the expected cost and the new gate rule were judged on years that had already been looked
+at, after seeing what the first version did on them. That is the reason for the open item on a fresh year.
 
 ## Tried and not adopted: the recent price of each procedure as an input
 

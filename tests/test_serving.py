@@ -9,7 +9,7 @@ from costmodel import config as config_module
 from costmodel import contract, registry
 from costmodel import features as F
 from costmodel.api import MAX_ADMISSIONS, Admission, create_app
-from costmodel.candidate import CostModel
+from costmodel.candidate import EXPECTED, TYPICAL, CostModel, CostPair
 from costmodel.config import Config
 from costmodel.score import Scorer, run_batch
 from costmodel.synthetic import generate
@@ -65,7 +65,23 @@ def test_predict_keeps_the_order_and_names_the_version(client):
     body = client.post("/predict", json={"admissions": admissions}).json()
     assert body["model_version"] == "7"
     assert [p["admission_id"] for p in body["predictions"]] == [a["admission_id"] for a in admissions]
-    assert [p["predicted_cost"] for p in body["predictions"]] == [2 * a["age_years"] for a in admissions]
+    # A model that gives one number per admission (a baseline, an older version): it counts as both.
+    assert [p["typical_cost"] for p in body["predictions"]] == [2 * a["age_years"] for a in admissions]
+    assert [p["expected_cost"] for p in body["predictions"]] == [2 * a["age_years"] for a in admissions]
+    assert set(body["predictions"][0]) == {"admission_id", "typical_cost", "expected_cost"}
+
+
+def test_predict_returns_the_two_numbers_of_a_model_that_has_them():
+    class TwoNumbers:
+        def predict(self, df):
+            age = df["age_years"].astype(float).to_numpy()
+            return pd.DataFrame({TYPICAL: 2 * age, EXPECTED: 3 * age})
+
+    admissions = rows(generate(5, "2024-01-01", "2024-01-31", seed=2))
+    with TestClient(create_app(CFG, Scorer("cost-serving_test", "8", TwoNumbers()))) as c:
+        body = c.post("/predict", json={"admissions": admissions}).json()
+    assert [p["typical_cost"] for p in body["predictions"]] == [2 * a["age_years"] for a in admissions]
+    assert [p["expected_cost"] for p in body["predictions"]] == [3 * a["age_years"] for a in admissions]
 
 
 @pytest.mark.parametrize(
@@ -113,7 +129,8 @@ def registered(tmp_path, monkeypatch):
     CFG.table_path.parent.mkdir(parents=True)
     df.to_parquet(CFG.table_path, index=False)
     train = df[df["admission_date"] < "2024-01-01"]
-    model = CostModel("tweedie", 7, 0.1, 50, 5, use_time=True).fit(F.build_features(train), train[F.TARGET])
+    pair = CostPair(CostModel("log_l2", 7, 0.1, 50, 5, use_time=True), CostModel("tweedie", 7, 0.1, 50, 5, use_time=True))
+    model = pair.fit(F.build_features(train), train[F.TARGET])
     registry.setup(CFG)
     with registry.mlflow.start_run():
         version = registry.log_model(CFG, model, train)
@@ -125,24 +142,29 @@ def registered(tmp_path, monkeypatch):
 def test_api_and_batch_price_like_the_registered_model(registered, tmp_path):
     df, model, version = registered
     march = df[df["admission_date"].dt.month.eq(3) & df["admission_date"].dt.year.eq(2024)]
-    expected = model.predict(F.build_features(march))
+    expected = model.predict_both(F.build_features(march))
+    assert not np.allclose(expected[TYPICAL], expected[EXPECTED])  # two different numbers per admission
 
     path = run_batch(CFG, month="2024-03")
     batch = pd.read_parquet(path)
     assert path == CFG.predictions_dir / "2024-03.parquet"
     assert batch["admission_id"].tolist() == march["admission_id"].tolist()
     assert set(batch["model_version"]) == {version}
-    np.testing.assert_allclose(batch["predicted_cost"], expected)
+    for column in (TYPICAL, EXPECTED):
+        np.testing.assert_allclose(batch[column], expected[column])
 
     # A file of admissions not billed yet (no cost column), scored from a CSV.
     unbilled = tmp_path / "unbilled.csv"
     march.drop(columns=[F.TARGET]).to_csv(unbilled, index=False, date_format="%Y-%m-%d")
-    np.testing.assert_allclose(pd.read_parquet(run_batch(CFG, input_path=str(unbilled)))["predicted_cost"], expected)
+    from_file = pd.read_parquet(run_batch(CFG, input_path=str(unbilled)))
+    for column in (TYPICAL, EXPECTED):
+        np.testing.assert_allclose(from_file[column], expected[column])
 
     with TestClient(create_app(CFG)) as client:
         assert client.get("/health").json()["model_version"] == version
         body = client.post("/predict", json={"admissions": rows(march.head(20))}).json()
-    np.testing.assert_allclose([p["predicted_cost"] for p in body["predictions"]], expected[:20], atol=0.005)
+    for column in (TYPICAL, EXPECTED):
+        np.testing.assert_allclose([p[column] for p in body["predictions"]], expected[column][:20], atol=0.005)
 
 
 @pytest.mark.slow

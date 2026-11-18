@@ -1,13 +1,23 @@
 {
-  "candidate_version": 2,
+  "candidate_version": 3,
   "promoted": true,
   "reasons": [
     "MAE 778.62 is 10.8% below best baseline (median_by_proc_age_type) (872.80)",
-    "monthly total error 11.32% is not worse than best baseline (median_by_proc_age_type) (40.81%)",
-    "monthly total error 11.32% is within the 15.0% ceiling"
+    "monthly total error 6.53% is not worse than best baseline (median_by_proc_age_type) (40.81%)",
+    "against production (version 2): MAE 778.62 vs 778.62 (+0.0%, 2.0% counts as better); monthly total error 6.53% vs 11.32% (+42.3%, 10.0% counts as better)",
+    "worth replacing production (version 2): better on monthly total, worse on neither",
+    "monthly total error 6.53% is within the 15.0% ceiling"
   ],
   "metrics": {
     "candidate": {
+      "mae": 778.6236713670914,
+      "rmse": 2705.55406813793,
+      "median_ae": 171.5523067430522,
+      "bias_pct": -6.644081623461891,
+      "mae_top_decile": 4724.826734763731,
+      "monthly_total_mape": 6.525685542705431
+    },
+    "production": {
       "mae": 778.6236713670914,
       "rmse": 2705.55406813793,
       "median_ae": 171.5523067430522,
@@ -62,6 +72,24 @@
       "bias_pct": -12.888757647204518,
       "mae_top_decile": 5848.082496653875,
       "monthly_total_mape": 12.888396464453722
+    }
+  },
+  "candidate_numbers": {
+    "typical_cost": {
+      "mae": 778.6236713670914,
+      "rmse": 2705.55406813793,
+      "median_ae": 171.5523067430522,
+      "bias_pct": -11.424603730230869,
+      "mae_top_decile": 4724.826734763731,
+      "monthly_total_mape": 11.315611258238375
+    },
+    "expected_cost": {
+      "mae": 819.1730732759114,
+      "rmse": 2654.8628606607967,
+      "median_ae": 162.87668805100316,
+      "bias_pct": -6.644081623461891,
+      "mae_top_decile": 4471.2411056306455,
+      "monthly_total_mape": 6.525685542705431
     }
   }
 }

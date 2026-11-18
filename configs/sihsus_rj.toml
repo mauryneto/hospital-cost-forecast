@@ -40,10 +40,13 @@ min_category_count = 20
 seed = 42
 
 [gate]
-# Promote only with an MAE at least 2% below every reference (best baseline, and the production model if any), a
-# monthly-total error not worse than theirs, and never above 15%: the mean-per-procedure baselines reach about 12%
-# on 2022, so a model above 15% would be worse for provisioning than a lookup table.
+# The model gives two numbers per admission; the MAE is judged on the typical cost, the monthly total on the expected
+# cost. Against the best baseline: an MAE at least 2% lower and a monthly-total error not worse. Against the model in
+# production: at least one of the two better by its margin (2% for the MAE, 10% for the monthly total, both relative)
+# and the other not worse. And never a monthly-total error above 15%: the mean-per-procedure baselines reach about
+# 12% on 2022, so a model above 15% would be worse for provisioning than a lookup table.
 min_mae_gain = 0.02
+min_total_gain = 0.10
 max_monthly_total_mape = 15.0
 
 [monitor]

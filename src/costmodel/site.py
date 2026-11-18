@@ -41,6 +41,7 @@ def page_data(cfg: Config) -> dict:
     test, monitor, replay = _read(cfg, "test.json"), _read(cfg, "monitor.json"), _read(cfg, "replay.json", required=False)
     # Optional side comparisons on the validation window (`costmodel families`, `blend`, `segments`, `recent-price`).
     recent = _read(cfg, "recent_price_valid.json", required=False) or {"rows": []}
+    skill = _read(cfg, "skill_test.json", required=False) or {"rows": []}  # `costmodel skill`, on the test window
     base_window = _read(cfg, "base_window_valid.json", required=False) or {"rows": []}
     families = _read(cfg, "families_valid.json", required=False) or []
     blend = _read(cfg, "blend_valid.json", required=False)
@@ -92,7 +93,15 @@ def page_data(cfg: Config) -> dict:
             "models": [
                 {"name": name, "candidate": name == "candidate", **{k: metrics[k] for k in TEST_METRICS}}
                 for name, metrics in test["metrics"].items()
+                if name != "production"  # the version it replaced: in the report, not one of the page's baselines
             ],
+            # When the candidate gives a typical and an expected cost: each of the two on every metric.
+            "numbers": [
+                {"name": name, **{k: metrics[k] for k in TEST_METRICS}}
+                for name, metrics in test.get("candidate_numbers", {}).items()
+            ],
+            # The model against a plain average, on the totals of each month for groups of different sizes.
+            "skill": skill["rows"],
         },
         "monitor": {
             "version": monitor["version"],

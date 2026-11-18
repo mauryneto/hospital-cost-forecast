@@ -7,7 +7,7 @@ import pytest
 
 from costmodel import features as F
 from costmodel.baselines import GlobalMean
-from costmodel.candidate import CostModel
+from costmodel.candidate import EXPECTED, TYPICAL, CostModel, CostPair, predict_both
 from costmodel.synthetic import generate
 
 
@@ -61,6 +61,37 @@ def test_feature_importance_names_every_feature(data):
     imp = model.feature_importance()
     assert set(imp.index) == set(model.columns) == set(F.FEATURES) - {"admission_period"}
     assert imp.index[0] in {"requested_procedure", "procedure_prefix2", "procedure_prefix4", "diagnosis_icd10"}
+
+
+def test_pair_gives_a_typical_and_an_expected_cost(data):
+    X, y, X_valid, y_valid = data
+    pair = CostPair(CostModel("log_l2", 15, 0.1, 40, 5), CostModel("tweedie", 15, 0.1, 40, 5)).fit(X, y)
+    both = pair.predict_both(X_valid)
+    assert list(both.columns) == [TYPICAL, EXPECTED] and both.index.equals(X_valid.index)
+    np.testing.assert_array_equal(pair.predict(X_valid), both[TYPICAL])  # one number per admission: the typical one
+    np.testing.assert_array_equal(both[EXPECTED], pair.expected.predict(X_valid))
+    typical, expected = predict_both(pair, X_valid)
+    # What each is for: the typical cost is closer to each admission, the expected cost adds up closer to the total.
+    assert np.abs(typical - y_valid).mean() < np.abs(expected - y_valid).mean()
+    assert abs(expected.sum() / y_valid.sum() - 1) < abs(typical.sum() / y_valid.sum() - 1)
+    assert pair.name == "lightgbm_log_l2+lightgbm_tweedie"
+
+
+def test_one_setting_best_at_both_is_fitted_once(data):
+    X, y, X_valid, _ = data
+    model = CostModel("tweedie", 15, 0.1, 40, 5)
+    pair = pickle.loads(pickle.dumps(CostPair(model, model).fit(X, y)))
+    assert pair.expected is pair.typical and pair.name == "lightgbm_tweedie"
+    both = pair.predict_both(X_valid)
+    np.testing.assert_array_equal(both[TYPICAL], both[EXPECTED])
+
+
+def test_a_model_with_one_number_gives_it_for_both(data):
+    X, y, X_valid, _ = data
+    model = CostModel("tweedie", 15, 0.1, 40, 5).fit(X, y)
+    typical, expected = predict_both(model, X_valid)
+    np.testing.assert_array_equal(typical, model.predict(X_valid))
+    assert expected is typical
 
 
 def test_unknown_objective_is_rejected():

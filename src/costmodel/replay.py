@@ -7,10 +7,10 @@ that are mature by then (costs billed, see ``drift.known_through``) can be looke
 * ``rule``: retrain when the retrain rule fires (``drift.should_retrain``).
 * ``monthly``: try to retrain at the end of every month.
 
-A retrain uses only data known at that moment, with the production model's settings, on an expanding or a sliding
-window. Like any candidate, it must pass the gate before it is used: it is fitted without the last ``gate_months``
-mature months, compared with the model in use on those months, and, if it passes, refitted on everything known and put
-in use from the next month.
+A retrain uses only data known at that moment, with the production model's settings (both of them, when it gives a
+typical and an expected cost), on an expanding or a sliding window. Like any candidate, it must pass the gate before
+it is used: it is fitted without the last ``gate_months`` mature months, compared with the model in use on those
+months, and, if it passes, refitted on everything known and put in use from the next month.
 
 The gate months must be new to *both* models. So a retrain is tried only when at least one month beyond the gate months
 is newer than the data of the model in use; otherwise the candidate would learn nothing new, and the model in use would
@@ -33,18 +33,21 @@ import pandas as pd  # noqa: E402
 
 from costmodel import features as F  # noqa: E402
 from costmodel import registry  # noqa: E402
-from costmodel.candidate import CostModel  # noqa: E402
+from costmodel.candidate import CostModel, CostPair, predict_both  # noqa: E402
 from costmodel.config import Config  # noqa: E402
-from costmodel.drift import known_through, monthly_metrics, should_retrain  # noqa: E402
-from costmodel.evaluate import summary, to_markdown  # noqa: E402
+from costmodel.drift import known_through, pair_monthly_metrics, should_retrain  # noqa: E402
+from costmodel.evaluate import pair_summary, to_markdown  # noqa: E402
 from costmodel.gate import should_promote  # noqa: E402
 from costmodel.train import last_months, load_splits, window_label  # noqa: E402
 
 POLICIES = ("never", "rule", "monthly")
 
 
-def like(template: CostModel) -> CostModel:
+def like(template):
     """A fresh model with the same settings (and number of trees) as ``template``."""
+    if isinstance(template, CostPair):
+        typical = like(template.typical)
+        return CostPair(typical, typical if template.expected is template.typical else like(template.expected))
     return CostModel(
         template.objective,
         template.num_leaves,
@@ -66,16 +69,16 @@ def simulate(cfg: Config, df: pd.DataFrame, live: pd.DataFrame, start_model, sta
 
     current, current_ref, deployed = start_model, reference_mae, 0  # index of the first month served by `current`
     cutoff = start_cutoff  # last admission month in the data of the model in use
-    pred = np.empty(len(live))
+    typical, pred = np.empty(len(live)), np.empty(len(live))  # `pred` is the expected cost: the one that is added up
     events, waits = [], 0
     for i, month in enumerate(months):
         rows = (live_period == month).to_numpy()
-        pred[rows] = current.predict(X_live[rows])
+        typical[rows], pred[rows] = predict_both(current, X_live[rows])
         if policy == "never" or i == len(months) - 1:
             continue  # a model retrained after the last month would serve outside the window
         known = known_through(month, rules)
-        served = (live_period >= months[deployed]) & (live_period <= known)
-        mature = monthly_metrics(y_live[served.to_numpy()], pred[served.to_numpy()], live.loc[served, "period"])
+        served = ((live_period >= months[deployed]) & (live_period <= known)).to_numpy()
+        mature = pair_monthly_metrics(y_live[served], typical[served], pred[served], live.loc[served, "period"])
         if policy == "rule":
             fire, reason = should_retrain(mature, current_ref, rules, ceiling)
         else:
@@ -94,9 +97,10 @@ def simulate(cfg: Config, df: pd.DataFrame, live: pd.DataFrame, start_model, sta
             continue  # not enough known data yet to train and gate a candidate
         X_hold = F.build_features(hold)
         candidate = like(template).fit(F.build_features(fit_part), fit_part[F.TARGET])
-        cand_m = summary(hold[F.TARGET].to_numpy(), candidate.predict(X_hold), hold["period"])
-        cur_m = summary(hold[F.TARGET].to_numpy(), current.predict(X_hold), hold["period"])
-        promote, gate_reasons = should_promote(cand_m, {"model in use": cur_m}, cfg.gate)
+        y_hold = hold[F.TARGET].to_numpy()
+        cand_m = pair_summary(y_hold, *predict_both(candidate, X_hold), hold["period"])
+        cur_m = pair_summary(y_hold, *predict_both(current, X_hold), hold["period"])
+        promote, gate_reasons = should_promote(cand_m, {}, cfg.gate, ("model in use", cur_m))
         if promote:
             current = like(template).fit(F.build_features(data), data[F.TARGET])
             current_ref, deployed, cutoff = cand_m["mae"], i + 1, known
@@ -121,8 +125,8 @@ def simulate(cfg: Config, df: pd.DataFrame, live: pd.DataFrame, start_model, sta
     return {
         "policy": policy,
         "window": window_label(window) if policy != "never" else "-",
-        "overall": summary(y_live, pred, live["period"]),
-        "monthly": monthly_metrics(y_live, pred, live["period"]),
+        "overall": pair_summary(y_live, typical, pred, live["period"]),
+        "monthly": pair_monthly_metrics(y_live, typical, pred, live["period"]),
         "attempts": len(events),
         "promotions": sum(e["promoted"] for e in events),
         "waits": waits,
@@ -137,7 +141,7 @@ def run(cfg: Config) -> list[dict]:
         raise RuntimeError(f"no evaluated '{registry.PRODUCTION}' model for {cfg.model_name}; run `costmodel evaluate`")
     production = registry.unwrap(registry.load(cfg, registry.PRODUCTION))
     template = production
-    if not isinstance(template, CostModel):  # a baseline is in production: retrain with the latest candidate's settings
+    if not isinstance(template, CostModel | CostPair):  # a baseline in production: retrain with the candidate's settings
         template = registry.unwrap(registry.load(cfg, registry.STAGING))
     unknown = set(cfg.replay.policies) - set(POLICIES)
     if unknown:

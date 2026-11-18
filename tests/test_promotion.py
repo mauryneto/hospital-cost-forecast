@@ -36,7 +36,7 @@ def test_promotion_then_challenger_must_beat_champion(cfg, monkeypatch):
 
     # Force the first decision, to exercise the promotion path regardless of how this synthetic sample turns out.
     real_gate = holdout.should_promote
-    monkeypatch.setattr(holdout, "should_promote", lambda cand, refs, rules: (True, ["forced for the test"]))
+    monkeypatch.setattr(holdout, "should_promote", lambda *args: (True, ["forced for the test"]))
     assert holdout.run(cfg) is True
     assert str(registry.version_for(cfg, registry.PRODUCTION).version) == v1
     assert registry.version_for(cfg, registry.PRODUCTION).tags["gate"] == "passed"
@@ -55,7 +55,7 @@ def test_promotion_then_challenger_must_beat_champion(cfg, monkeypatch):
 @pytest.mark.slow
 def test_failed_candidate_with_empty_production_puts_best_baseline_there(cfg, monkeypatch):
     train.run(cfg)
-    monkeypatch.setattr(holdout, "should_promote", lambda cand, refs, rules: (False, ["forced for the test"]))
+    monkeypatch.setattr(holdout, "should_promote", lambda *args: (False, ["forced for the test"]))
     assert holdout.run(cfg) is False
     prod = registry.version_for(cfg, registry.PRODUCTION)
     assert prod.tags["kind"] == "baseline"

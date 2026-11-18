@@ -2,10 +2,11 @@
 
 1. **Search.** Every combination of training window x objective x tree size x time feature in ``[train]`` is fitted on
    the training window and measured on the validation window, each as an MLflow run. The test window is not read here.
-2. **Choose.** Lowest validation MAE among the settings whose monthly-total error is within the gate's ceiling (the
-   gate would reject the others anyway); if none is, lowest MAE overall, and the gate will say no.
-3. **Refit** the chosen settings on training + validation (the most recent data the model can have before the test
-   year), with the number of trees found by early stopping, and register it in MLflow with alias ``staging``.
+2. **Choose two settings,** one for each number the model gives (see ``candidate.CostPair``). For the **typical
+   cost**: lowest validation MAE among the settings whose monthly-total error is within the gate's ceiling (if none
+   is, lowest MAE overall). For the **expected cost**: lowest error on the month's total. They can be the same.
+3. **Refit** both on training + validation (the most recent data the model can have before the test year), each with
+   the number of trees found by early stopping, and register them as one version in MLflow with alias ``staging``.
 
 Whether it goes to ``production`` is decided later, by ``costmodel evaluate`` (see ``holdout.py``).
 """
@@ -21,7 +22,7 @@ import pandas as pd
 
 from costmodel import features as F
 from costmodel import registry
-from costmodel.candidate import CostModel
+from costmodel.candidate import CostModel, CostPair
 from costmodel.config import Config
 from costmodel.evaluate import summary, to_markdown
 from costmodel.sources import load_table
@@ -96,6 +97,21 @@ def choose(results: pd.DataFrame, cfg: Config) -> pd.Series:
     return (eligible if len(eligible) else results).sort_values("mae").iloc[0]
 
 
+def choose_for_totals(results: pd.DataFrame) -> pd.Series:
+    """The setting for the expected cost: lowest error on the month's total (ties: lowest MAE)."""
+    return results.sort_values(["monthly_total_mape", "mae"]).iloc[0]
+
+
+def refit(cfg: Config, setting: pd.Series, known: pd.DataFrame) -> CostModel:
+    """One setting of the search, fitted on its window of ``known`` with the number of trees the search found."""
+    tc, months = cfg.train, int(setting["window_months"])
+    data = last_months(known, months)
+    model = CostModel(setting["objective"], int(setting["num_leaves"]), tc.learning_rate, int(setting["trees"]),
+                      tc.min_category_count, tc.seed, bool(setting["use_time"]))  # fmt: skip
+    print(f"refitting {model.name} ({window_label(months)}) on {len(data):,} admissions (train + valid)")
+    return model.fit(F.build_features(data), data[F.TARGET])
+
+
 def run(cfg: Config) -> str:
     """Returns the registered version number."""
     df = load_splits(cfg)
@@ -104,23 +120,18 @@ def run(cfg: Config) -> str:
     with mlflow.start_run(run_name="train") as parent:
         mlflow.set_tags({"step": "train", "dataset": cfg.name})
         results = search(cfg, train, valid)
-        best = choose(results, cfg)
-        tc = cfg.train
+        best, best_total = choose(results, cfg), choose_for_totals(results)
+        known = pd.concat([train, valid])
+        typical = refit(cfg, best, known)
+        expected = typical if best_total.name == best.name else refit(cfg, best_total, known)
+        model = CostPair(typical, expected)
         months = int(best["window_months"])
-        refit_data = last_months(pd.concat([train, valid]), months)
-        model = CostModel(
-            best["objective"],
-            int(best["num_leaves"]),
-            tc.learning_rate,
-            int(best["trees"]),
-            tc.min_category_count,
-            tc.seed,
-            bool(best["use_time"]),
-        )
-        print(f"refitting {model.name} ({window_label(months)}) on {len(refit_data):,} admissions (train + valid)")
-        model.fit(F.build_features(refit_data), refit_data[F.TARGET])
-        mlflow.log_params(model.params() | {"window_months": months, "n_train": len(refit_data)})
-        mlflow.log_metrics({f"valid_{k}": float(best[k]) for k in ("mae", "rmse", "bias_pct", "monthly_total_mape")})
+        refit_data = last_months(known, months)
+        mlflow.log_params(typical.params() | {"window_months": months, "n_train": len(refit_data)})
+        mlflow.log_params({f"expected_{k}": v for k, v in expected.params().items()})
+        mlflow.log_param("expected_window_months", int(best_total["window_months"]))
+        mlflow.log_metrics({f"valid_{k}": float(best[k]) for k in ("mae", "rmse")})
+        mlflow.log_metrics({f"valid_{k}": float(best_total[k]) for k in ("bias_pct", "monthly_total_mape")})
         version = registry.log_model(cfg, model, refit_data)
     registry.tag_version(
         cfg,
@@ -128,20 +139,28 @@ def run(cfg: Config) -> str:
         {
             "kind": "candidate",
             "model": model.name,
+            "typical_setting": setting_label(best),
+            "expected_setting": setting_label(best_total),
             "window_months": str(months),
             "fitted_on": f"{refit_data['admission_date'].min():%Y-%m-%d} to {refit_data['admission_date'].max():%Y-%m-%d}",
             "valid_mae": f"{best['mae']:.2f}",
-            "valid_monthly_total_mape": f"{best['monthly_total_mape']:.2f}",
+            "valid_monthly_total_mape": f"{best_total['monthly_total_mape']:.2f}",
             "train_run_id": parent.info.run_id,
         },
     )
     registry.set_alias(cfg, registry.STAGING, version)
-    write_report(cfg, results, best, model, version)
+    write_report(cfg, results, best, best_total, model, version)
     print(f"registered {cfg.model_name} version {version} as '{registry.STAGING}'")
     return version
 
 
-def write_report(cfg: Config, results: pd.DataFrame, best: pd.Series, model: CostModel, version: str) -> None:
+def gain_shares(model: CostModel) -> pd.Series:
+    importance = model.feature_importance()
+    return (100 * importance / importance.sum()).round(1).rename("share of gain (%)")
+
+
+def write_report(cfg: Config, results: pd.DataFrame, best: pd.Series, best_total: pd.Series, model: CostPair,
+                 version: str) -> None:  # fmt: skip
     out = cfg.reports_dir
     out.mkdir(parents=True, exist_ok=True)
     records = json.loads(results.to_json(orient="records"))
@@ -159,8 +178,7 @@ def write_report(cfg: Config, results: pd.DataFrame, best: pd.Series, model: Cos
         "monthly_total_mape",
     ]
     ceiling = cfg.gate.max_monthly_total_mape
-    importance = model.feature_importance()
-    importance = (100 * importance / importance.sum()).round(1).rename("share of gain (%)")
+    same = model.expected is model.typical
     lines = [
         f"# Candidate search on the validation window ({cfg.name})",
         "",
@@ -169,13 +187,27 @@ def write_report(cfg: Config, results: pd.DataFrame, best: pd.Series, model: Cos
         "",
         to_markdown(results[cols].sort_values("mae"), index=False),
         "",
-        f"**Chosen:** {best['objective']}, {int(best['num_leaves'])} leaves, {best['window']},"
+        f"**Chosen for the typical cost:** {best['objective']}, {int(best['num_leaves'])} leaves, {best['window']},"
         f" {'with' if best['use_time'] else 'without'} the time feature, {int(best['trees'])} trees"
         + (f" (lowest MAE among settings with monthly total error at most {ceiling:.0f}%)." if ceiling is not None else "."),
-        f"Refitted on training + validation and registered as `{cfg.model_name}` version {version}, alias `staging`.",
         "",
-        "## What the refitted model relies on",
+        "**Chosen for the expected cost:** "
+        + (
+            "the same setting (it also has the lowest error on the month's total)."
+            if same
+            else f"{best_total['objective']}, {int(best_total['num_leaves'])} leaves, {best_total['window']},"
+            f" {'with' if best_total['use_time'] else 'without'} the time feature, {int(best_total['trees'])} trees"
+            " (lowest error on the month's total)."
+        ),
         "",
-        importance.to_markdown(floatfmt=".1f"),
+        f"Refitted on training + validation and registered together as `{cfg.model_name}` version {version}, alias"
+        " `staging`.",
+        "",
+        "## What the refitted model relies on" + ("" if same else " (typical cost)"),
+        "",
+        gain_shares(model.typical).to_markdown(floatfmt=".1f"),
     ]
+    if not same:
+        expected_shares = gain_shares(model.expected).to_markdown(floatfmt=".1f")
+        lines += ["", "## What the refitted model relies on (expected cost)", "", expected_shares]
     (out / "train_valid.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
