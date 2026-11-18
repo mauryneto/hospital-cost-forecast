@@ -23,6 +23,11 @@ dependencies = [
 [project.scripts]
 costmodel = "costmodel.cli:main"
 
+[project.optional-dependencies]
+families = [
+    "catboost>=1.2.10",
+]
+
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",

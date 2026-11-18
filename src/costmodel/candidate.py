@@ -81,20 +81,8 @@ class CostModel:
         y = np.asarray(y, dtype=float)
         return np.log(y) if self.objective == "log_l2" else y
 
-    def fit(
-        self,
-        X: pd.DataFrame,
-        y,
-        X_valid: pd.DataFrame | None = None,
-        y_valid=None,
-        early_stopping_rounds: int | None = None,
-    ) -> CostModel:
-        """Fit on features from ``features.build_features``. With a validation set, stop when it stops improving."""
-        self.categories_ = {}
-        for col in F.CATEGORICAL:
-            counts = X[col].astype("string").value_counts()
-            self.categories_[col] = sorted(counts[counts >= self.min_category_count].index)
-        self.booster_ = lgb.LGBMRegressor(
+    def _booster(self) -> lgb.LGBMRegressor:
+        return lgb.LGBMRegressor(
             objective="regression" if self.objective == "log_l2" else self.objective,
             n_estimators=self.n_estimators,
             learning_rate=self.learning_rate,
@@ -110,6 +98,21 @@ class CostModel:
             force_row_wise=True,
             verbose=-1,
         )
+
+    def fit(
+        self,
+        X: pd.DataFrame,
+        y,
+        X_valid: pd.DataFrame | None = None,
+        y_valid=None,
+        early_stopping_rounds: int | None = None,
+    ) -> CostModel:
+        """Fit on features from ``features.build_features``. With a validation set, stop when it stops improving."""
+        self.categories_ = {}
+        for col in F.CATEGORICAL:
+            counts = X[col].astype("string").value_counts()
+            self.categories_[col] = sorted(counts[counts >= self.min_category_count].index)
+        self.booster_ = self._booster()
         Xe = self._encode(X)
         fit_kwargs = {}
         if X_valid is not None and early_stopping_rounds:

@@ -1,0 +1,57 @@
+[
+  {
+    "family": "LightGBM (gradient boosting)",
+    "setting": "log_l2, 255 leaves, expanding, with time; chosen among 16 settings",
+    "trees": 324,
+    "mae": 792.1481993509,
+    "rmse": 2931.1110499231,
+    "mae_top_decile": 5098.0182062039,
+    "bias_pct": -14.9849371321,
+    "monthly_total_mape": 14.9834520255,
+    "seconds": 75.3
+  },
+  {
+    "family": "random forest",
+    "setting": "on log(cost)",
+    "trees": 300,
+    "mae": 835.1480557422,
+    "rmse": 3075.8505355829,
+    "mae_top_decile": 5419.7043676554,
+    "bias_pct": -18.3480144059,
+    "monthly_total_mape": 18.3378840469,
+    "seconds": 220.4
+  },
+  {
+    "family": "random forest",
+    "setting": "on the cost",
+    "trees": 300,
+    "mae": 841.4300905537,
+    "rmse": 2879.1688154777,
+    "mae_top_decile": 4696.8310401878,
+    "bias_pct": -8.4768481577,
+    "monthly_total_mape": 9.0934378729,
+    "seconds": 150.2
+  },
+  {
+    "family": "CatBoost",
+    "setting": "log(cost), least squares",
+    "trees": 1000,
+    "mae": 838.6368385227,
+    "rmse": 3000.8260723196,
+    "mae_top_decile": 5334.3906562935,
+    "bias_pct": -15.7668839925,
+    "monthly_total_mape": 15.7629760025,
+    "seconds": 1806.1
+  },
+  {
+    "family": "CatBoost",
+    "setting": "Tweedie",
+    "trees": 999,
+    "mae": 837.1483353574,
+    "rmse": 2886.1957597959,
+    "mae_top_decile": 4896.7688482191,
+    "bias_pct": -11.208845188,
+    "monthly_total_mape": 11.2796126951,
+    "seconds": 2400.1
+  }
+]

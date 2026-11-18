@@ -31,6 +31,26 @@ the first source; a health plan can fill the same table with its own claims and 
 - Medians win per admission but miss the month's total by 40%, because SUS costs are skewed (the 10% most expensive
   admissions take 57% of the money). That is why the gate checks both metrics.
 
+**Why LightGBM: other model families on the validation year (2022).** Same training admissions, same inputs, same
+two metrics ([families_valid.md](reports/sihsus_rj/families_valid.md)):
+
+| Model family | Setting | MAE per admission (R$) | Error on the month's total | Time to fit |
+|---|---|---:|---:|---:|
+| **LightGBM (gradient boosting)** | least squares on log(cost); chosen among 16 settings | **792.15** | 14.98% | 75 s |
+| Random forest | on log(cost) | 835.15 | 18.34% | 220 s |
+| CatBoost | Tweedie | 837.15 | 11.28% | 40 min |
+| CatBoost | least squares on log(cost) | 838.64 | 15.76% | 30 min |
+| Random forest | on the cost | 841.43 | **9.09%** | 150 s |
+
+- No other family came close per admission: all four are 5–6% worse than LightGBM.
+- The error on the month's total follows what the model is fitted on more than the family. Models fitted on the cost
+  itself miss the total by less (9–11%) and each admission by more, and LightGBM does the same when given a Tweedie
+  objective with the same inputs (10.69% to 11.46% at an MAE of 800 to 811). The random forest on the cost has the lowest total error of all.
+- The comparison is not even: LightGBM's row is the best of 16 settings and each other family got two, and CatBoost
+  was still improving when it reached its limit of 1,000 trees. More tuning would narrow the gap; at 30 to 40 minutes
+  per fit against 75 seconds, it was not pursued.
+- Nothing was promoted from this comparison, and the test year was not looked at again.
+
 **Monitoring (2024, simulated production).** The model under-predicts the month's total by about 14% early in 2024
 and by 20–24% from July. The retrain rule fires at the end of September, as soon as the bad months have been billed.
 Input drift (PSI) stayed flat while the error jumped: the admissions looked the same, but the prices paid for them
@@ -98,6 +118,7 @@ docker compose up api
 | `costmodel replay` | What-if of the retraining policies over the monitoring months (slow: it retrains) |
 | `costmodel score --month 2024-03` | Batch: price a month of admissions with `production` |
 | `costmodel serve` | HTTP API: `POST /predict`, `GET /health` |
+| `costmodel families` | Compare other model families (random forest, CatBoost) with the chosen candidate on validation; CatBoost needs `uv sync --extra families` |
 | `costmodel site` | One static page with the results ([`docs/index.html`](docs/index.html)), built from the reports |
 | `costmodel run` | `data`, `train`, `evaluate`, `monitor`, in order, stopping at the first failure |
 | `costmodel validate file.csv` | Check a file against the data contract and list every problem |
@@ -194,9 +215,15 @@ Not done yet, in the order I would do them:
   an input.
 - **Other states,** to see how much of the model is specific to Rio de Janeiro.
 
+## How this was built
+
+The code was written with [Claude Code](https://claude.com/claude-code), an AI coding assistant, and every commit
+says so. The direction, the questions along the way and what stayed in were the author's.
+[DECISIONS.md](DECISIONS.md) lists the decisions that shaped the project and where each one came from.
+
 ## Project
 
-Python 3.12, uv, LightGBM, pandera, MLflow (SQLite), FastAPI; the results page is plain HTML, CSS and JavaScript. Lint with ruff, tests with pytest; CI runs a secret scan
+Python 3.12, uv, LightGBM, pandera, MLflow (SQLite), FastAPI (CatBoost is optional, for the family comparison); the results page is plain HTML, CSS and JavaScript. Lint with ruff, tests with pytest; CI runs a secret scan
 (gitleaks), lint and the test suite, both directly and inside the Docker image. Only public data is used; raw data is never
 committed, only its checksums.
 

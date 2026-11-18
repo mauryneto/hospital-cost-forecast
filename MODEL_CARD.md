@@ -13,6 +13,7 @@ Janeiro. It is the model currently in `production` in the MLflow registry. All n
 | Size | 255 leaves per tree, 324 trees (chosen by early stopping on 2022), learning rate 0.1, seed 42 |
 | Trained on | 3,606,614 admissions from 2018-01-01 to 2022-12-31 (training + validation windows, refitted after the search) |
 | Chosen by | Lowest MAE on 2022 among 16 settings whose monthly-total error stayed at or under 15% ([train_valid.md](reports/sihsus_rj/train_valid.md)) |
+| Alternatives tried | Random forest and CatBoost on the same 2022 validation year: 5–6% worse per admission ([families_valid.md](reports/sihsus_rj/families_valid.md)) |
 | Promoted by | The gate on 2023, scored once ([test.md](reports/sihsus_rj/test.md)) |
 | Packaging | MLflow pyfunc that takes the raw admission columns and builds its own features, so callers cannot build them differently |
 | Served by | `costmodel score` (a month in batch) and `costmodel serve` (`POST /predict`) |

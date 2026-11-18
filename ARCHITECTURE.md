@@ -55,6 +55,10 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
 4. **Train** (`costmodel train`). Every combination of training window (expanding, or only the last N months) x
    objective x tree size is fitted on the training window and measured on validation, each as an MLflow run. The best
    one is refitted on training + validation and registered in the MLflow model registry with the alias `staging`.
+   `costmodel families` is a side check, outside `costmodel run`: it fits other model families (random forest,
+   CatBoost) on the same windows and features and reports them next to the chosen setting. It reads only the
+   validation window and registers nothing; a family that won there would enter the search as a candidate and face
+   the same gate.
 5. **Gate** (`costmodel evaluate`). The `staging` model is loaded back from the registry and scored once on the test
    window, next to every baseline refitted on the same data and the current `production` model, if any. It is promoted
    (the `production` alias moves to it) only if it beats each of them on MAE by the configured margin **and** does not
