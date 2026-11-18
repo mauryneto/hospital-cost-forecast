@@ -1,0 +1,67 @@
+{
+  "setting": "log_l2, 255 leaves, expanding, with time",
+  "gap_months": 4,
+  "min_count": 20,
+  "rows": [
+    {
+      "variant": "the candidate as it is",
+      "window": "-",
+      "trees": 324,
+      "mae": 792.1481993509,
+      "rmse": 2931.1110499231,
+      "mae_top_decile": 5098.0182062039,
+      "bias_pct": -14.9849371321,
+      "monthly_total_mape": 14.9834520255,
+      "gain_share_pct": null,
+      "own_price_pct": null
+    },
+    {
+      "variant": "recent price as one more input",
+      "window": "last 3 billed months",
+      "trees": 327,
+      "mae": 803.940864878,
+      "rmse": 2951.8790454255,
+      "mae_top_decile": 5110.1647043226,
+      "bias_pct": -14.090942553,
+      "monthly_total_mape": 14.095488045,
+      "gain_share_pct": 58.7019663267,
+      "own_price_pct": 97.1839149124
+    },
+    {
+      "variant": "cost predicted relative to the recent price",
+      "window": "last 3 billed months",
+      "trees": 320,
+      "mae": 822.0046416099,
+      "rmse": 2996.4137399409,
+      "mae_top_decile": 5040.2248451383,
+      "bias_pct": -10.008942318,
+      "monthly_total_mape": 10.9199552454,
+      "gain_share_pct": 4.5270526485,
+      "own_price_pct": 97.1839149124
+    },
+    {
+      "variant": "recent price as one more input",
+      "window": "last 12 billed months",
+      "trees": 392,
+      "mae": 795.5614978205,
+      "rmse": 2935.3389188481,
+      "mae_top_decile": 5077.7746894627,
+      "bias_pct": -14.3473065498,
+      "monthly_total_mape": 14.3588214525,
+      "gain_share_pct": 61.2105770643,
+      "own_price_pct": 99.2368760216
+    },
+    {
+      "variant": "cost predicted relative to the recent price",
+      "window": "last 12 billed months",
+      "trees": 228,
+      "mae": 808.3870652804,
+      "rmse": 2950.6796768598,
+      "mae_top_decile": 5038.3597161932,
+      "bias_pct": -11.7292264285,
+      "monthly_total_mape": 11.7583723128,
+      "gain_share_pct": 3.0762407237,
+      "own_price_pct": 99.2368760216
+    }
+  ]
+}

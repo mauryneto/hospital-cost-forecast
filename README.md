@@ -70,6 +70,65 @@ month's total. The model in production was not changed. The gate asks a new mode
 the one in production, and this gain is mostly on the total, so as the rule stands the average would not replace it
 (see the roadmap).
 
+**One model for every admission, or one per group?** ([segments_valid.md](reports/sihsus_rj/segments_valid.md)). The
+chosen setting fitted once per group, with only that group's admissions, and measured on the whole validation year:
+
+| | Models | MAE per admission (R$) | Error on the month's total |
+|---|---:|---:|---:|
+| **One model for every admission** | 1 | 792.15 | **14.98%** |
+| One model per admission type (elective, urgent) | 2 | 791.17 | 15.28% |
+| One model per procedure group (clinical, surgical) | 2 | **777.98** | 16.49% |
+
+- Splitting by admission type changes nothing: the single model already separates elective from urgent.
+- Splitting by procedure group is 1.8% better per admission and 1.5 points worse on the month's total, above the
+  gate's 15% ceiling, so the single model stays. The gain is all in surgery: its own model has an MAE of R$ 575
+  against R$ 628 (8% better), while under-predicting surgery's total by 9% instead of 2%. For clinical admissions
+  the group's own model is slightly worse per admission (R$ 899 against R$ 886).
+- Groups with fewer than 20,000 training admissions (diagnostic procedures, transplants) kept the single model.
+
+**Telling the model what each procedure has been costing lately**
+([recent_price_valid.md](reports/sihsus_rj/recent_price_valid.md)). One more input: the mean paid for the same
+procedure over the last billed months. An admission only uses bills from four months before its own month or earlier,
+which is what is known by then. The model is not retrained along the year; only this input moves.
+
+| | Window | MAE per admission (R$) | Error on the month's total |
+|---|---|---:|---:|
+| **The candidate as it is** | | **792.15** | 14.98% |
+| Recent price as one more input | last 3 billed months | 803.94 | 14.10% |
+| Recent price as one more input | last 12 billed months | 795.56 | 14.36% |
+| Cost predicted relative to the recent price | last 3 billed months | 822.00 | **10.92%** |
+| Cost predicted relative to the recent price | last 12 billed months | 808.39 | 11.76% |
+
+It did not help per admission: every variant is worse there, by 0.4% to 3.8%. Predicting the cost relative to the
+recent price does cut the error on the month's total, to about the level LightGBM's Tweedie setting reaches without
+any new input (10.69% at an MAE of 807.86). So on a year of steady price rises it adds nothing that a different
+objective does not already give, and it would cost a table of recent prices kept up to date for serving. What it
+was built for, a sudden change like July 2024, is not in this year and was not tested.
+
+**How much billed history should each retrain use?**
+([base_window_valid.md](reports/sihsus_rj/base_window_valid.md)). Prices move every few months, so a short, recent
+history is a natural idea. Here the model is fitted again before every quarter of 2022, with only the admission months
+already billed by then, and prices that quarter. Every variant is retrained four times; only its history differs.
+
+| History given to each retrain | Admissions per fit | MAE per admission (R$) | Error on the month's total |
+|---|---:|---:|---:|
+| Last 4 billed months | 252,641 | 818.56 | 14.20% |
+| Last 12 billed months | 742,852 | 800.17 | 13.49% |
+| Last 24 billed months | 1,410,114 | 796.58 | 13.03% |
+| **Every billed month** | 2,917,840 | **788.65** | 13.39% |
+| Every billed month, recent months weigh more | 2,917,840 | 796.15 | **12.37%** |
+| *For reference: fitted once, never retrained* | | *792.15* | *14.98%* |
+
+- More history is better per admission, in every quarter. Four months is 3.8% worse than everything: with thousands of
+  procedure codes, a short history has too few examples of most of them.
+- A short history is not fresher either. Bills take months to arrive, so "the last 4 billed months" are already 4 to
+  7 months old when the quarter is priced.
+- Weighing recent months more gives the lowest error on the month's total, at 1% more per admission.
+- Retraining every quarter on everything billed beats the model fitted once on both metrics, which agrees with the
+  2024 replay.
+- This is SUS, where the price table moves slowly. A payer whose contract prices are renegotiated every quarter, and
+  whose bills arrive sooner, may get a different answer from the same command.
+
 **Monitoring (2024, simulated production).** The model under-predicts the month's total by about 14% early in 2024
 and by 20–24% from July. The retrain rule fires at the end of September, as soon as the bad months have been billed.
 Input drift (PSI) stayed flat while the error jumped: the admissions looked the same, but the prices paid for them
@@ -139,6 +198,9 @@ docker compose up api
 | `costmodel serve` | HTTP API: `POST /predict`, `GET /health` |
 | `costmodel families` | Compare other model families (random forest, CatBoost) with the chosen candidate on validation; CatBoost needs `uv sync --extra families` |
 | `costmodel blend` | Average the candidate's best per-admission and best month's-total settings, on validation |
+| `costmodel segments` | One model for every admission, or one per admission type / procedure group? On validation |
+| `costmodel recent-price` | Does the model do better when given each procedure's recent billed price? On validation |
+| `costmodel base-window` | How much billed history should each retrain use? Retrained every 3 months, on validation |
 | `costmodel site` | One static page with the results ([`docs/index.html`](docs/index.html)), built from the reports |
 | `costmodel run` | `data`, `train`, `evaluate`, `monitor`, in order, stopping at the first failure |
 | `costmodel validate file.csv` | Check a file against the data contract and list every problem |
@@ -230,6 +292,10 @@ Not done yet, in the order I would do them:
 - **The average of two settings as a candidate.** On validation it is a little better per admission and clearly
   better on the month's total. Serving it means packaging the two models as one and passing the gate, and the gate
   would have to weigh the month's total (the retraining policy item below) for the gain to count.
+- **When the money goes out.** The model prices an admission in the month the patient is admitted, but bills arrive
+  over the following months (about a third of the money in the same month, a third one month later, the rest after
+  that, the expensive bills last). Spreading each month's predicted cost over the months it will be billed in gives a
+  cash-flow forecast.
 - **Kinds of prediction side by side on the results page:** point estimate, interval and month's total, per model.
 - **The retraining policy, tested on a new period.** The 2024 replay suggests retraining whenever a new billed month
   exists, and a gate that weighs the month's total. Changing the rule on the same year that suggested it would be

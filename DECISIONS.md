@@ -21,6 +21,8 @@ and kept after review.
 | 7 | **Show the results on a page, not only in Markdown.** | Results should be visible without reading reports. | `costmodel site`: a [static page](https://mauryneto.github.io/hospital-cost-forecast/) generated from the reports. |
 | 8 | **Is one model family enough? Test others.** | The candidate had only been compared with simple rules and with other settings of itself. | `costmodel families`: random forest and CatBoost on the same split, features and metrics. Result: see below. |
 | 9 | **Make visible which decisions were the author's.** | The commits show that an assistant wrote the code. They do not show who decided what. | This file. |
+| 10 | **Everything is predicted by one model for all admissions. Would one model per kind of admission be better?** | A model fitted to one group could learn that group better; it could also lose what the groups have in common. Not obvious either way. | `costmodel segments`: the chosen setting fitted per admission type and per procedure group. Result: see below. |
+| 11 | **Prices change every quarter, so train on only the last 3 or 4 months and predict the next 3. And an admission is paid months later: is that accounted for?** | People who work in health care say a long history teaches old prices. And part of what is paid in a month comes from admissions of two or three months before. | `costmodel base-window`: retrained before every quarter with only the months already billed, with histories of 4, 12 and 24 months and all of them. Result: see below. The billing delay was measured again on the data; a cash-flow forecast went to the roadmap. |
 
 ## Fixed in the brief, before any code
 
@@ -80,3 +82,53 @@ with the Tweedie setting that has the lowest error on the month's total
 792.15 per admission, and 12.58% against 14.98% on the month's total. The model in production was not changed. The
 gain per admission (0.6%) is below the 2% the gate asks, so whether the average replaces it depends on the open item
 above: how much the gate should weigh the month's total.
+
+## Result of decision 10
+
+On the same validation year ([segments_valid.md](reports/sihsus_rj/segments_valid.md)):
+
+| | Models | MAE per admission (R$) | Error on the month's total |
+|---|---:|---:|---:|
+| **One model for every admission** | 1 | 792.15 | **14.98%** |
+| One model per admission type | 2 | 791.17 | 15.28% |
+| One model per procedure group | 2 | **777.98** | 16.49% |
+
+The single model stays. By admission type nothing changes. By procedure group the error per admission falls 1.8%,
+all of it in surgery (R$ 575 against R$ 628), and the error on the month's total rises above the gate's ceiling.
+It is the same trade-off for the third time: what helps each admission does not help the total. Surgery with a
+model of its own is the lead worth following, once the gate question is settled.
+
+## Result of decision 11
+
+On the same validation year, retraining before every quarter with only what was already billed
+([base_window_valid.md](reports/sihsus_rj/base_window_valid.md)):
+
+| History given to each retrain | MAE per admission (R$) | Error on the month's total |
+|---|---:|---:|
+| Last 4 billed months | 818.56 | 14.20% |
+| Last 12 billed months | 800.17 | 13.49% |
+| Last 24 billed months | 796.58 | 13.03% |
+| **Every billed month** | **788.65** | 13.39% |
+| Every billed month, recent months weigh more | 796.15 | **12.37%** |
+
+On this data the short history loses: 3.8% worse per admission than using everything, in every quarter, and no better
+on the month's total. Two reasons. There are thousands of procedure codes and four months hold few examples of most
+of them. And because bills take months to arrive, the last four billed months are already 4 to 7 months old when the
+quarter is priced, so the short history is not much fresher than the long one. The author's second point is what
+explains the first.
+
+The idea is not dismissed for other data. SUS prices move slowly; a payer with quarterly contract prices and faster
+bills can run the same command and may get the opposite answer. Weighing recent months more, the middle ground the
+assistant added, gave the lowest error on the month's total.
+
+## Tried and not adopted: the recent price of each procedure as an input
+
+Asked what would improve the predictions most, the assistant bet on telling the model what each procedure has been
+costing lately, since the largest error measured is an outdated price level. The author asked whether a payer would
+really have that information (it would: it is computed from its own paid bills) and approved the test
+([recent_price_valid.md](reports/sihsus_rj/recent_price_valid.md)).
+
+The bet did not pay off on 2022. As one more input it made the error per admission slightly worse (795.56 to 803.94
+against 792.15). Predicting the cost relative to the recent price cut the error on the month's total to 10.92%, at
+3.8% more per admission, which is what the Tweedie setting already does without any new input. It was built for a
+sudden price change like July 2024; 2022 has none, so that part of the idea remains untested.

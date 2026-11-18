@@ -226,7 +226,7 @@ footer p { margin: 0 0 10px; }
     <div class="side">
       <div class="no">05</div>
       <h2>Other kinds of model</h2>
-      <p>Is this the right kind of model? Other families, and an average of two settings of the candidate, on the same admissions and inputs.</p>
+      <p>Is this the right kind of model? Other families, an average of two settings of the candidate, one model per group of admissions, the recent price of each procedure as an input, and shorter histories for each retrain, all on the same admissions.</p>
       <p>Measured on the validation window, where choices are made. The test window was not looked at again.</p>
     </div>
     <div class="main">
@@ -246,6 +246,30 @@ footer p { margin: 0 0 10px; }
           <h3>Averaging two settings of the candidate</h3>
           <p class="sub" id="blend-sub"></p>
           <div class="tablewrap" id="blend-table"></div>
+        </div>
+      </div>
+      <div id="seg-block">
+        <p class="finding" id="seg-finding"></p>
+        <div class="figure">
+          <h3>One model for every admission, or one per group</h3>
+          <p class="sub">The chosen setting fitted once on all admissions, and once per group with only that group's admissions. Measured on the whole validation window.</p>
+          <div class="tablewrap" id="seg-table"></div>
+        </div>
+      </div>
+      <div id="rp-block">
+        <p class="finding" id="rp-finding"></p>
+        <div class="figure">
+          <h3>Telling the model what each procedure has been costing lately</h3>
+          <p class="sub">One more input: the mean paid for the same procedure in the last billed months, using only bills already known at admission. The model is not retrained along the window; only this input moves.</p>
+          <div class="tablewrap" id="rp-table"></div>
+        </div>
+      </div>
+      <div id="bw-block">
+        <p class="finding" id="bw-finding"></p>
+        <div class="figure">
+          <h3>How much billed history each retrain should use</h3>
+          <p class="sub" id="bw-sub"></p>
+          <div class="tablewrap" id="bw-table"></div>
         </div>
       </div>
     </div>
@@ -554,7 +578,13 @@ footer p { margin: 0 0 10px; }
   var FAM = D.families || [], B = D.blend && D.blend.rows.length > 1 ? D.blend : null;
   if (FAM.length < 2) $("fam-block").style.display = "none";
   if (!B) $("blend-block").style.display = "none";
-  if (FAM.length < 2 && !B) $("s-families").style.display = "none";
+  var SEG = D.segments || [];
+  if (SEG.length < 2) $("seg-block").style.display = "none";
+  var RP = D.recent_price || [];
+  if (RP.length < 2) $("rp-block").style.display = "none";
+  var BW = (D.base_window && D.base_window.rows) || [];
+  if (BW.length < 3) $("bw-block").style.display = "none";
+  if (FAM.length < 2 && !B && SEG.length < 2 && RP.length < 2 && BW.length < 3) $("s-families").style.display = "none";
   if (FAM.length >= 2) {
     var chosen = FAM.filter(isCandidate)[0];
     var others = FAM.filter(function (r) { return !r.candidate; }).sort(function (a, b) { return a.mae - b.mae; });
@@ -587,6 +617,49 @@ footer p { margin: 0 0 10px; }
     $("blend-sub").textContent = "First: " + B.per_admission + " (the chosen setting). Second: " + B.monthly_total + " (lowest error on the month's total in the search). The share is the weight of the second in the average.";
     table($("blend-table"), ["Share of the second", "MAE", "Month's total error", "Bias", "MAE, top 10%"], B.rows.map(function (r) {
       return [share(r.weight) + (r === bestB && bestB !== alone ? "  ◂ best" : ""), fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
+    }));
+  }
+
+  if (SEG.length >= 2) {
+    var one = SEG[0], split = SEG.slice(1).sort(function (a, b) { return a.mae - b.mae; })[0];
+    var gainS = 100 * (1 - split.mae / one.mae);
+    $("seg-finding").innerHTML = gainS < 0.5 ? "Splitting the admissions into groups, each with its own model, <b>does not beat the single model</b> per admission." :
+      "<b>" + esc(split.scheme.charAt(0).toUpperCase() + split.scheme.slice(1)) + "</b> is <b>" + fmt(gainS, 1) + "% better per admission</b>" +
+      (split.monthly_total_mape > one.monthly_total_mape ? ", but worse on the month's total (" : " and better on the month's total (") +
+      pct(split.monthly_total_mape, 2) + " against " + pct(one.monthly_total_mape, 2) + ").";
+    table($("seg-table"), ["", "Models", "MAE", "Month's total error", "Bias", "MAE, top 10%"], SEG.map(function (r) {
+      return [r.scheme.charAt(0).toUpperCase() + r.scheme.slice(1), fmt(r.models, 0), fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
+    }));
+  }
+
+  if (RP.length >= 2) {
+    var asIs = RP[0], withPrice = RP.slice(1);
+    var rpName = function (r) { return r.variant + (r.window === "-" ? "" : ", " + r.window); };
+    var rpMae = withPrice.slice().sort(function (a, b) { return a.mae - b.mae; })[0];
+    var rpTotal = withPrice.slice().sort(function (a, b) { return a.monthly_total_mape - b.monthly_total_mape; })[0];
+    var more = function (r) { var d = 100 * (r.mae / asIs.mae - 1); return fmt(Math.abs(d), 1) + "% " + (d > 0 ? "more" : "less") + " per admission"; };
+    $("rp-finding").innerHTML = (rpMae.mae < asIs.mae ? "With the recent price the model is <b>better per admission</b> (" + esc(rpName(rpMae)) + ": " + more(rpMae) + "). " :
+      "The recent price <b>does not help per admission</b>: the closest variant misses by " + more(rpMae) + ". ") +
+      (rpTotal.monthly_total_mape < asIs.monthly_total_mape ? "On the month's total, <b>" + esc(rpName(rpTotal)) + "</b> goes from " + pct(asIs.monthly_total_mape, 2) + " to <b>" +
+        pct(rpTotal.monthly_total_mape, 2) + "</b>, at " + more(rpTotal) + "." : "It does not help the month's total either.");
+    table($("rp-table"), ["", "Window", "MAE", "Month's total error", "Bias", "MAE, top 10%"], RP.map(function (r) {
+      return [r.variant.charAt(0).toUpperCase() + r.variant.slice(1), r.window === "-" ? "–" : r.window, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
+    }));
+  }
+
+  if (BW.length >= 3) {
+    var once = BW[0], retrained = BW.slice(1);
+    var bwMae = retrained.slice().sort(function (a, b) { return a.mae - b.mae; });
+    var bwTotal = retrained.slice().sort(function (a, b) { return a.monthly_total_mape - b.monthly_total_mape; })[0];
+    var shortest = retrained.slice().sort(function (a, b) { return a.mean_rows - b.mean_rows; })[0];
+    var cap = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
+    $("bw-finding").innerHTML = "Retrained before every block, <b>" + esc(bwMae[0].history) + "</b> has the lowest error per admission (" + CUR + fmt(bwMae[0].mae, 2) + ")" +
+      (bwTotal === bwMae[0] ? " and the lowest error on the month's total (" + pct(bwTotal.monthly_total_mape, 2) + "). " :
+        "; <b>" + esc(bwTotal.history) + "</b> has the lowest error on the month's total (" + pct(bwTotal.monthly_total_mape, 2) + "). ") +
+      (shortest === bwMae[0] ? "" : "The shortest history, " + esc(shortest.history) + ", misses by " + CUR + fmt(shortest.mae, 2) + " per admission and " + pct(shortest.monthly_total_mape, 2) + " on the month's total.");
+    $("bw-sub").textContent = "The model is fitted again before every block of " + D.base_window.horizon + " months, with only the admission months already billed by then, and prices that block. Only the history it is given differs. The first row is fitted once and never retrained.";
+    table($("bw-table"), ["History given to each retrain", "Retrains", "Admissions per fit", "MAE", "Month's total error", "Bias", "MAE, top 10%"], BW.map(function (r) {
+      return [cap(r.history), fmt(r.retrains, 0), r.mean_rows == null ? "–" : fmt(r.mean_rows, 0), fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
     }));
   }
 

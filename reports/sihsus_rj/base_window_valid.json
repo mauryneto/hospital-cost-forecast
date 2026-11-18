@@ -1,0 +1,186 @@
+{
+  "setting": "log_l2, 255 leaves, expanding, with time",
+  "horizon": 3,
+  "gap_months": 4,
+  "half_life": 12,
+  "rows": [
+    {
+      "history": "the candidate as it is (fitted once, not retrained)",
+      "retrains": 0,
+      "mean_rows": null,
+      "mean_trees": 324.0,
+      "mae": 792.1481993509,
+      "rmse": 2931.1110499231,
+      "mae_top_decile": 5098.0182062039,
+      "bias_pct": -14.9849371321,
+      "monthly_total_mape": 14.9834520255
+    },
+    {
+      "history": "last 4 billed months",
+      "retrains": 4,
+      "mean_rows": 252641.0,
+      "mean_trees": 90.75,
+      "mae": 818.5605080135,
+      "rmse": 2985.5404044352,
+      "mae_top_decile": 5131.2605649819,
+      "bias_pct": -14.1866820876,
+      "monthly_total_mape": 14.198773725
+    },
+    {
+      "history": "last 12 billed months",
+      "retrains": 4,
+      "mean_rows": 742852.5,
+      "mean_trees": 141.25,
+      "mae": 800.1743123832,
+      "rmse": 2916.8643359529,
+      "mae_top_decile": 5037.2435246793,
+      "bias_pct": -13.4683773815,
+      "monthly_total_mape": 13.4949102704
+    },
+    {
+      "history": "last 24 billed months",
+      "retrains": 4,
+      "mean_rows": 1410114.5,
+      "mean_trees": 190.0,
+      "mae": 796.576377402,
+      "rmse": 2910.5849555045,
+      "mae_top_decile": 5010.2864927547,
+      "bias_pct": -13.0085404696,
+      "monthly_total_mape": 13.0267940149
+    },
+    {
+      "history": "every billed month",
+      "retrains": 4,
+      "mean_rows": 2917840.0,
+      "mean_trees": 294.0,
+      "mae": 788.6485406318,
+      "rmse": 2896.874318456,
+      "mae_top_decile": 4988.9243292608,
+      "bias_pct": -13.3736827741,
+      "monthly_total_mape": 13.3945616821
+    },
+    {
+      "history": "every billed month, recent months weigh more",
+      "retrains": 4,
+      "mean_rows": 2917840.0,
+      "mean_trees": 154.5,
+      "mae": 796.153430614,
+      "rmse": 2901.5888987293,
+      "mae_top_decile": 4983.8815513521,
+      "bias_pct": -12.3504805832,
+      "monthly_total_mape": 12.3718268299
+    }
+  ],
+  "blocks": {
+    "last 4 billed months": [
+      {
+        "block": "2022-01 to 2022-03",
+        "mae": 867.0508075175845,
+        "total_error_pct": -11.756187921244111
+      },
+      {
+        "block": "2022-04 to 2022-06",
+        "mae": 800.0398461336883,
+        "total_error_pct": -17.012691390806797
+      },
+      {
+        "block": "2022-07 to 2022-09",
+        "mae": 811.9643038683149,
+        "total_error_pct": -14.838036881324784
+      },
+      {
+        "block": "2022-10 to 2022-12",
+        "mae": 797.7965860707096,
+        "total_error_pct": -13.161558073953229
+      }
+    ],
+    "last 12 billed months": [
+      {
+        "block": "2022-01 to 2022-03",
+        "mae": 847.0397051707859,
+        "total_error_pct": -11.211442921017372
+      },
+      {
+        "block": "2022-04 to 2022-06",
+        "mae": 778.6865127954059,
+        "total_error_pct": -16.099654900154082
+      },
+      {
+        "block": "2022-07 to 2022-09",
+        "mae": 795.873759299437,
+        "total_error_pct": -13.093554408372526
+      },
+      {
+        "block": "2022-10 to 2022-12",
+        "mae": 781.5703598254825,
+        "total_error_pct": -13.537549854306251
+      }
+    ],
+    "last 24 billed months": [
+      {
+        "block": "2022-01 to 2022-03",
+        "mae": 843.0030231550536,
+        "total_error_pct": -11.36406890245835
+      },
+      {
+        "block": "2022-04 to 2022-06",
+        "mae": 774.6550319765835,
+        "total_error_pct": -14.85242255764096
+      },
+      {
+        "block": "2022-07 to 2022-09",
+        "mae": 790.2676138431364,
+        "total_error_pct": -13.046909071554968
+      },
+      {
+        "block": "2022-10 to 2022-12",
+        "mae": 780.9062675100881,
+        "total_error_pct": -12.804548396146343
+      }
+    ],
+    "every billed month": [
+      {
+        "block": "2022-01 to 2022-03",
+        "mae": 837.2263648682845,
+        "total_error_pct": -11.498819609547482
+      },
+      {
+        "block": "2022-04 to 2022-06",
+        "mae": 766.1391518857149,
+        "total_error_pct": -15.321051662123068
+      },
+      {
+        "block": "2022-07 to 2022-09",
+        "mae": 781.3257621103164,
+        "total_error_pct": -13.284553785049116
+      },
+      {
+        "block": "2022-10 to 2022-12",
+        "mae": 772.5689356276318,
+        "total_error_pct": -13.433554247175023
+      }
+    ],
+    "every billed month, recent months weigh more": [
+      {
+        "block": "2022-01 to 2022-03",
+        "mae": 843.5934813900335,
+        "total_error_pct": -10.736752972199167
+      },
+      {
+        "block": "2022-04 to 2022-06",
+        "mae": 774.2334809943534,
+        "total_error_pct": -14.541073510391572
+      },
+      {
+        "block": "2022-07 to 2022-09",
+        "mae": 790.6405563100474,
+        "total_error_pct": -12.022082242297506
+      },
+      {
+        "block": "2022-10 to 2022-12",
+        "mae": 778.6916325646368,
+        "total_error_pct": -12.157786698161043
+      }
+    ]
+  }
+}

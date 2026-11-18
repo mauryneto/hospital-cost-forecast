@@ -109,7 +109,8 @@ def test_page_embeds_the_replay_when_there_is_one(cfg):
 
 def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     data = embedded(site.run(cfg).read_text(encoding="utf-8"))
-    assert data["families"] == [] and data["blend"] is None  # both are optional
+    assert data["families"] == [] and data["blend"] is None and data["segments"] == []  # all optional
+    assert data["recent_price"] == [] and data["base_window"]["rows"] == []
 
     metrics = {"mae": 10.0, "rmse": 30.0, "bias_pct": -5.0, "mae_top_decile": 80.0, "monthly_total_mape": 6.0}
     families = [
@@ -120,6 +121,17 @@ def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
              "rows": [{"weight": w, **metrics} for w in (0.0, 0.5, 1.0)]}  # fmt: skip
     (cfg.reports_dir / "families_valid.json").write_text(json.dumps(families), encoding="utf-8")
     (cfg.reports_dir / "blend_valid.json").write_text(json.dumps(blend), encoding="utf-8")
+    splits = [("one", None, 1), ("per type", "t", 2)]
+    schemes = [{"scheme": name, "column": col, "models": n, **metrics} for name, col, n in splits]
+    segments = {"setting": "chosen", "min_segment_rows": 5, "schemes": schemes, "groups": {"t": [{"group": "urgent"}]}}
+    (cfg.reports_dir / "segments_valid.json").write_text(json.dumps(segments), encoding="utf-8")
+    variants = [("as is", "-"), ("input", "3")]
+    recent = {"rows": [{"variant": v, "window": w, "gain_share_pct": 9.0, **metrics} for v, w in variants]}
+    (cfg.reports_dir / "recent_price_valid.json").write_text(json.dumps(recent), encoding="utf-8")
+    histories = [("fitted once", 0, None), ("last 4 billed months", 4, 900.0), ("every billed month", 4, 9000.0)]
+    rows = [{"history": h, "retrains": r, "mean_rows": n, "mean_trees": 50.0, **metrics} for h, r, n in histories]
+    base = {"horizon": 3, "rows": rows, "blocks": {"last 4 billed months": [{"block": "2024-01 to 2024-03"}]}}
+    (cfg.reports_dir / "base_window_valid.json").write_text(json.dumps(base), encoding="utf-8")
     data = embedded(site.run(cfg).read_text(encoding="utf-8"))
     assert [(r["family"], r["candidate"]) for r in data["families"]] == [
         ("LightGBM (gradient boosting)", True),  # the first row is the setting the search chose
@@ -127,6 +139,11 @@ def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     ]
     assert "rmse" not in data["families"][0]  # only what the page shows is embedded
     assert data["blend"]["best_weight"] == 0.5 and [r["weight"] for r in data["blend"]["rows"]] == [0.0, 0.5, 1.0]
+    assert [(r["scheme"], r["models"]) for r in data["segments"]] == [("one", 1), ("per type", 2)]
+    assert "urgent" not in json.dumps(data["segments"])  # the per-group detail stays in the report
+    assert [(r["variant"], r["window"]) for r in data["recent_price"]] == [("as is", "-"), ("input", "3")]
+    assert data["base_window"]["horizon"] == 3
+    assert [(r["history"], r["mean_rows"]) for r in data["base_window"]["rows"]] == [(h, n) for h, _, n in histories]
 
 
 def test_embedded_text_cannot_close_the_script_block(cfg):

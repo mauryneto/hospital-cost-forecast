@@ -22,6 +22,9 @@ def main(argv: list[str] | None = None) -> None:
         ("replay", "what-if: replay the monitoring window under each retraining policy (slow: it retrains)"),
         ("families", "compare other model families (random forest, CatBoost) with the candidate on validation"),
         ("blend", "average the candidate's best per-admission and best month's-total settings, on validation"),
+        ("segments", "one model for every admission, or one per admission type / procedure group? on validation"),
+        ("recent-price", "does the model do better when given each procedure's recent billed price? on validation"),
+        ("base-window", "how much billed history should each retrain use? retrained every 3 months, on validation"),
         ("site", "one static page with the results (docs/index.html), built from the reports"),
         ("run", "the whole pipeline, in order: data, train, evaluate, monitor"),
     ]:
@@ -101,6 +104,18 @@ def main(argv: list[str] | None = None) -> None:
         run(cfg)
     elif args.command == "blend":
         from costmodel.blend import run
+
+        run(cfg)
+    elif args.command == "segments":
+        from costmodel.segments import run
+
+        run(cfg)
+    elif args.command == "recent-price":
+        from costmodel.recent_price import run
+
+        run(cfg)
+    elif args.command == "base-window":
+        from costmodel.base_window import run
 
         run(cfg)
     elif args.command == "site":

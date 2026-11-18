@@ -1,0 +1,116 @@
+{
+  "setting": "log_l2, 255 leaves, expanding, with time",
+  "min_segment_rows": 20000,
+  "schemes": [
+    {
+      "scheme": "one model for every admission",
+      "column": null,
+      "models": 1,
+      "mae": 792.1481993509,
+      "rmse": 2931.1110499231,
+      "mae_top_decile": 5098.0182062039,
+      "bias_pct": -14.9849371321,
+      "monthly_total_mape": 14.9834520255
+    },
+    {
+      "scheme": "one model per admission type",
+      "column": "admission_type",
+      "models": 2,
+      "mae": 791.1740878145,
+      "rmse": 2929.6291015417,
+      "mae_top_decile": 5079.7924706169,
+      "bias_pct": -15.290778925,
+      "monthly_total_mape": 15.2821836261
+    },
+    {
+      "scheme": "one model per procedure group",
+      "column": "procedure_prefix2",
+      "models": 2,
+      "mae": 777.9838168518,
+      "rmse": 2919.4662169217,
+      "mae_top_decile": 4997.0185474331,
+      "bias_pct": -16.4916955126,
+      "monthly_total_mape": 16.4905488812
+    }
+  ],
+  "groups": {
+    "admission_type": [
+      {
+        "group": "elective",
+        "n_train": 650185,
+        "n_valid": 201983,
+        "own_model": true,
+        "trees": 99,
+        "mae_single": 975.2838269748628,
+        "mae_by_group": 956.487574425537,
+        "total_error_pct_single": -11.58991923844626,
+        "total_error_pct_by_group": -13.356562131997203
+      },
+      {
+        "group": "other",
+        "n_train": 7935,
+        "n_valid": 2291,
+        "own_model": false,
+        "mae_single": 1010.4012175262056,
+        "mae_by_group": 1010.4012175262056,
+        "total_error_pct_single": -13.310720549535208,
+        "total_error_pct_by_group": -13.310720549535208
+      },
+      {
+        "group": "urgent",
+        "n_train": 2161728,
+        "n_valid": 582492,
+        "own_model": true,
+        "trees": 165,
+        "mae_single": 727.7862834120888,
+        "mae_by_group": 732.9882872879706,
+        "total_error_pct_single": -16.772370895966304,
+        "total_error_pct_by_group": -16.314921984670033
+      }
+    ],
+    "procedure_prefix2": [
+      {
+        "group": "02",
+        "n_train": 6461,
+        "n_valid": 1707,
+        "own_model": false,
+        "mae_single": 290.1324953329665,
+        "mae_by_group": 290.1324953329665,
+        "total_error_pct_single": -21.653856762467722,
+        "total_error_pct_by_group": -21.653856762467722
+      },
+      {
+        "group": "03",
+        "n_train": 1703308,
+        "n_valid": 456723,
+        "own_model": true,
+        "trees": 289,
+        "mae_single": 886.4294628538178,
+        "mae_by_group": 899.1519995694802,
+        "total_error_pct_single": -26.513027744983535,
+        "total_error_pct_by_group": -23.592926612022985
+      },
+      {
+        "group": "04",
+        "n_train": 1095884,
+        "n_valid": 323800,
+        "own_model": true,
+        "trees": 107,
+        "mae_single": 627.7209329055339,
+        "mae_by_group": 575.3591981999529,
+        "total_error_pct_single": -2.334922562046248,
+        "total_error_pct_by_group": -9.210759647425254
+      },
+      {
+        "group": "05",
+        "n_train": 14195,
+        "n_valid": 4536,
+        "own_model": false,
+        "mae_single": 3225.584744964978,
+        "mae_by_group": 3225.584744964978,
+        "total_error_pct_single": -2.6583988975496027,
+        "total_error_pct_by_group": -2.6583988975496027
+      }
+    ]
+  }
+}

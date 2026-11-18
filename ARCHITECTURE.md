@@ -59,7 +59,12 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    CatBoost) on the same windows and features and reports them next to the chosen setting. It reads only the
    validation window and registers nothing; a family that won there would enter the search as a candidate and face
    the same gate. `costmodel blend` is the same kind of check for an average of two settings from the search: the one
-   chosen for the error per admission and the one with the lowest error on the month's total.
+   chosen for the error per admission and the one with the lowest error on the month's total. `costmodel segments`
+   asks whether one model per group of admissions (by admission type, by procedure group) does better than one model
+   for all of them. `costmodel recent-price` gives the model the mean paid for each procedure in the last billed
+   months, built only from bills already known at admission (the monitor's billing delay decides which).
+   `costmodel base-window` retrains before every block of three months with histories of different lengths (the
+   last 4, 12 or 24 billed months, all of them, all of them with recent months weighing more).
 5. **Gate** (`costmodel evaluate`). The `staging` model is loaded back from the registry and scored once on the test
    window, next to every baseline refitted on the same data and the current `production` model, if any. It is promoted
    (the `production` alias moves to it) only if it beats each of them on MAE by the configured margin **and** does not
@@ -86,7 +91,7 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    field the contract does not know at admission (the cost, the length of stay) instead of ignoring it.
 9. **Show.** `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
    monitoring months, where prices changed, the retraining replay and, when they were run, the side comparisons
-   (other model families, the blend). The numbers are embedded when the page is
+   (other model families, the blend, one model per group, the recent price, the length of the history). The numbers are embedded when the page is
    generated, so it cannot disagree with the reports, and only aggregates are published.
 
 ## Leakage control is part of the contract

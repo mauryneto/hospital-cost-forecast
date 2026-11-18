@@ -2,7 +2,7 @@
 
 The page (``docs/index.html`` in the work folder, which GitHub Pages can serve) has no server behind it and loads no
 data: the numbers are embedded when it is generated, read from ``reports/<dataset>/test.json``, ``monitor.json`` and,
-where they exist, ``replay.json``, ``families_valid.json`` and ``blend_valid.json``. So the page cannot disagree with
+where they exist, ``replay.json`` and the side comparisons. So the page cannot disagree with
 the reports, and regenerating it after a new run is one command. Only aggregates are embedded (per model, per month,
 per procedure); never an admission.
 """
@@ -22,6 +22,9 @@ TEST_METRICS = ("mae", "monthly_total_mape", "bias_pct", "mae_top_decile")
 SHIFT_FIELDS = ("code", "n", "extra", "reference_median", "monthly_median")
 FAMILY_FIELDS = ("family", "setting", "trees", "seconds", *TEST_METRICS)
 BLEND_FIELDS = ("weight", *TEST_METRICS)
+SEGMENT_FIELDS = ("scheme", "models", *TEST_METRICS)
+RECENT_PRICE_FIELDS = ("variant", "window", *TEST_METRICS)
+BASE_WINDOW_FIELDS = ("history", "retrains", "mean_rows", *TEST_METRICS)
 
 
 def _read(cfg: Config, name: str, required: bool = True):
@@ -36,9 +39,12 @@ def _read(cfg: Config, name: str, required: bool = True):
 def page_data(cfg: Config) -> dict:
     """Everything the page shows, taken from the reports."""
     test, monitor, replay = _read(cfg, "test.json"), _read(cfg, "monitor.json"), _read(cfg, "replay.json", required=False)
-    # Optional side comparisons on the validation window (`costmodel families`, `costmodel blend`).
+    # Optional side comparisons on the validation window (`costmodel families`, `blend`, `segments`, `recent-price`).
+    recent = _read(cfg, "recent_price_valid.json", required=False) or {"rows": []}
+    base_window = _read(cfg, "base_window_valid.json", required=False) or {"rows": []}
     families = _read(cfg, "families_valid.json", required=False) or []
     blend = _read(cfg, "blend_valid.json", required=False)
+    segments = _read(cfg, "segments_valid.json", required=False) or {"schemes": []}
     if "price_shifts" not in monitor:
         raise RuntimeError("monitor.json has no price breakdown; run `costmodel monitor` again")
     from costmodel.monitor import shown_types
@@ -119,6 +125,15 @@ def page_data(cfg: Config) -> dict:
             "monthly_total": blend["monthly_total"],
             "best_weight": blend["best_weight"],
             "rows": [{k: row[k] for k in BLEND_FIELDS} for row in blend["rows"]],
+        },
+        # The first row is the single model; each other row is one way of splitting the admissions into groups.
+        "segments": [{k: row[k] for k in SEGMENT_FIELDS} for row in segments["schemes"]],
+        # The first row is the candidate as it is; each other row gives it the recent billed price in some way.
+        "recent_price": [{k: row[k] for k in RECENT_PRICE_FIELDS} for row in recent["rows"]],
+        # The first row is the candidate fitted once; each other row is retrained before every block of months.
+        "base_window": {
+            "horizon": base_window.get("horizon"),
+            "rows": [{k: row[k] for k in BASE_WINDOW_FIELDS} for row in base_window["rows"]],
         },
     }
 

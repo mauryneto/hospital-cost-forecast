@@ -106,8 +106,12 @@ class CostModel:
         X_valid: pd.DataFrame | None = None,
         y_valid=None,
         early_stopping_rounds: int | None = None,
+        sample_weight=None,
     ) -> CostModel:
-        """Fit on features from ``features.build_features``. With a validation set, stop when it stops improving."""
+        """Fit on features from ``features.build_features``. With a validation set, stop when it stops improving.
+
+        ``sample_weight`` makes some admissions count more than others (e.g. recent ones); the default is all equal.
+        """
         self.categories_ = {}
         for col in F.CATEGORICAL:
             counts = X[col].astype("string").value_counts()
@@ -121,12 +125,12 @@ class CostModel:
                 "eval_y": self._target(y_valid),
                 "callbacks": [lgb.early_stopping(early_stopping_rounds, verbose=False)],
             }
-        self.booster_.fit(Xe, self._target(y), **fit_kwargs)
+        self.booster_.fit(Xe, self._target(y), sample_weight=sample_weight, **fit_kwargs)
         self.best_iteration_ = int(self.booster_.best_iteration_ or self.booster_.n_estimators_)
         self.smearing_ = 1.0
         if self.objective == "log_l2":
             residuals = self._target(y) - self.booster_.predict(Xe, num_iteration=self.best_iteration_)
-            self.smearing_ = float(np.mean(np.exp(residuals)))
+            self.smearing_ = float(np.average(np.exp(residuals), weights=sample_weight))
         return self
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
