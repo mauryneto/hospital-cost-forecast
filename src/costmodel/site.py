@@ -36,6 +36,64 @@ RECENT_PRICE_FIELDS = ("variant", "window", *TEST_METRICS)
 BASE_WINDOW_FIELDS = ("history", "retrains", "mean_rows", *TEST_METRICS)
 
 
+GAP_KEYS = ("mae_gap", "mae_gap_low", "mae_gap_high", "total_gap", "total_gap_low", "total_gap_high")
+
+
+def fresh_data(report: dict) -> dict:
+    """What the page shows of a `costmodel fresh` report: the verdicts and the numbers behind each."""
+    two, worth, retrain = report["two_numbers"], report["worth_it"], report["retraining"]
+    short = ("mae", "monthly_total_mape", "bias_pct")
+
+    def months(rows: list[dict]) -> list[dict]:
+        return [{"period": m["period"], "total_error_pct": m["total_error_pct"], "mae": m["mae"]} for m in rows]
+
+    production = report.get("production")
+    return {
+        **{k: report[k] for k in ("window", "admissions", "known_through", "fit_rows", "draws")},
+        "model": {k: report["model"][k] for k in TEST_METRICS},
+        "monthly": months(report["monthly"]),
+        "two_numbers": {
+            "numbers": {name: {k: m[k] for k in short} for name, m in two["numbers"].items()},
+            "gap": two["expected_minus_typical"],
+            **{k: two[k] for k in ("per_admission", "monthly_total", "verdict")},
+        },
+        "worth_it": {
+            "best_baseline": worth["best_baseline"],
+            "baseline": {k: worth["baselines"][worth["best_baseline"]][k] for k in short},
+            **{k: worth[k] for k in ("gate_passes", "gain_at_every_level", "verdict")},
+            "skill": [{k: row[k] for k in ("level", "model", "global_mean", "gain_pct")} for row in worth["skill"]],
+        },
+        "ideas": [
+            {
+                **{k: idea[k] for k in ("idea", "detail", "scored_on", "expected_from_validation", "verdict")},
+                **{k: idea.get(k) for k in GAP_KEYS},
+                "ours": idea.get("ours") and {k: idea["ours"][k] for k in short},
+                "theirs": idea.get("theirs") and {k: idea["theirs"][k] for k in short},
+            }
+            for idea in report["ideas"]
+        ],
+        "retraining": {
+            "verdict": retrain["verdict"],
+            "policies": [
+                {
+                    "policy": r["policy"],
+                    "window": r["window"],
+                    "label": r["policy"] if r["policy"] == "never" else f"{r['policy']} ({r['window']})",
+                    "mae": r["overall"]["mae"],
+                    "monthly_total_mape": r["overall"]["monthly_total_mape"],
+                    "attempts": r["attempts"],
+                    "promotions": r["promotions"],
+                    "serves": [e["serves from"] for e in r["events"] if e["promoted"]],
+                    "monthly": [{"period": m["period"], "total_error_pct": m["total_error_pct"]} for m in r["monthly"]],
+                }
+                for r in retrain["policies"]
+            ],
+        },
+        "production": production
+        and {**{k: production[k] for k in ("fit_until", *short)}, "monthly": months(production["monthly"])},
+    }
+
+
 def _read(cfg: Config, name: str, required: bool = True):
     path = cfg.reports_dir / name
     if not path.exists():
@@ -54,6 +112,9 @@ def page_data(cfg: Config) -> dict:
     base_window = _read(cfg, "base_window_valid.json", required=False) or {"rows": []}
     families = _read(cfg, "families_valid.json", required=False) or []
     foundation = _read(cfg, "foundation_valid.json", required=False)
+    fresh = None  # `costmodel fresh`, run with another dataset's config
+    if cfg.site.fresh_dataset and (path := cfg.reports_dir.parent / cfg.site.fresh_dataset / "fresh_year.json").exists():
+        fresh = fresh_data(json.loads(path.read_text(encoding="utf-8")))
     blend = _read(cfg, "blend_valid.json", required=False)
     segments = _read(cfg, "segments_valid.json", required=False) or {"schemes": []}
     if "price_shifts" not in monitor:
@@ -140,6 +201,7 @@ def page_data(cfg: Config) -> dict:
         ],
         # The first row of the family comparison is always the setting the search chose.
         "families": [{"candidate": i == 0, **{k: row[k] for k in FAMILY_FIELDS}} for i, row in enumerate(families)],
+        "fresh": fresh,
         # `costmodel foundation`: the first row is the model in production; all rows share one sample of validation.
         "foundation": foundation
         and {

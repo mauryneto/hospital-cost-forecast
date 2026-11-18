@@ -1,0 +1,1278 @@
+{
+  "window": [
+    "2025-01",
+    "2025-12"
+  ],
+  "admissions": 919818,
+  "known_through": "2024-09",
+  "fit_rows": 5169905,
+  "draws": 1000,
+  "settings": {
+    "typical_cost": {
+      "objective": "log_l2",
+      "num_leaves": 255,
+      "trees": 324,
+      "use_time": true
+    },
+    "expected_cost": {
+      "objective": "tweedie",
+      "num_leaves": 63,
+      "trees": 303,
+      "use_time": true
+    }
+  },
+  "reference_mae": 919.7758828338,
+  "model": {
+    "mae": 1029.0026857211,
+    "rmse": 3089.85633835,
+    "mae_top_decile": 5785.7875970873,
+    "bias_pct": -1.7953048105,
+    "monthly_total_mape": 2.7852760454
+  },
+  "monthly": [
+    {
+      "period": "2025-01",
+      "n": 74293.0,
+      "actual": 132732268.87,
+      "predicted": 136540132.63672206,
+      "mae": 991.7526563205,
+      "total_error_pct": 2.8688304654
+    },
+    {
+      "period": "2025-02",
+      "n": 71335.0,
+      "actual": 124950738.46,
+      "predicted": 129087645.43662772,
+      "mae": 972.4364200775,
+      "total_error_pct": 3.3108303541
+    },
+    {
+      "period": "2025-03",
+      "n": 74448.0,
+      "actual": 135082123.68,
+      "predicted": 133465357.56839465,
+      "mae": 1001.4613477168,
+      "total_error_pct": -1.196876439
+    },
+    {
+      "period": "2025-04",
+      "n": 74431.0,
+      "actual": 135208094.75,
+      "predicted": 135109860.76798943,
+      "mae": 1029.1765158183,
+      "total_error_pct": -0.0726539208
+    },
+    {
+      "period": "2025-05",
+      "n": 80898.0,
+      "actual": 152274784.45000002,
+      "predicted": 148252823.85460582,
+      "mae": 1036.7638947694,
+      "total_error_pct": -2.6412518723
+    },
+    {
+      "period": "2025-06",
+      "n": 77318.0,
+      "actual": 144749476.01,
+      "predicted": 142842229.87302694,
+      "mae": 1050.5895891075,
+      "total_error_pct": -1.3176186813
+    },
+    {
+      "period": "2025-07",
+      "n": 79810.0,
+      "actual": 152806417.95999998,
+      "predicted": 149179642.5107025,
+      "mae": 1079.130540017,
+      "total_error_pct": -2.373444452
+    },
+    {
+      "period": "2025-08",
+      "n": 78617.0,
+      "actual": 145597220.85000002,
+      "predicted": 146159120.37301287,
+      "mae": 1066.881215903,
+      "total_error_pct": 0.3859273685
+    },
+    {
+      "period": "2025-09",
+      "n": 80003.0,
+      "actual": 149851421.04,
+      "predicted": 145724520.91586626,
+      "mae": 1014.3168634556,
+      "total_error_pct": -2.7539946538
+    },
+    {
+      "period": "2025-10",
+      "n": 79798.0,
+      "actual": 153859863.33,
+      "predicted": 146807741.36706662,
+      "mae": 1032.9070227742,
+      "total_error_pct": -4.5834708353
+    },
+    {
+      "period": "2025-11",
+      "n": 75045.0,
+      "actual": 142354376.09000003,
+      "predicted": 135372996.01223767,
+      "mae": 1039.5869405781,
+      "total_error_pct": -4.9042258268
+    },
+    {
+      "period": "2025-12",
+      "n": 73822.0,
+      "actual": 138956913.04,
+      "predicted": 129210214.37110683,
+      "mae": 1024.0388995628,
+      "total_error_pct": -7.0141876756
+    }
+  ],
+  "two_numbers": {
+    "numbers": {
+      "typical_cost": {
+        "mae": 1029.0026857211,
+        "rmse": 3089.85633835,
+        "median_ae": 245.4832406087,
+        "bias_pct": -5.4760305429,
+        "mae_top_decile": 5785.7875970873,
+        "monthly_total_mape": 5.3748971321
+      },
+      "expected_cost": {
+        "mae": 1049.4734827545,
+        "rmse": 3012.8579808925,
+        "median_ae": 274.3970762399,
+        "bias_pct": -1.7953048105,
+        "mae_top_decile": 5320.6657172125,
+        "monthly_total_mape": 2.7852760454
+      }
+    },
+    "expected_minus_typical": {
+      "mae_gap": 20.4707970334,
+      "mae_gap_low": 18.8896443189,
+      "mae_gap_high": 22.1513816597,
+      "total_gap": -2.5896210867,
+      "total_gap_low": -2.8527755161,
+      "total_gap_high": -2.2642022396
+    },
+    "per_admission": "confirmed",
+    "monthly_total": "confirmed",
+    "verdict": "confirmed"
+  },
+  "worth_it": {
+    "baselines": {
+      "global_mean": {
+        "mae": 1777.9748515496,
+        "rmse": 4360.1505421284,
+        "median_ae": 1034.9995129872,
+        "bias_pct": -15.5463560896,
+        "mae_top_decile": 9161.2538221219,
+        "monthly_total_mape": 15.4149506776
+      },
+      "median_by_proc": {
+        "mae": 1048.6795938544,
+        "rmse": 3619.8016272796,
+        "median_ae": 132.18,
+        "bias_pct": -45.4585048731,
+        "mae_top_decile": 7279.1310927681,
+        "monthly_total_mape": 45.4088574018
+      },
+      "median_by_proc_age_type": {
+        "mae": 1035.1788498377,
+        "rmse": 3588.4961710389,
+        "median_ae": 130.63,
+        "bias_pct": -44.3431725884,
+        "mae_top_decile": 7158.7806391468,
+        "monthly_total_mape": 44.2880038532
+      },
+      "mean_by_proc": {
+        "mae": 1177.2035272575,
+        "rmse": 3460.1053889512,
+        "median_ae": 345.3405490836,
+        "bias_pct": -17.7694502304,
+        "mae_top_decile": 6486.1130073872,
+        "monthly_total_mape": 17.6837251951
+      },
+      "mean_by_proc_age_type": {
+        "mae": 1156.6129014984,
+        "rmse": 3412.2717146678,
+        "median_ae": 311.7100865313,
+        "bias_pct": -16.547320898,
+        "mae_top_decile": 6284.2354792018,
+        "monthly_total_mape": 16.453794601
+      },
+      "log_linear": {
+        "mae": 1062.2125315416,
+        "rmse": 3364.6372985644,
+        "median_ae": 293.6420081539,
+        "bias_pct": -18.4133264632,
+        "mae_top_decile": 6422.572094157,
+        "monthly_total_mape": 18.3722898869
+      }
+    },
+    "best_baseline": "median_by_proc_age_type",
+    "gate_passes": false,
+    "gate_reasons": [
+      "MAE 1029.00 is only 0.6% below best baseline (median_by_proc_age_type) (1035.18); needs 2.0%",
+      "monthly total error 2.79% is not worse than best baseline (median_by_proc_age_type) (44.29%)",
+      "monthly total error 2.79% is within the 15.0% ceiling"
+    ],
+    "skill": [
+      {
+        "level": "all admissions, each month",
+        "what": "error on totals (%)",
+        "model": 2.7911549937,
+        "totals": 12,
+        "global_mean": 15.5463560896,
+        "mean_by_proc": 17.7694502304,
+        "gain_pct": 82.0462430062
+      },
+      {
+        "level": "admission type x month",
+        "what": "error on totals (%)",
+        "model": 4.2142016033,
+        "totals": 36,
+        "global_mean": 19.6624901847,
+        "mean_by_proc": 17.7694502304,
+        "gain_pct": 78.5673047327
+      },
+      {
+        "level": "procedure group x month",
+        "what": "error on totals (%)",
+        "model": 3.7727390143,
+        "totals": 48,
+        "global_mean": 22.8204003565,
+        "mean_by_proc": 17.8723441843,
+        "gain_pct": 83.4676913842
+      },
+      {
+        "level": "bed specialty x month",
+        "what": "error on totals (%)",
+        "model": 5.644458904,
+        "totals": 134,
+        "global_mean": 34.1233392546,
+        "mean_by_proc": 18.1180669324,
+        "gain_pct": 83.4586560773
+      },
+      {
+        "level": "diagnosis chapter x month",
+        "what": "error on totals (%)",
+        "model": 10.6066582091,
+        "totals": 255,
+        "global_mean": 41.3398370806,
+        "mean_by_proc": 18.6463754415,
+        "gain_pct": 74.3427672722
+      },
+      {
+        "level": "procedure subgroup x month",
+        "what": "error on totals (%)",
+        "model": 9.9220785726,
+        "totals": 359,
+        "global_mean": 44.2334657065,
+        "mean_by_proc": 18.2175805398,
+        "gain_pct": 77.5688420201
+      },
+      {
+        "level": "hospital x month",
+        "what": "error on totals (%)",
+        "model": 15.7655370006,
+        "totals": 2930,
+        "global_mean": 49.9994728352,
+        "mean_by_proc": 30.9510073465,
+        "gain_pct": 68.4685935539
+      },
+      {
+        "level": "each admission",
+        "what": "mean absolute error",
+        "model": 1029.0026857211,
+        "totals": 919818,
+        "global_mean": 1777.9748515496,
+        "mean_by_proc": 1177.2035272575,
+        "gain_pct": 42.1250146016
+      }
+    ],
+    "gain_at_every_level": true,
+    "verdict": "not confirmed"
+  },
+  "ideas": [
+    {
+      "idea": "recent months weigh more",
+      "detail": "half-life of 12 months",
+      "scored_on": 919818,
+      "ours": {
+        "mae": 1029.0026857211,
+        "rmse": 3089.85633835,
+        "mae_top_decile": 5785.7875970873,
+        "bias_pct": -1.7953048105,
+        "monthly_total_mape": 2.7852760454
+      },
+      "theirs": {
+        "mae": 1032.052826842,
+        "rmse": 3098.3177951761,
+        "bias_pct": -3.212741112,
+        "mae_top_decile": 5773.6600495608,
+        "monthly_total_mape": 3.6782513669
+      },
+      "mae_gap": 3.0501411209,
+      "mae_gap_low": 1.9436426413,
+      "mae_gap_high": 4.1128301135,
+      "total_gap": 0.8929753215,
+      "total_gap_low": 0.6390264606,
+      "total_gap_high": 0.9843245524,
+      "expected_from_validation": "better on the month's total",
+      "verdict": "contradicted"
+    },
+    {
+      "idea": "a typical-cost model of its own for one group",
+      "detail": "procedure_prefix2 = 04, 2,120,524 admissions to learn from, 418,060 scored",
+      "scored_on": 919818,
+      "ours": {
+        "mae": 1029.0026857211,
+        "rmse": 3089.85633835,
+        "mae_top_decile": 5785.7875970873,
+        "bias_pct": -1.7953048105,
+        "monthly_total_mape": 2.7852760454
+      },
+      "theirs": {
+        "mae": 988.3260272061,
+        "rmse": 3077.9378072279,
+        "bias_pct": -1.7953048105,
+        "mae_top_decile": 5660.3545401389,
+        "monthly_total_mape": 2.7852760454
+      },
+      "mae_gap": -40.676658515,
+      "mae_gap_low": -41.741494278,
+      "mae_gap_high": -39.5420783518,
+      "total_gap": 0.0,
+      "total_gap_low": 0.0,
+      "total_gap_high": 0.0,
+      "group_mae_single": 1144.9816093614,
+      "group_mae_own": 1055.4845929476,
+      "expected_from_validation": "better per admission",
+      "verdict": "confirmed"
+    },
+    {
+      "idea": "a foundation model (TabPFN-2) with code statistics",
+      "detail": "10,000 admissions of the last 12 known months",
+      "expected_from_validation": "better on the month's total, not worse per admission",
+      "scored_on": 30000,
+      "ours": {
+        "mae": 1027.8157666321,
+        "rmse": 3000.4476931164,
+        "mae_top_decile": 5704.2026181379,
+        "bias_pct": -0.9459006768,
+        "monthly_total_mape": 4.4172703966
+      },
+      "theirs": {
+        "mae": 965.0745586621,
+        "rmse": 3191.9523166331,
+        "bias_pct": 38.9247704043,
+        "mae_top_decile": 6039.9577219504,
+        "monthly_total_mape": 38.9208274859
+      },
+      "mae_gap": -62.74120797,
+      "mae_gap_low": -77.3012770584,
+      "mae_gap_high": -49.5006677152,
+      "total_gap": 34.5035570893,
+      "total_gap_low": 30.9290364271,
+      "total_gap_high": 37.3698706051,
+      "verdict": "contradicted"
+    }
+  ],
+  "retraining": {
+    "policies": [
+      {
+        "policy": "never",
+        "window": "-",
+        "overall": {
+          "mae": 1029.0026857211,
+          "rmse": 3089.85633835,
+          "median_ae": 245.4832406087,
+          "bias_pct": -1.7953048105,
+          "mae_top_decile": 5785.7875970873,
+          "monthly_total_mape": 2.7852760454
+        },
+        "monthly": [
+          {
+            "period": "2025-01",
+            "n": 74293.0,
+            "actual": 132732268.87,
+            "predicted": 136540132.63672206,
+            "mae": 991.7526563205,
+            "total_error_pct": 2.8688304654
+          },
+          {
+            "period": "2025-02",
+            "n": 71335.0,
+            "actual": 124950738.46,
+            "predicted": 129087645.43662772,
+            "mae": 972.4364200775,
+            "total_error_pct": 3.3108303541
+          },
+          {
+            "period": "2025-03",
+            "n": 74448.0,
+            "actual": 135082123.68,
+            "predicted": 133465357.56839465,
+            "mae": 1001.4613477168,
+            "total_error_pct": -1.196876439
+          },
+          {
+            "period": "2025-04",
+            "n": 74431.0,
+            "actual": 135208094.75,
+            "predicted": 135109860.76798943,
+            "mae": 1029.1765158183,
+            "total_error_pct": -0.0726539208
+          },
+          {
+            "period": "2025-05",
+            "n": 80898.0,
+            "actual": 152274784.45000002,
+            "predicted": 148252823.85460582,
+            "mae": 1036.7638947694,
+            "total_error_pct": -2.6412518723
+          },
+          {
+            "period": "2025-06",
+            "n": 77318.0,
+            "actual": 144749476.01,
+            "predicted": 142842229.87302694,
+            "mae": 1050.5895891075,
+            "total_error_pct": -1.3176186813
+          },
+          {
+            "period": "2025-07",
+            "n": 79810.0,
+            "actual": 152806417.95999998,
+            "predicted": 149179642.5107025,
+            "mae": 1079.130540017,
+            "total_error_pct": -2.373444452
+          },
+          {
+            "period": "2025-08",
+            "n": 78617.0,
+            "actual": 145597220.85000002,
+            "predicted": 146159120.37301287,
+            "mae": 1066.881215903,
+            "total_error_pct": 0.3859273685
+          },
+          {
+            "period": "2025-09",
+            "n": 80003.0,
+            "actual": 149851421.04,
+            "predicted": 145724520.91586626,
+            "mae": 1014.3168634556,
+            "total_error_pct": -2.7539946538
+          },
+          {
+            "period": "2025-10",
+            "n": 79798.0,
+            "actual": 153859863.33,
+            "predicted": 146807741.36706662,
+            "mae": 1032.9070227742,
+            "total_error_pct": -4.5834708353
+          },
+          {
+            "period": "2025-11",
+            "n": 75045.0,
+            "actual": 142354376.09000003,
+            "predicted": 135372996.01223767,
+            "mae": 1039.5869405781,
+            "total_error_pct": -4.9042258268
+          },
+          {
+            "period": "2025-12",
+            "n": 73822.0,
+            "actual": 138956913.04,
+            "predicted": 129210214.37110683,
+            "mae": 1024.0388995628,
+            "total_error_pct": -7.0141876756
+          }
+        ],
+        "attempts": 0,
+        "promotions": 0,
+        "waits": 0,
+        "events": []
+      },
+      {
+        "policy": "rule",
+        "window": "expanding",
+        "overall": {
+          "mae": 1029.0026857211,
+          "rmse": 3089.85633835,
+          "median_ae": 245.4832406087,
+          "bias_pct": -1.7953048105,
+          "mae_top_decile": 5785.7875970873,
+          "monthly_total_mape": 2.7852760454
+        },
+        "monthly": [
+          {
+            "period": "2025-01",
+            "n": 74293.0,
+            "actual": 132732268.87,
+            "predicted": 136540132.63672206,
+            "mae": 991.7526563205,
+            "total_error_pct": 2.8688304654
+          },
+          {
+            "period": "2025-02",
+            "n": 71335.0,
+            "actual": 124950738.46,
+            "predicted": 129087645.43662772,
+            "mae": 972.4364200775,
+            "total_error_pct": 3.3108303541
+          },
+          {
+            "period": "2025-03",
+            "n": 74448.0,
+            "actual": 135082123.68,
+            "predicted": 133465357.56839465,
+            "mae": 1001.4613477168,
+            "total_error_pct": -1.196876439
+          },
+          {
+            "period": "2025-04",
+            "n": 74431.0,
+            "actual": 135208094.75,
+            "predicted": 135109860.76798943,
+            "mae": 1029.1765158183,
+            "total_error_pct": -0.0726539208
+          },
+          {
+            "period": "2025-05",
+            "n": 80898.0,
+            "actual": 152274784.45000002,
+            "predicted": 148252823.85460582,
+            "mae": 1036.7638947694,
+            "total_error_pct": -2.6412518723
+          },
+          {
+            "period": "2025-06",
+            "n": 77318.0,
+            "actual": 144749476.01,
+            "predicted": 142842229.87302694,
+            "mae": 1050.5895891075,
+            "total_error_pct": -1.3176186813
+          },
+          {
+            "period": "2025-07",
+            "n": 79810.0,
+            "actual": 152806417.95999998,
+            "predicted": 149179642.5107025,
+            "mae": 1079.130540017,
+            "total_error_pct": -2.373444452
+          },
+          {
+            "period": "2025-08",
+            "n": 78617.0,
+            "actual": 145597220.85000002,
+            "predicted": 146159120.37301287,
+            "mae": 1066.881215903,
+            "total_error_pct": 0.3859273685
+          },
+          {
+            "period": "2025-09",
+            "n": 80003.0,
+            "actual": 149851421.04,
+            "predicted": 145724520.91586626,
+            "mae": 1014.3168634556,
+            "total_error_pct": -2.7539946538
+          },
+          {
+            "period": "2025-10",
+            "n": 79798.0,
+            "actual": 153859863.33,
+            "predicted": 146807741.36706662,
+            "mae": 1032.9070227742,
+            "total_error_pct": -4.5834708353
+          },
+          {
+            "period": "2025-11",
+            "n": 75045.0,
+            "actual": 142354376.09000003,
+            "predicted": 135372996.01223767,
+            "mae": 1039.5869405781,
+            "total_error_pct": -4.9042258268
+          },
+          {
+            "period": "2025-12",
+            "n": 73822.0,
+            "actual": 138956913.04,
+            "predicted": 129210214.37110683,
+            "mae": 1024.0388995628,
+            "total_error_pct": -7.0141876756
+          }
+        ],
+        "attempts": 4,
+        "promotions": 0,
+        "waits": 0,
+        "events": [
+          {
+            "decided": "2025-08",
+            "why": "2 months in a row out of bounds (2025-04: MAE 1029.18 > 1011.75; 2025-05: MAE 1036.76 > 1011.75)",
+            "data through": "2025-05",
+            "candidate MAE": 907.2865476908,
+            "in-use MAE": 1033.1281525531,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 907.29 vs 1033.13 (+12.2%, 2.0% counts as better); monthly total error 5.32% vs 1.36% (-292.3%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.32% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-09",
+            "why": "2 months in a row out of bounds (2025-05: MAE 1036.76 > 1011.75; 2025-06: MAE 1050.59 > 1011.75)",
+            "data through": "2025-06",
+            "candidate MAE": 916.8658285586,
+            "in-use MAE": 1043.5203229109,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 916.87 vs 1043.52 (+12.1%, 2.0% counts as better); monthly total error 5.89% vs 1.98% (-197.4%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.89% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-10",
+            "why": "2 months in a row out of bounds (2025-06: MAE 1050.59 > 1011.75; 2025-07: MAE 1079.13 > 1011.75)",
+            "data through": "2025-07",
+            "candidate MAE": 962.4158923876,
+            "in-use MAE": 1065.0863897546,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 962.42 vs 1065.09 (+9.6%, 2.0% counts as better); monthly total error 2.18% vs 1.85% (-17.9%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 2.18% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-11",
+            "why": "2 months in a row out of bounds (2025-07: MAE 1079.13 > 1011.75; 2025-08: MAE 1066.88 > 1011.75)",
+            "data through": "2025-08",
+            "candidate MAE": 1006.7464656791,
+            "in-use MAE": 1073.051998393,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 1006.75 vs 1073.05 (+6.2%, 2.0% counts as better); monthly total error 1.43% vs 1.38% (-3.3%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 1.43% is within the 15.0% ceiling"
+          }
+        ]
+      },
+      {
+        "policy": "rule",
+        "window": "sliding 24 months",
+        "overall": {
+          "mae": 1029.0026857211,
+          "rmse": 3089.85633835,
+          "median_ae": 245.4832406087,
+          "bias_pct": -1.7953048105,
+          "mae_top_decile": 5785.7875970873,
+          "monthly_total_mape": 2.7852760454
+        },
+        "monthly": [
+          {
+            "period": "2025-01",
+            "n": 74293.0,
+            "actual": 132732268.87,
+            "predicted": 136540132.63672206,
+            "mae": 991.7526563205,
+            "total_error_pct": 2.8688304654
+          },
+          {
+            "period": "2025-02",
+            "n": 71335.0,
+            "actual": 124950738.46,
+            "predicted": 129087645.43662772,
+            "mae": 972.4364200775,
+            "total_error_pct": 3.3108303541
+          },
+          {
+            "period": "2025-03",
+            "n": 74448.0,
+            "actual": 135082123.68,
+            "predicted": 133465357.56839465,
+            "mae": 1001.4613477168,
+            "total_error_pct": -1.196876439
+          },
+          {
+            "period": "2025-04",
+            "n": 74431.0,
+            "actual": 135208094.75,
+            "predicted": 135109860.76798943,
+            "mae": 1029.1765158183,
+            "total_error_pct": -0.0726539208
+          },
+          {
+            "period": "2025-05",
+            "n": 80898.0,
+            "actual": 152274784.45000002,
+            "predicted": 148252823.85460582,
+            "mae": 1036.7638947694,
+            "total_error_pct": -2.6412518723
+          },
+          {
+            "period": "2025-06",
+            "n": 77318.0,
+            "actual": 144749476.01,
+            "predicted": 142842229.87302694,
+            "mae": 1050.5895891075,
+            "total_error_pct": -1.3176186813
+          },
+          {
+            "period": "2025-07",
+            "n": 79810.0,
+            "actual": 152806417.95999998,
+            "predicted": 149179642.5107025,
+            "mae": 1079.130540017,
+            "total_error_pct": -2.373444452
+          },
+          {
+            "period": "2025-08",
+            "n": 78617.0,
+            "actual": 145597220.85000002,
+            "predicted": 146159120.37301287,
+            "mae": 1066.881215903,
+            "total_error_pct": 0.3859273685
+          },
+          {
+            "period": "2025-09",
+            "n": 80003.0,
+            "actual": 149851421.04,
+            "predicted": 145724520.91586626,
+            "mae": 1014.3168634556,
+            "total_error_pct": -2.7539946538
+          },
+          {
+            "period": "2025-10",
+            "n": 79798.0,
+            "actual": 153859863.33,
+            "predicted": 146807741.36706662,
+            "mae": 1032.9070227742,
+            "total_error_pct": -4.5834708353
+          },
+          {
+            "period": "2025-11",
+            "n": 75045.0,
+            "actual": 142354376.09000003,
+            "predicted": 135372996.01223767,
+            "mae": 1039.5869405781,
+            "total_error_pct": -4.9042258268
+          },
+          {
+            "period": "2025-12",
+            "n": 73822.0,
+            "actual": 138956913.04,
+            "predicted": 129210214.37110683,
+            "mae": 1024.0388995628,
+            "total_error_pct": -7.0141876756
+          }
+        ],
+        "attempts": 4,
+        "promotions": 0,
+        "waits": 0,
+        "events": [
+          {
+            "decided": "2025-08",
+            "why": "2 months in a row out of bounds (2025-04: MAE 1029.18 > 1011.75; 2025-05: MAE 1036.76 > 1011.75)",
+            "data through": "2025-05",
+            "candidate MAE": 906.4493237622,
+            "in-use MAE": 1033.1281525531,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 906.45 vs 1033.13 (+12.3%, 2.0% counts as better); monthly total error 5.16% vs 1.36% (-279.9%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.16% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-09",
+            "why": "2 months in a row out of bounds (2025-05: MAE 1036.76 > 1011.75; 2025-06: MAE 1050.59 > 1011.75)",
+            "data through": "2025-06",
+            "candidate MAE": 913.8225931456,
+            "in-use MAE": 1043.5203229109,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 913.82 vs 1043.52 (+12.4%, 2.0% counts as better); monthly total error 5.53% vs 1.98% (-179.5%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.53% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-10",
+            "why": "2 months in a row out of bounds (2025-06: MAE 1050.59 > 1011.75; 2025-07: MAE 1079.13 > 1011.75)",
+            "data through": "2025-07",
+            "candidate MAE": 967.6951917414,
+            "in-use MAE": 1065.0863897546,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 967.70 vs 1065.09 (+9.1%, 2.0% counts as better); monthly total error 1.98% vs 1.85% (-7.2%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 1.98% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-11",
+            "why": "2 months in a row out of bounds (2025-07: MAE 1079.13 > 1011.75; 2025-08: MAE 1066.88 > 1011.75)",
+            "data through": "2025-08",
+            "candidate MAE": 1013.4768893031,
+            "in-use MAE": 1073.051998393,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 1013.48 vs 1073.05 (+5.6%, 2.0% counts as better); monthly total error 1.60% vs 1.38% (-16.0%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 1.60% is within the 15.0% ceiling"
+          }
+        ]
+      },
+      {
+        "policy": "monthly",
+        "window": "expanding",
+        "overall": {
+          "mae": 1039.3677423895,
+          "rmse": 3106.3085991379,
+          "median_ae": 244.009444153,
+          "bias_pct": -0.9010524368,
+          "mae_top_decile": 5778.1041362989,
+          "monthly_total_mape": 2.1220642263
+        },
+        "monthly": [
+          {
+            "period": "2025-01",
+            "n": 74293.0,
+            "actual": 132732268.87,
+            "predicted": 136540132.63672206,
+            "mae": 991.7526563205,
+            "total_error_pct": 2.8688304654
+          },
+          {
+            "period": "2025-02",
+            "n": 71335.0,
+            "actual": 124950738.46,
+            "predicted": 129087645.43662772,
+            "mae": 972.4364200775,
+            "total_error_pct": 3.3108303541
+          },
+          {
+            "period": "2025-03",
+            "n": 74448.0,
+            "actual": 135082123.68,
+            "predicted": 133465357.56839465,
+            "mae": 1001.4613477168,
+            "total_error_pct": -1.196876439
+          },
+          {
+            "period": "2025-04",
+            "n": 74431.0,
+            "actual": 135208094.75,
+            "predicted": 136135333.07918447,
+            "mae": 1024.3900267249,
+            "total_error_pct": 0.6857861069
+          },
+          {
+            "period": "2025-05",
+            "n": 80898.0,
+            "actual": 152274784.45000002,
+            "predicted": 149322597.35939458,
+            "mae": 1043.0513573813,
+            "total_error_pct": -1.9387235393
+          },
+          {
+            "period": "2025-06",
+            "n": 77318.0,
+            "actual": 144749476.01,
+            "predicted": 144217049.63514397,
+            "mae": 1052.5969994703,
+            "total_error_pct": -0.3678261155
+          },
+          {
+            "period": "2025-07",
+            "n": 79810.0,
+            "actual": 152806417.95999998,
+            "predicted": 150099407.78546348,
+            "mae": 1081.5744482831,
+            "total_error_pct": -1.771529109
+          },
+          {
+            "period": "2025-08",
+            "n": 78617.0,
+            "actual": 145597220.85000002,
+            "predicted": 146968644.06016266,
+            "mae": 1066.4510449343,
+            "total_error_pct": 0.9419295246
+          },
+          {
+            "period": "2025-09",
+            "n": 80003.0,
+            "actual": 149851421.04,
+            "predicted": 148729133.80602106,
+            "mae": 1039.5801902066,
+            "total_error_pct": -0.7489333276
+          },
+          {
+            "period": "2025-10",
+            "n": 79798.0,
+            "actual": 153859863.33,
+            "predicted": 149480100.35198492,
+            "mae": 1064.2542931268,
+            "total_error_pct": -2.8465922712
+          },
+          {
+            "period": "2025-11",
+            "n": 75045.0,
+            "actual": 142354376.09000003,
+            "predicted": 137462025.73153186,
+            "mae": 1074.5813574575,
+            "total_error_pct": -3.436740403
+          },
+          {
+            "period": "2025-12",
+            "n": 73822.0,
+            "actual": 138956913.04,
+            "predicted": 131522477.71317887,
+            "mae": 1049.9986374116,
+            "total_error_pct": -5.3501730603
+          }
+        ],
+        "attempts": 7,
+        "promotions": 1,
+        "waits": 4,
+        "events": [
+          {
+            "decided": "2025-03",
+            "why": "scheduled",
+            "data through": "2024-12",
+            "candidate MAE": 921.1922454558,
+            "in-use MAE": 952.5999364989,
+            "promoted": true,
+            "serves from": "2025-04",
+            "gate": "against model in use: MAE 921.19 vs 952.60 (+3.3%, 2.0% counts as better); monthly total error 4.25% vs 5.28% (+19.4%, 10.0% counts as better); worth replacing model in use: better on MAE and monthly total, worse on neither; monthly total error 4.25% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-06",
+            "why": "scheduled",
+            "data through": "2025-03",
+            "candidate MAE": 865.1581974635,
+            "in-use MAE": 980.6288111154,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 865.16 vs 980.63 (+11.8%, 2.0% counts as better); monthly total error 4.20% vs 2.29% (-83.5%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 4.20% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-07",
+            "why": "scheduled",
+            "data through": "2025-04",
+            "candidate MAE": 886.1802999121,
+            "in-use MAE": 1009.7917308888,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 886.18 vs 1009.79 (+12.2%, 2.0% counts as better); monthly total error 5.48% vs 0.58% (-851.2%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.48% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-08",
+            "why": "scheduled",
+            "data through": "2025-05",
+            "candidate MAE": 907.2865476908,
+            "in-use MAE": 1034.1091669205,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 907.29 vs 1034.11 (+12.3%, 2.0% counts as better); monthly total error 5.32% vs 1.31% (-305.6%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.32% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-09",
+            "why": "scheduled",
+            "data through": "2025-06",
+            "candidate MAE": 916.8658285586,
+            "in-use MAE": 1047.7161823992,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 916.87 vs 1047.72 (+12.5%, 2.0% counts as better); monthly total error 5.89% vs 1.15% (-410.4%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.89% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-10",
+            "why": "scheduled",
+            "data through": "2025-07",
+            "candidate MAE": 962.4158923876,
+            "in-use MAE": 1067.3155104279,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 962.42 vs 1067.32 (+9.8%, 2.0% counts as better); monthly total error 2.18% vs 1.07% (-103.3%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 2.18% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-11",
+            "why": "scheduled",
+            "data through": "2025-08",
+            "candidate MAE": 1006.7464656791,
+            "in-use MAE": 1074.0696883553,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 1006.75 vs 1074.07 (+6.3%, 2.0% counts as better); monthly total error 1.43% vs 1.36% (-5.1%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 1.43% is within the 15.0% ceiling"
+          }
+        ]
+      },
+      {
+        "policy": "monthly",
+        "window": "sliding 24 months",
+        "overall": {
+          "mae": 1022.0275229471,
+          "rmse": 3081.2703707093,
+          "median_ae": 236.8620766614,
+          "bias_pct": -1.6826673889,
+          "mae_top_decile": 5674.9644787369,
+          "monthly_total_mape": 2.6162402648
+        },
+        "monthly": [
+          {
+            "period": "2025-01",
+            "n": 74293.0,
+            "actual": 132732268.87,
+            "predicted": 136540132.63672206,
+            "mae": 991.7526563205,
+            "total_error_pct": 2.8688304654
+          },
+          {
+            "period": "2025-02",
+            "n": 71335.0,
+            "actual": 124950738.46,
+            "predicted": 129087645.43662772,
+            "mae": 972.4364200775,
+            "total_error_pct": 3.3108303541
+          },
+          {
+            "period": "2025-03",
+            "n": 74448.0,
+            "actual": 135082123.68,
+            "predicted": 133465357.56839465,
+            "mae": 1001.4613477168,
+            "total_error_pct": -1.196876439
+          },
+          {
+            "period": "2025-04",
+            "n": 74431.0,
+            "actual": 135208094.75,
+            "predicted": 134558011.87037155,
+            "mae": 1023.5301557693,
+            "total_error_pct": -0.4808017455
+          },
+          {
+            "period": "2025-05",
+            "n": 80898.0,
+            "actual": 152274784.45000002,
+            "predicted": 146445422.78382465,
+            "mae": 1028.9589270328,
+            "total_error_pct": -3.828185794
+          },
+          {
+            "period": "2025-06",
+            "n": 77318.0,
+            "actual": 144749476.01,
+            "predicted": 141740116.55974108,
+            "mae": 1050.0566650235,
+            "total_error_pct": -2.0790123275
+          },
+          {
+            "period": "2025-07",
+            "n": 79810.0,
+            "actual": 152806417.95999998,
+            "predicted": 148901833.58497024,
+            "mae": 1093.1433323087,
+            "total_error_pct": -2.5552489399
+          },
+          {
+            "period": "2025-08",
+            "n": 78617.0,
+            "actual": 145597220.85000002,
+            "predicted": 145397470.41078573,
+            "mae": 1073.5008467369,
+            "total_error_pct": -0.1371938544
+          },
+          {
+            "period": "2025-09",
+            "n": 80003.0,
+            "actual": 149851421.04,
+            "predicted": 147225615.71857166,
+            "mae": 1037.5723429716,
+            "total_error_pct": -1.7522725532
+          },
+          {
+            "period": "2025-10",
+            "n": 79798.0,
+            "actual": 153859863.33,
+            "predicted": 149899444.55282918,
+            "mae": 1062.2752208186,
+            "total_error_pct": -2.574042828
+          },
+          {
+            "period": "2025-11",
+            "n": 75045.0,
+            "actual": 142354376.09000003,
+            "predicted": 136061166.3307829,
+            "mae": 964.9120356045,
+            "total_error_pct": -4.4208052693
+          },
+          {
+            "period": "2025-12",
+            "n": 73822.0,
+            "actual": 138956913.04,
+            "predicted": 130354392.63625866,
+            "mae": 948.697741575,
+            "total_error_pct": -6.190782607
+          }
+        ],
+        "attempts": 6,
+        "promotions": 2,
+        "waits": 5,
+        "events": [
+          {
+            "decided": "2025-03",
+            "why": "scheduled",
+            "data through": "2024-12",
+            "candidate MAE": 916.1276719915,
+            "in-use MAE": 952.5999364989,
+            "promoted": true,
+            "serves from": "2025-04",
+            "gate": "against model in use: MAE 916.13 vs 952.60 (+3.8%, 2.0% counts as better); monthly total error 4.08% vs 5.28% (+22.7%, 10.0% counts as better); worth replacing model in use: better on MAE and monthly total, worse on neither; monthly total error 4.08% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-06",
+            "why": "scheduled",
+            "data through": "2025-03",
+            "candidate MAE": 869.1265559371,
+            "in-use MAE": 986.9886497643,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 869.13 vs 986.99 (+11.9%, 2.0% counts as better); monthly total error 3.69% vs 2.23% (-65.4%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 3.69% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-07",
+            "why": "scheduled",
+            "data through": "2025-04",
+            "candidate MAE": 880.4395101775,
+            "in-use MAE": 1012.4101359847,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 880.44 vs 1012.41 (+13.0%, 2.0% counts as better); monthly total error 5.23% vs 1.13% (-363.0%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.23% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-08",
+            "why": "scheduled",
+            "data through": "2025-05",
+            "candidate MAE": 906.4493237622,
+            "in-use MAE": 1026.3575526989,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 906.45 vs 1026.36 (+11.7%, 2.0% counts as better); monthly total error 5.16% vs 2.15% (-139.3%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.16% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-09",
+            "why": "scheduled",
+            "data through": "2025-06",
+            "candidate MAE": 913.8225931456,
+            "in-use MAE": 1039.2691036645,
+            "promoted": false,
+            "serves from": "-",
+            "gate": "against model in use: MAE 913.82 vs 1039.27 (+12.1%, 2.0% counts as better); monthly total error 5.53% vs 2.95% (-87.3%, 10.0% counts as better); not worth replacing model in use: worse on monthly total; monthly total error 5.53% is within the 15.0% ceiling"
+          },
+          {
+            "decided": "2025-10",
+            "why": "scheduled",
+            "data through": "2025-07",
+            "candidate MAE": 967.6951917414,
+            "in-use MAE": 1071.9416690714,
+            "promoted": true,
+            "serves from": "2025-11",
+            "gate": "against model in use: MAE 967.70 vs 1071.94 (+9.7%, 2.0% counts as better); monthly total error 1.98% vs 2.32% (+14.6%, 10.0% counts as better); worth replacing model in use: better on MAE and monthly total, worse on neither; monthly total error 1.98% is within the 15.0% ceiling"
+          }
+        ]
+      }
+    ],
+    "verdict": "confirmed"
+  },
+  "production": {
+    "fit_until": "2022-12-31",
+    "rows": 3606614,
+    "mae": 960.2518683888,
+    "rmse": 3146.4299026189,
+    "bias_pct": -17.6731698274,
+    "mae_top_decile": 5880.6797915588,
+    "monthly_total_mape": 17.5477140116,
+    "monthly": [
+      {
+        "period": "2025-01",
+        "n": 74293.0,
+        "actual": 132732268.87,
+        "predicted": 116088554.30424114,
+        "mae": 876.8826801991,
+        "total_error_pct": -12.5393129398
+      },
+      {
+        "period": "2025-02",
+        "n": 71335.0,
+        "actual": 124950738.46,
+        "predicted": 108775263.27409056,
+        "mae": 867.9932713623,
+        "total_error_pct": -12.9454818637
+      },
+      {
+        "period": "2025-03",
+        "n": 74448.0,
+        "actual": 135082123.68,
+        "predicted": 113605600.02826709,
+        "mae": 920.1574583795,
+        "total_error_pct": -15.8988643846
+      },
+      {
+        "period": "2025-04",
+        "n": 74431.0,
+        "actual": 135208094.75,
+        "predicted": 113613479.75112118,
+        "mae": 925.260521217,
+        "total_error_pct": -15.9713921262
+      },
+      {
+        "period": "2025-05",
+        "n": 80898.0,
+        "actual": 152274784.45000002,
+        "predicted": 123598575.51382352,
+        "mae": 982.7814518659,
+        "total_error_pct": -18.8318827965
+      },
+      {
+        "period": "2025-06",
+        "n": 77318.0,
+        "actual": 144749476.01,
+        "predicted": 119273060.09978114,
+        "mae": 971.0466194953,
+        "total_error_pct": -17.6003510427
+      },
+      {
+        "period": "2025-07",
+        "n": 79810.0,
+        "actual": 152806417.95999998,
+        "predicted": 122947910.4112955,
+        "mae": 995.6946149056,
+        "total_error_pct": -19.5400873519
+      },
+      {
+        "period": "2025-08",
+        "n": 78617.0,
+        "actual": 145597220.85000002,
+        "predicted": 121477110.03256704,
+        "mae": 962.2289433328,
+        "total_error_pct": -16.5663263877
+      },
+      {
+        "period": "2025-09",
+        "n": 80003.0,
+        "actual": 149851421.04,
+        "predicted": 121511777.13079147,
+        "mae": 977.5038974949,
+        "total_error_pct": -18.911828605
+      },
+      {
+        "period": "2025-10",
+        "n": 79798.0,
+        "actual": 153859863.33,
+        "predicted": 122373996.48422556,
+        "mae": 1003.6723119566,
+        "total_error_pct": -20.46398987
+      },
+      {
+        "period": "2025-11",
+        "n": 75045.0,
+        "actual": 142354376.09000003,
+        "predicted": 113355462.43174525,
+        "mae": 1013.0052349287,
+        "total_error_pct": -20.3709323554
+      },
+      {
+        "period": "2025-12",
+        "n": 73822.0,
+        "actual": 138956913.04,
+        "predicted": 109870287.45523147,
+        "mae": 1013.3404405195,
+        "total_error_pct": -20.932118416
+      }
+    ]
+  },
+  "minutes": 46.0
+}

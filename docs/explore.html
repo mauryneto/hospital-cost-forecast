@@ -104,6 +104,10 @@ th { font: 500 11px var(--mono); letter-spacing: .04em; text-transform: uppercas
 th:first-child, td:first-child { text-align: left; padding-left: 0; }
 td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 td:first-child { font-family: var(--sans); }
+#fresh-verdicts td, #fresh-ideas td:first-child { white-space: normal; text-align: left; font-family: var(--sans); }
+#fresh-verdicts th { text-align: left; }
+#fresh-verdicts td:first-child, #fresh-ideas td:first-child { min-width: 22ch; }
+#fresh-verdicts td:nth-child(2) { white-space: nowrap; font-weight: 600; }
 #fo-table th:nth-child(2), #fo-table td:nth-child(2) { text-align: left; font-family: var(--sans); }
 #fo-table td:nth-child(-n+2) { white-space: normal; min-width: 20ch; }
 details { margin-top: 8px; }

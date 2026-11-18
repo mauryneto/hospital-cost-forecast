@@ -82,6 +82,8 @@ class SiteConfig:
     candidate_label: str = "LightGBM candidate"
     # Names for the codes shown on the explorer page: feature column -> code -> name (codes without one show as is).
     labels: dict = field(default_factory=dict)
+    # Name of the dataset whose `costmodel fresh` report the page shows as its last section ("" = none).
+    fresh_dataset: str = ""
 
 
 @dataclass(frozen=True)

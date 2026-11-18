@@ -60,8 +60,9 @@ recommended by the system and decided by a person, with nothing scheduled.
 - **The licence of the newer foundation models.** TabPFN-2.5 and later read up to a million rows instead of 10,000,
   the limit that hurt in the comparison. They need an account and a non-commercial licence that also covers the
   model's outputs. The author's call.
-- **A year not used for any choice.** The second of the model's two numbers, and the gate rule written for it, were
-  judged on years already seen (see "Two numbers instead of one"). 2025 is the check that is missing.
+- **What to do with the 2025 check** (see "Result of the 2025 check"): a typical cost that is a median, the gate's
+  rule for retrained models, and a typical-cost model of its own for surgery. The author's call.
+- **The next period not used for any choice.** 2025 has been read. The first half of 2026 is next, once billed.
 
 ## The 2025 check: written before looking
 
@@ -106,6 +107,45 @@ never retrained) is scored on 2025 too.
 - If a mistake in the code is found after the run, it is fixed, the run repeated and the fact stated here.
 - Nothing is adopted by this check. The model in production stays as it is; what to do with the result is the
   author's decision.
+
+## Result of the 2025 check
+
+Run once, on the code of commit `a04832a`, which was pushed before the run; the protocol is commit `82383d7`. It
+took 46 minutes. [The report](reports/sihsus_rj_2025/fresh_year.md) has every number; the model priced 919,818
+admissions with an error of R$ 1,029.00 per admission and 2.79% on the month's total.
+
+| | Verdict | |
+|---|---|---|
+| 1. The two numbers | Confirmed | Typical cost 1,029.00 against 1,049.47 per admission; expected cost 2.79% against 5.37% on the month's total |
+| 2. Still worth it | Not confirmed | A gain over a plain average at every level (42% to 83%), but per admission only 0.6% better than the best baseline, where the gate asks for 2% |
+| 3. Recent months weigh more | Contradicted | Worse on both metrics |
+| 3. A model of its own for surgery | Confirmed | 40.68 less per admission over all admissions; 1,055.48 against 1,144.98 on surgical admissions |
+| 3. TabPFN-2 with code statistics | Contradicted | Better per admission, 34.50 points worse on the month's total |
+| 4. Retraining every month | Confirmed | 2.12% on the month's total against 2.79% for never and for the rule |
+
+Three things the verdicts do not say by themselves, in the assistant's reading:
+
+- **Question 4 passed by a small margin and for an awkward reason.** The gate refused 18 of the 21 retrained
+  candidates, all of them 6% to 13% better per admission on the two months they were judged on, for being worse on
+  those months' total. So "by the rule" ended up identical to "never", and "every month" used a single retrained
+  model. The gate's rule against the model in use, written with the two numbers, had not been exercised on a fresh
+  period before; on this one it is too strict.
+- **The error per admission rewards predicting low.** A table of medians (44.29% off on the month's total) nearly
+  tied with the model per admission, and the model in production, never retrained since 2022 and 17.55% off on the
+  month's total, was closer to each admission (960.25) than the model fitted for 2025. The typical cost is the log
+  model's prediction scaled up (by 17% in version 3); an estimate meant to be close to each admission would not be
+  scaled. This was not tested and is the first thing to try next, on the validation year.
+- **TabPFN-2's two numbers went opposite ways.** Its median was closer to each admission than the model's typical
+  cost, and its mean overshot the month's total in every month of the year. A diagnostic run afterwards on the same
+  admissions points at how the mean is taken out of it (an average of exp() over a hundred levels of the distribution
+  it predicts for log(cost)): 98% of the paid amounts fell below the level it gave as its 95%, and the few levels
+  above that one carry almost all of the excess. On 2022 the same recipe was 8.50% low. That is a finding about this
+  way of reading an expected cost from the model, not a verdict on foundation models.
+
+One diagnostic was run after the check, on the same 30,000 admissions, to understand the TabPFN result. It changed no
+verdict and no code. Nothing was adopted: the model in production is still version 3, and what to do with each
+finding (a median for the typical cost, the gate's rule for retrains, a model of its own for surgery) is the
+author's decision. 2025 has now been read; the next period no choice was made on is the first half of 2026.
 
 ## Result of decision 8
 

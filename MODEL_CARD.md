@@ -143,6 +143,17 @@ expected cost's numbers therefore come from a year that had already been seen, a
 model in production was written for this change (see the README). A year not used for any choice (2025) is the next
 check.
 
+### A year no choice was made on (2025)
+
+The test year was looked at twice, so one more year was read once, by settings and criteria committed beforehand
+([report](reports/sihsus_rj_2025/fresh_year.md)). The same two settings, fitted on the admissions whose costs were
+known when 2025 began, priced its 919,818 admissions with an error of R$ 1,029.00 per admission (typical cost) and
+2.79% on the month's total (expected cost). The two numbers did what each is for. Against a plain average the error
+on totals was 42% to 83% smaller at every level. Per admission, though, the typical cost was only 0.6% better than a
+table of medians per procedure, age band and admission type, less than the 2% the gate asks for: per admission, this
+model should not be assumed to beat a careful lookup table. Version 3 itself, never retrained since 2022, would have
+missed the 2025 month's total by 17.55%.
+
 ### Error by segment (MAE of the typical cost, R$)
 
 | Segment | Admissions | Mean paid | This model | Best baseline |

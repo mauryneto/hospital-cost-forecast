@@ -105,6 +105,10 @@ th { font: 500 11px var(--mono); letter-spacing: .04em; text-transform: uppercas
 th:first-child, td:first-child { text-align: left; padding-left: 0; }
 td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 td:first-child { font-family: var(--sans); }
+#fresh-verdicts td, #fresh-ideas td:first-child { white-space: normal; text-align: left; font-family: var(--sans); }
+#fresh-verdicts th { text-align: left; }
+#fresh-verdicts td:first-child, #fresh-ideas td:first-child { min-width: 22ch; }
+#fresh-verdicts td:nth-child(2) { white-space: nowrap; font-weight: 600; }
 #fo-table th:nth-child(2), #fo-table td:nth-child(2) { text-align: left; font-family: var(--sans); }
 #fo-table td:nth-child(-n+2) { white-space: normal; min-width: 20ch; }
 details { margin-top: 8px; }
@@ -292,6 +296,40 @@ footer p { margin: 0 0 10px; }
           <p class="sub" id="bw-sub"></p>
           <div class="tablewrap" id="bw-table"></div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-fresh">
+    <div class="side">
+      <div class="no">06</div>
+      <h2>A year no choice was made on</h2>
+      <p>Every choice above was made on one year and judged on two others that ended up being looked at more than once. This is the check that was left: one more year, read once, by settings and expectations written down and committed before it was read.</p>
+      <p>Nothing was adopted because of it. The model in production is still the one of the sections above.</p>
+    </div>
+    <div class="main">
+      <p class="finding" id="fresh-finding"></p>
+      <div class="figure">
+        <h3>What was expected, and what the year said</h3>
+        <p class="sub" id="fresh-sub"></p>
+        <div class="tablewrap" id="fresh-verdicts"></div>
+      </div>
+      <div class="figure">
+        <h3>Error on the month's total, month by month</h3>
+        <p class="sub">Percent; negative = under-predicted. Each line prices the same admissions.</p>
+        <div class="legend" id="f1-legend"></div>
+        <div class="chart" id="f1"></div>
+      </div>
+      <div class="figure">
+        <h3>The ideas that had looked good on the validation year</h3>
+        <p class="sub">Each is compared with the model on the same admissions. A negative difference means the idea did better; in brackets, its 95% interval.</p>
+        <div class="tablewrap" id="fresh-ideas"></div>
+      </div>
+      <div class="figure">
+        <h3>Retraining policies over the year</h3>
+        <p class="sub" id="fresh-policies-sub"></p>
+        <div class="tablewrap" id="fresh-policies"></div>
+        <details><summary>Against a plain average, level by level</summary><div class="tablewrap" id="fresh-skill"></div></details>
       </div>
     </div>
   </section>
@@ -737,6 +775,63 @@ footer p { margin: 0 0 10px; }
     $("bw-sub").textContent = "The model is fitted again before every block of " + D.base_window.horizon + " months, with only the admission months already billed by then, and prices that block. Only the history it is given differs. The first row is fitted once and never retrained.";
     table($("bw-table"), ["History given to each retrain", "Retrains", "Admissions per fit", "MAE", "Month's total error", "Bias", "MAE, top 10%"], BW.map(function (r) {
       return [cap(r.history), fmt(r.retrains, 0), r.mean_rows == null ? "–" : fmt(r.mean_rows, 0), fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
+    }));
+  }
+
+  // ---- 06 a year no choice was made on ----------------------------------------------------------------------------
+  var FR = D.fresh;
+  if (!FR) $("s-fresh").style.display = "none";
+  else {
+    var plus = function (v, d) { return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + fmt(Math.abs(v), d); };
+    var between = function (r, k, d, unit) { return r[k] == null ? "\u2013" : plus(r[k], d) + unit + " (" + plus(r[k + "_low"], d) + " to " + plus(r[k + "_high"], d) + ")"; };
+    var cap1 = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
+    var T2 = FR.two_numbers, WI = FR.worth_it, RT = FR.retraining, typ = T2.numbers.typical_cost, exp = T2.numbers.expected_cost;
+    var year = FR.window[0].slice(0, 4) === FR.window[1].slice(0, 4) ? FR.window[0].slice(0, 4) : FR.window[0] + " to " + FR.window[1];
+    var policyOf = function (label) { return RT.policies.filter(function (r) { return r.label === label; })[0]; };
+    var RULE_NAMES = { global_mean: "the plain average", median_by_proc: "the median per procedure", mean_by_proc: "the mean per procedure", log_linear: "a linear regression on log(cost)",
+      median_by_proc_age_type: "the median per procedure, age band and admission type", mean_by_proc_age_type: "the mean per procedure, age band and admission type" };
+    var pNever = policyOf("never"), pRule = policyOf("rule (expanding)"), pMonthly = policyOf("monthly (expanding)");
+    var checks = [
+      ["The typical cost has the lower error per admission, the expected cost the lower error on the month's total", T2.verdict,
+        "Per admission: " + CUR + fmt(typ.mae, 2) + " against " + CUR + fmt(exp.mae, 2) + ". Month's total: " + pct(exp.monthly_total_mape, 2) + " against " + pct(typ.monthly_total_mape, 2) + "."],
+      ["The model beats the best simple rule by the gate's margin, and a plain average at every level", WI.verdict,
+        "Best simple rule (" + (RULE_NAMES[WI.best_baseline] || WI.best_baseline) + "): " + CUR + fmt(WI.baseline.mae, 2) + " per admission and " + pct(WI.baseline.monthly_total_mape, 2) + " on the month's total; the gate's rule " +
+        (WI.gate_passes ? "passes" : "fails") + ". A gain over the plain average at every level: " + (WI.gain_at_every_level ? "yes" : "no") + "."]
+    ].concat(FR.ideas.map(function (i) {
+      return ["Idea: " + i.idea + " (" + i.expected_from_validation + ")", i.verdict,
+        i.theirs ? "Per admission " + CUR + between(i, "mae_gap", 2, "") + "; month's total " + between(i, "total_gap", 2, " points") + "." : "Not run."];
+    })).concat([["Trying to retrain every month does better on the month's total than never retraining and than waiting for the rule", RT.verdict,
+      pMonthly && pRule && pNever ? "Every month " + pct(pMonthly.monthly_total_mape, 2) + ", by the rule " + pct(pRule.monthly_total_mape, 2) + ", never " + pct(pNever.monthly_total_mape, 2) + "." : ""]]);
+    var confirmed = checks.filter(function (c) { return c[1] === "confirmed"; }).length;
+    $("fresh-finding").innerHTML = "On the <b>" + fmt(FR.admissions, 0) + " admissions of " + esc(year) + "</b>, the model misses each admission by <b>" + CUR + fmt(FR.model.mae, 2) + "</b> and the month's total by <b>" +
+      pct(FR.model.monthly_total_mape, 2) + "</b>. Of the " + checks.length + " expectations written down before the year was read, <b>" + confirmed + " were confirmed</b>.";
+    $("fresh-sub").textContent = "The model is the two settings of the model in production, fitted on the " + fmt(FR.fit_rows, 0) + " admissions whose costs were known when the year began (admission months through " + FR.known_through +
+      "). A difference counts only when its 95% interval, from drawing the admissions again " + fmt(FR.draws, 0) + " times, leaves zero out: \u201cnot shown\u201d means it did not.";
+    table($("fresh-verdicts"), ["Expected", "Verdict", "What the year said"], checks.map(function (c) { return [c[0], cap1(c[1]), c[2]]; }));
+
+    var f1Series = [{ name: "the model, fitted when the year began", short: "fitted once", color: C1(), values: FR.monthly.map(function (m) { return m.total_error_pct; }) }];
+    if (pMonthly) {
+      var mp = pMonthly.monthly.map(function (m) { return m.period; });
+      f1Series.push({ name: "trying to retrain every month", short: "every month", color: C2(), values: pMonthly.monthly.map(function (m) { return m.total_error_pct; }),
+        events: pMonthly.serves.map(function (p) { return mp.indexOf(p); }).filter(function (i) { return i >= 0; }) });
+    }
+    if (FR.production) f1Series.push({ name: "the model in production, last fitted on " + FR.production.fit_until.slice(0, 4), short: "in production", color: CN(), values: FR.production.monthly.map(function (m) { return m.total_error_pct; }) });
+    legend($("f1-legend"), f1Series.concat(pMonthly ? [{ name: "\u25cb a retrained model starts serving", color: "transparent" }] : []));
+    lineChart($("f1"), { x: FR.monthly.map(function (m) { return m.period; }), zero: true, height: 300, yfmt: function (v) { return pct(v, 0, true); }, label: "Error on the month's total in the fresh year", series: f1Series });
+
+    table($("fresh-ideas"), ["Idea", "Scored on", "MAE", "Model, same admissions", "Difference", "Month's total", "Model", "Difference", "Verdict"], FR.ideas.map(function (i) {
+      return i.theirs ? [cap1(i.idea) + ": " + i.detail, fmt(i.scored_on, 0), fmt(i.theirs.mae, 2), fmt(i.ours.mae, 2), between(i, "mae_gap", 2, ""), pct(i.theirs.monthly_total_mape, 2), pct(i.ours.monthly_total_mape, 2),
+        between(i, "total_gap", 2, " pts"), cap1(i.verdict)] : [cap1(i.idea), "\u2013", "\u2013", "\u2013", "\u2013", "\u2013", "\u2013", "\u2013", cap1(i.verdict)];
+    }));
+    var tried = 0, passed = 0; RT.policies.forEach(function (r) { tried += r.attempts; passed += r.promotions; });
+    $("fresh-policies-sub").textContent = "The same replay as in section 04, starting from the model above. A retrained candidate is used only if it passes the gate on the last two known months: of the " +
+      tried + " candidates in these replays, " + passed + " passed." + (FR.production ? " The last row is the model in production exactly as it is, never retrained." : "");
+    table($("fresh-policies"), ["Policy", "MAE", "Month's total", "Attempts", "Put in use", "Serving from"], RT.policies.map(function (r) {
+      return [r.label, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), String(r.attempts), String(r.promotions), r.serves.join(", ") || "\u2013"];
+    }).concat(FR.production ? [["in production, last fitted on " + FR.production.fit_until.slice(0, 4), fmt(FR.production.mae, 2), pct(FR.production.monthly_total_mape, 2), "\u2013", "\u2013", "\u2013"]] : []));
+    table($("fresh-skill"), ["Totals of", "Plain average", "The model", "Gain"], WI.skill.map(function (r) {
+      var money = r.level === "each admission";
+      return [cap1(r.level), money ? CUR + fmt(r.global_mean, 2) : pct(r.global_mean, 2), money ? CUR + fmt(r.model, 2) : pct(r.model, 2), pct(r.gain_pct, 0)];
     }));
   }
 

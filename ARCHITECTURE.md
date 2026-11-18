@@ -101,6 +101,11 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    version, not the alias, so the version they report is always the one that priced the admission; a promotion or a
    rollback reaches the API when it restarts. The API does not start without a `production` model, and it rejects any
    field the contract does not know at admission (the cost, the length of stay) instead of ignoring it.
+   `costmodel fresh` is the check on a year no choice was made on. Given a config with a `[fresh]` section (a
+   window and the two settings, nothing to search), it fits the model with the admissions whose costs were known
+   when the window began, prices the window once, and answers questions whose criteria were written beforehand: the
+   two numbers, the gate's rule and the gain over a plain average, ideas that looked good on validation, and the
+   retraining replay. The 2025 check uses `configs/sihsus_rj_2025.toml`, a dataset of its own.
 9. **Show.** `costmodel explore` adds up, group by group and month by month (all admissions, admission type,
    procedure group, bed specialty, hospital), what the model in production predicted and what was paid, over the test
    and monitoring windows; small groups are pooled and no admission is listed. `costmodel site` then writes that as
@@ -108,7 +113,7 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
    monitoring months, where prices changed, the retraining replay and, when they were run, the side comparisons
    (other model families, a tabular foundation model, the blend, one model per group, the recent price, the length
-   of the history). The numbers
+   of the history) and the fresh-year check of the dataset named in `[site] fresh_dataset`. The numbers
    are embedded when the page is generated, so it cannot disagree with the reports, and only aggregates are published.
 
 ## Leakage control is part of the contract

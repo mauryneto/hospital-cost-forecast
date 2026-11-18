@@ -68,6 +68,48 @@ test year (weighted by money, so the first row is close to, but not the same as,
 - For any total smaller than everything, the plain average is off by 15% to 49% and the model by 7% to 11%. A payer
   budgets by hospital, by specialty and by case, which is where the model earns its place.
 
+**A year no choice was made on (2025).** Every choice here was made on 2022 and judged on 2023 and 2024, which
+ended up being looked at more than once. 2025 was read once, by settings, questions and criteria committed before any
+of its costs was read ([the protocol](DECISIONS.md#the-2025-check-written-before-looking),
+[the report](reports/sihsus_rj_2025/fresh_year.md)). The model is the two settings of version 3, fitted on the
+5,169,905 admissions whose costs were known when 2025 began; it prices the 919,818 admissions of the year with an
+error of R$ 1,029.00 per admission and 2.79% on the month's total.
+
+| Written beforehand | Verdict | What 2025 said |
+|---|---|---|
+| The typical cost is closer to each admission, the expected cost to the month's total | Confirmed | R$ 1,029.00 against 1,049.47 per admission; 2.79% against 5.37% on the month's total |
+| The model beats the best simple rule by the gate's margin, and a plain average at every level | **Not confirmed** | Per admission it is 0.6% better than the median per procedure, age band and admission type (1,035.18); the gate asks for 2%. On totals the model's error is 42% to 83% smaller than a plain average's at every level |
+| Idea from 2022: recent months weigh more (better on the month's total) | **Contradicted** | Worse on both: 3.05 more per admission, 0.89 points more on the month's total |
+| Idea from 2022: a typical-cost model of its own for surgical admissions (better per admission) | Confirmed | 40.68 less per admission over all admissions (988.33 against 1,029.00) |
+| Idea from 2022: TabPFN-2 with code statistics (better on the month's total, not worse per admission) | **Contradicted** | On 30,000 admissions: 62.74 less per admission, but 38.92% off on the month's total against 4.42% |
+| Trying to retrain every month beats waiting for the rule on the month's total | Confirmed | 2.12% against 2.79%, with one retrained model put in use |
+
+A difference counts as confirmed or contradicted only when its 95% interval leaves zero out. What the year adds to
+the verdicts:
+
+- **On totals the model did better than in the test year**: 2.79% on the month's total (6.53% in 2023), drifting from
+  2.87% high in January to 7.01% low in December.
+- **Per admission, its lead over a table of medians went from 10.8% in 2023 to 0.6%.** The medians miss the month's
+  total by 44.29%, so they are no substitute, but the gate's rule against baselines would not have let this model
+  in. One likely reason, not tested: the typical cost is not a median. It is the log model's prediction scaled up (by
+  17% in version 3) so that it adds up better, and with costs this skewed, whatever predicts lower gets closer to
+  each admission.
+- **The same effect shows in the model in production, never retrained since 2022**: it would have been closer to each
+  admission (960.25) while missing the month's total by 17.55%. The error per admission alone is a poor judge of a
+  model when prices have moved.
+- **The gate blocked 18 of the 21 retrained candidates in the replay.** All 18 were 6% to 13% better per admission on
+  the two months they were judged on and were refused for being worse on those months' total, which the model in use
+  happened to hit within 3%. The rule fired from August on and none of its retrains was used. "Not worse on the
+  other number", judged on two months, is too strict.
+- **TabPFN-2's two numbers went opposite ways.** Its median was closer to each admission than the model's typical
+  cost, and its mean overshot the month's total in every month of the year. A diagnostic run afterwards on the same
+  admissions points at how the mean is taken out of it (an average of exp() over a hundred levels of the distribution
+  it predicts for log(cost)): 98% of the paid amounts fell below the level it gave as its 95%, and the few levels
+  above that one carry almost all of the excess. On 2022 the same recipe was 8.50% low. That is a finding about this
+  way of reading an expected cost from the model, not a verdict on foundation models.
+- **Nothing was adopted.** The model in production is still version 3. What to do with each finding is in the
+  roadmap and in [DECISIONS.md](DECISIONS.md).
+
 **A tabular foundation model on the validation year (2022).** A foundation model is not trained on this data: it
 reads labelled admissions as context and prices the others in one pass. TabPFN-2, the TabPFN checkpoint with open
 weights, reads 10,000 rows; the training window has 2.8 million. Every row below is scored on the same 30,000
@@ -268,6 +310,7 @@ docker compose up api
 | `costmodel foundation` | A tabular foundation model (TabPFN-2) against the candidate, on a sample of validation; needs `uv sync --extra foundation` and a GPU |
 | `costmodel base-window` | How much billed history should each retrain use? Retrained every 3 months, on validation |
 | `costmodel skill` | Is the production model worth it over a plain average? Totals by hospital, specialty and more, on test |
+| `costmodel fresh` | A year no choice was made on, scored once by the settings in `[fresh]`: `--config configs/sihsus_rj_2025.toml` (run `costmodel data` with it first) |
 | `costmodel explore` | The production model group by group and month by month (hospital, specialty and more): the data of the explorer page |
 | `costmodel site` | The static pages with the results ([`docs/index.html`](docs/index.html) and, after `explore`, [`docs/explore.html`](docs/explore.html)), built from the reports |
 | `costmodel run` | `data`, `train`, `evaluate`, `monitor`, in order, stopping at the first failure |
@@ -362,7 +405,8 @@ Not done yet, in the order planned:
 1. **A newer tabular foundation model, if its licence is accepted.** TabPFN-2, with open weights, was compared
    (see Results): reading 10,000 admissions and statistics of the codes, it ties with the model in production per
    admission and does better on the month's total, on a sample of validation. The newer checkpoints read up to a
-   million rows but need an account and a non-commercial licence. The author's call.
+   million rows but need an account and a non-commercial licence. The author's call. On 2025, TabPFN-2 was closer to
+   each admission than the model and far off on the month's total, so its expected cost needs work before anything.
 2. **When the money goes out.** The model prices an admission in the month the patient is admitted, but bills arrive
    over the following months (about a third of the money in the same month, a third one month later, the rest after
    that, the expensive bills last). Spreading each month's expected cost over the months it will be billed in gives a
@@ -375,14 +419,16 @@ Not done yet, in the order planned:
 5. **The patient's history** (earlier admissions). It usually helps a cost model a great deal, but the public SUS files
    do not identify the patient across admissions; this is for a payer's own data.
 
-Checks still owed, whatever comes first:
+What the 2025 check left open:
 
-- **A fresh year.** Every choice so far was made on 2022 and judged on 2023 and 2024, which have now been looked at
-  more than once. 2025 would be the first year untouched by any choice: the place to confirm the two numbers, the
-  gate's new rule and the ideas that looked good on 2022 (weighing recent months more, a model of its own for surgery,
-  a foundation model reading recent admissions and code statistics).
-- **The retraining policy, tested on a new period.** The 2024 replay suggests retraining whenever a new billed month
-  exists. Changing the retrain rule on the same year that suggested it would be fitting it to the result.
+- **A typical cost that is a median.** The typical cost is scaled up to add up better, and in 2025 a table of medians
+  nearly tied with it per admission. Since the expected cost now does the adding up, the typical cost could be a true
+  median. To be tried on the validation year, then confirmed on a period not read yet.
+- **The gate's rule for a retrained model.** Judged on two months, "not worse on the other number" refused 18 of 21
+  retrains that were clearly better per admission. The margin, the number of months, or both need rethinking.
+- **A typical-cost model of its own for surgery.** Better on 2022 and confirmed on 2025; not adopted yet.
+- **A period not read yet.** 2025 has now been read. The next clean check is the first half of 2026, once its bills
+  are complete.
 
 Decided against: **prediction ranges** ("between X and Y"). Whoever uses this wants a value to work with, and the
 model already says which value is for what (the typical cost and the expected cost). And a **neural network with

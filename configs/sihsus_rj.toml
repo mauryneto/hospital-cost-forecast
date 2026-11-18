@@ -73,6 +73,8 @@ note = "The target is what the SUS paid for the admission (the reimbursement), n
 repository = "https://github.com/mauryneto/hospital-cost-forecast"
 currency = "R$"
 candidate_label = "LightGBM"
+# The last section of the page: the year no choice was made on (`costmodel fresh --config configs/sihsus_rj_2025.toml`).
+fresh_dataset = "sihsus_rj_2025"
 
 # Names for the codes on the explorer page (`costmodel explore`). Codes left out are shown as they are.
 [site.labels.admission_type]

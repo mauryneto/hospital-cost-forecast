@@ -110,6 +110,44 @@ def test_page_embeds_the_replay_when_there_is_one(cfg):
     assert data["replay"][1]["serves"] == ["2024-02"]
 
 
+def test_page_shows_the_fresh_year_of_another_dataset(cfg):
+    import dataclasses
+
+    assert embedded(site.run(cfg).read_text(encoding="utf-8"))["fresh"] is None  # no dataset named: no section
+    cfg = dataclasses.replace(cfg, site=dataclasses.replace(cfg.site, fresh_dataset="next_year"))
+    assert embedded(site.run(cfg).read_text(encoding="utf-8"))["fresh"] is None  # named, but not run yet
+    m = {"mae": 10.0, "rmse": 30.0, "bias_pct": -5.0, "mae_top_decile": 80.0, "monthly_total_mape": 6.0}
+    months = [{"period": "2025-01", "n": 5.0, "actual": 9.0, "predicted": 8.0, "mae": 2.0, "total_error_pct": -11.1}]
+    gaps = dict.fromkeys(site.GAP_KEYS, -1.0)
+    counts = {"attempts": 0, "promotions": 0, "events": []}
+    policy = {"policy": "never", "window": "-", "overall": m, "monthly": months, **counts}
+    report = {
+        "window": ["2025-01", "2025-12"], "admissions": 5, "known_through": "2024-09", "fit_rows": 50, "draws": 10,
+        "model": m, "monthly": months, "settings": {}, "reference_mae": 9.0, "minutes": 1.0,
+        "two_numbers": {"numbers": {"typical_cost": m, "expected_cost": m}, "expected_minus_typical": gaps,
+                        "per_admission": "confirmed", "monthly_total": "not shown", "verdict": "not shown"},
+        "worth_it": {"baselines": {"mean_by_proc": m}, "best_baseline": "mean_by_proc", "gate_passes": True,
+                     "gate_reasons": ["r"], "gain_at_every_level": True, "verdict": "confirmed",
+                     "skill": [{"level": "each admission", "what": "w", "model": 1.0, "totals": 5, "global_mean": 2.0,
+                                "mean_by_proc": 1.5, "gain_pct": 50.0}]},
+        "ideas": [{"idea": "a", "detail": "d", "scored_on": 5, "ours": m, "theirs": m, **gaps,
+                   "expected_from_validation": "better", "verdict": "confirmed"},
+                  {"idea": "b", "detail": "d", "scored_on": 0, "expected_from_validation": "better", "verdict": "not run"}],
+        "retraining": {"verdict": "not confirmed", "policies": [policy]},
+        "production": {"fit_until": "2022-12-31", "rows": 40, **m, "monthly": months},
+    }  # fmt: skip
+    other = cfg.reports_dir.parent / "next_year"
+    other.mkdir(parents=True)
+    (other / "fresh_year.json").write_text(json.dumps(report), encoding="utf-8")
+    fresh = embedded(site.run(cfg).read_text(encoding="utf-8"))["fresh"]
+    assert fresh["admissions"] == 5 and fresh["two_numbers"]["verdict"] == "not shown"
+    assert fresh["two_numbers"]["gap"]["mae_gap"] == -1.0 and "rmse" not in fresh["two_numbers"]["numbers"]["typical_cost"]
+    assert fresh["worth_it"]["baseline"]["mae"] == 10.0 and "baselines" not in fresh["worth_it"]
+    assert [i["verdict"] for i in fresh["ideas"]] == ["confirmed", "not run"] and fresh["ideas"][1]["theirs"] is None
+    assert fresh["retraining"]["policies"][0]["label"] == "never" and fresh["production"]["fit_until"] == "2022-12-31"
+    assert fresh["monthly"] == [{"period": "2025-01", "total_error_pct": -11.1, "mae": 2.0}]  # no totals in money
+
+
 def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     data = embedded(site.run(cfg).read_text(encoding="utf-8"))
     assert data["families"] == [] and data["blend"] is None and data["segments"] == []  # all optional
