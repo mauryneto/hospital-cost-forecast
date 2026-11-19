@@ -74,12 +74,14 @@ def test_typical_compares_four_numbers_and_registers_nothing(tmp_path, monkeypat
     results = typical.run(cfg)
     assert results["number"].tolist() == [SCALED, UNSCALED, "median of log(cost)", "median of cost"]
     searched = json.loads((cfg.reports_dir / "train_valid.json").read_text())[0]
-    today, unscaled = results.iloc[0], results.iloc[1]
-    assert today["mae"] == pytest.approx(searched["mae"])  # today's number is the one `costmodel train` reported
-    assert pd.isna(today["mae_gap"]) and results["mae_gap"].iloc[1:].notna().all()
+    scaled, unscaled = results.iloc[0], results.iloc[1]
+    # The two numbers are the ones `costmodel train` reported for this setting, with and without the factor.
+    assert scaled["mae"] == pytest.approx(searched["mae"])
+    assert unscaled["mae"] == pytest.approx(searched["mae_unscaled"])
+    assert pd.isna(scaled["mae_gap"]) and results["mae_gap"].iloc[1:].notna().all()
     # Without the factor every prediction is lower by the same share, so the total falls and the trees are the same.
-    assert unscaled["bias_pct"] < today["bias_pct"] and unscaled["trees"] == today["trees"]
-    assert unscaled["mae_gap"] == pytest.approx(unscaled["mae"] - today["mae"])
+    assert unscaled["bias_pct"] < scaled["bias_pct"] and unscaled["trees"] == scaled["trees"]
+    assert unscaled["mae_gap"] == pytest.approx(unscaled["mae"] - scaled["mae"])
     assert (results["mae_gap_low"].iloc[1:] <= results["mae_gap"].iloc[1:]).all()
     assert results["lead_over_baseline_pct"].isna().all()  # `costmodel baselines` did not run here
 
@@ -91,10 +93,12 @@ def test_typical_compares_four_numbers_and_registers_nothing(tmp_path, monkeypat
     saved = json.loads((cfg.reports_dir / "typical_valid.json").read_text())
     assert 10 < saved["money_share_top_decile"] < 100
     assert saved["factor"] > 1.0 and saved["baseline"] is None and len(saved["rows"]) == 4
+    assert saved["in_use"] == SCALED  # this config keeps the default: the typical cost with the factor
     assert saved["best"] == results.sort_values("mae").iloc[0]["number"]
     report = (cfg.reports_dir / "typical_valid.md").read_text(encoding="utf-8")
     assert "## Typical admissions and the most expensive ones" in report
-    assert "## Against today's typical cost" in report and "nothing was registered" in report
+    assert "## Against the scaled number" in report and "nothing was registered" in report
+    assert "gives the typical cost as the **scaled** number" in report
     # A comparison only: the registry still has just the version the search registered, and nothing in production.
     assert str(registry.version_for(cfg, registry.STAGING).version) == version
     assert registry.version_for(cfg, registry.PRODUCTION) is None

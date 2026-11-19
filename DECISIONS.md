@@ -60,9 +60,9 @@ recommended by the system and decided by a person, with nothing scheduled.
 - **The licence of the newer foundation models.** TabPFN-2.5 and later read up to a million rows instead of 10,000,
   the limit that hurt in the comparison. They need an account and a non-commercial licence that also covers the
   model's outputs. The author's call.
-- **What to do with the 2025 check** (see "Result of the 2025 check"): a typical cost that is a median (tried on
-  2022 and better per admission, see "The typical cost as a median"; not adopted), the gate's rule for retrained
-  models, and a typical-cost model of its own for surgery. The author's call.
+- **What to do with the 2025 check** (see "Result of the 2025 check"): the gate's rule for retrained models, and a
+  typical-cost model of its own for surgery. The author's call. The third, a typical cost that is a median, became
+  version 4 (see "Version 4: the typical cost without the factor") and waits for a period not read yet.
 - **The next period not used for any choice.** 2025 has been read. The first half of 2026 is next, once billed.
 
 ## The 2025 check: written before looking
@@ -182,8 +182,43 @@ In the assistant's reading:
   factor out adds about five points to that lead. Whether it does the same on a year like 2025 was not measured:
   2025 has been read, and scoring this on it now would be choosing with a year that was meant to choose nothing.
 
-Not adopted. Adopting it would be a new version (the typical cost without the factor), judged by the gate, and
-confirmed on the first half of 2026. The author's call.
+Not adopted at the time. Adopting it would be a new version (the typical cost without the factor), judged by the
+gate, and confirmed on the first half of 2026. The author's call, made afterwards: see the next section.
+
+## Version 4: the typical cost without the factor
+
+The author asked what the factor was and what a version 4 would be, and chose to adopt it. A second question of his,
+on the way: is the error large because little is known about the patient? In part. The inputs describe the patient by
+age, sex and municipality only, and a look at the other fields of the public file found none worth adding (in the
+file of June 2022 a secondary diagnosis that is a disease is filled for 7.5% of admissions, and it is typed at
+billing, after discharge). What makes an admission expensive happens after admission: of the admissions paid
+R$ 6,000 or more in 2022, 82% had intensive care or a procedure other than the one requested, against 4% of those
+paid under R$ 1,150. These were one-off looks at the data, not reports in this repository.
+
+- **What changed in the code.** `[train] typical_scaled = false`: a `log_l2` model chosen for the typical cost gives
+  exp(prediction) without the smearing factor. The search now also reports each fit's MAE without the factor
+  (`mae_unscaled`) and ranks the typical cost's settings by it. The expected cost is untouched.
+- **The same model.** The search chose the same setting as before (255 leaves, all years, with the date, 324 trees),
+  so version 4 is the trees of version 3 with the last multiplication (by 1.169) left out; checked on 50,000
+  admissions, the two typical costs differ by exactly that factor and the expected costs are identical.
+- **The gate, on 2023.** MAE 727.20 against 778.62 for version 3: 6.6% lower, where the rule asks for 2%. The
+  month's total is the same expected cost (6.53%), so "worse on neither" holds. The lead over the best baseline goes
+  from 10.8% to 16.7%. Version 4 replaced version 3.
+- **What it costs.** On the 10% most expensive admissions of 2023 the error is 4,902.42 against 4,724.83 (3.8% more).
+  Added up, the typical cost would be 24.14% off against 11.32%; nothing in the pipeline adds it up.
+- **A third look at the test year.** The choice was made on 2022 and the gate needs 2023, so 2023 was scored again.
+  Its numbers are not an independent confirmation. 2025 was not scored again: it has been read, and it chooses
+  nothing. The first half of 2026 is where this can be confirmed.
+- **A side effect on the monitor.** The retrain rule starts from the model's test MAE, which is now lower, so its
+  limit is lower too (799.92 instead of 856.48). Over 2024 the rule fires at the end of September, on May and June,
+  instead of the end of November, on July and August. The rule itself was not touched. In the replay, the retrain it
+  asks for enters in October instead of December (MAE over the year 869.96, month's total 12.83%).
+- **Left open by this.** (1) The 15% ceiling that makes a setting eligible for the typical cost is still read on the
+  number with the factor; one setting with a slightly lower MAE without it (745.95 against 747.38, no date input) is
+  excluded by that ceiling. Whether a ceiling on totals should constrain a number that is not added up was not
+  decided. (2) The comparisons made on 2022 before this (other families, averaging, one model per group, recent
+  prices, history, the foundation model) measured the scaled number and were not run again. (3) A model fitted to
+  give the median was 1.9% better still on 2022 but hit its limit of trees; it needs a search of its own.
 
 ## Result of decision 8
 

@@ -211,10 +211,12 @@ def page_data(cfg: Config) -> dict:
             **{k: foundation[k] for k in ("checkpoint", "context_rows", "eval_rows", "valid_rows", "train_rows")},
             "rows": [{k: row[k] for k in FOUNDATION_FIELDS} for row in foundation["rows"]],
         },
-        # `costmodel typical`: the first row is today's typical cost; the others are the same setting read as a median.
+        # `costmodel typical`: the first row is the scaled typical cost; the others are the same setting read as a
+        # median. `in_use` names the row the config gives today.
         "typical": typical
         and {
             **{k: typical[k] for k in ("factor", "n_valid", "baseline", "money_share_top_decile")},
+            "in_use": typical.get("in_use", "scaled"),
             "min_mae_gain": cfg.gate.min_mae_gain,
             "rows": [{k: row[k] for k in TYPICAL_FIELDS} for row in typical["rows"]],
         },

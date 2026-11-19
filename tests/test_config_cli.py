@@ -78,3 +78,26 @@ def test_run_stops_at_the_first_failed_step(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "step 'data' failed" in out
     assert "=== train ===" not in out
+
+
+def test_the_typical_cost_is_ranked_by_the_number_the_config_gives():
+    import pandas as pd
+
+    from costmodel.config import Config, TrainConfig
+    from costmodel.train import choose
+
+    rows = pd.DataFrame(
+        [
+            {"objective": "log_l2", "mae": 100.0, "mae_unscaled": 96.0, "monthly_total_mape": 10.0},
+            {"objective": "log_l2", "mae": 101.0, "mae_unscaled": 93.0, "monthly_total_mape": 12.0},
+            {"objective": "log_l2", "mae": 99.0, "mae_unscaled": 90.0, "monthly_total_mape": 20.0},  # above the ceiling
+            {"objective": "tweedie", "mae": 110.0, "mae_unscaled": 110.0, "monthly_total_mape": 3.0},
+        ]
+    )
+    scaled = Config(name="x", source={})
+    unscaled = Config(name="x", source={}, train=TrainConfig(typical_scaled=False))
+    assert choose(rows, scaled).name == 0 and choose(rows, unscaled).name == 1
+    # A search report written before the column existed is still read: it ranks by the only MAE it has.
+    assert choose(rows.drop(columns="mae_unscaled"), unscaled).name == 0
+    assert load_config("configs/sihsus_rj.toml").train.typical_scaled is False
+    assert load_config("configs/sihsus_rj_2025.toml").train.typical_scaled is True  # the 2025 check keeps its recipe

@@ -316,7 +316,7 @@ footer p { margin: 0 0 10px; }
       <div class="no">06</div>
       <h2>A year no choice was made on</h2>
       <p>Every choice above was made on one year and judged on two others that ended up being looked at more than once. This is the check that was left: one more year, read once, by settings and expectations written down and committed before it was read.</p>
-      <p>Nothing was adopted because of it. The model in production is still the one of the sections above.</p>
+      <p>Its numbers are those of the model as it was when the year was read, with the typical cost still scaled up. Nothing was adopted because of this year alone; what followed from it was tried on the validation year first (section 05).</p>
     </div>
     <div class="main">
       <p class="finding" id="fresh-finding"></p>
@@ -736,28 +736,30 @@ footer p { margin: 0 0 10px; }
     }));
   }
   if (TY) {
-    var TY_NAMES = { "scaled (today)": "Today's: scaled up by the factor", "unscaled": "The same model without the factor",
+    var TY_NAMES = { "scaled": "Scaled up by the factor", "unscaled": "The same model without the factor",
       "median of log(cost)": "A median model, fitted on log(cost)", "median of cost": "A median model, fitted on the cost" };
+    var tyAdopted = TY.in_use === "unscaled";
+    var tyName = function (r) { return (TY_NAMES[r.number] || r.number) + (r.number === TY.in_use ? " (in use)" : ""); };
     var tySigned = function (v, d) { return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + fmt(Math.abs(v), d); };
     var tySpan = function (r) { return r.mae_gap == null ? "\u2013" : tySigned(r.mae_gap, 2) + " (" + tySigned(r.mae_gap_low, 2) + " to " + tySigned(r.mae_gap_high, 2) + ")"; };
     var tyNow = TY.rows[0], tyFree = TY.rows[1], tyBest = TY.rows.slice().sort(function (a, b) { return a.mae - b.mae; })[0];
     var tyLess = function (r) { return fmt(Math.abs(100 * (r.mae / tyNow.mae - 1)), 1) + "%"; };
     var tyTop = function (r) { return fmt(100 * (r.mae_top_decile / tyNow.mae_top_decile - 1), 1) + "%"; };
     var tyClear = function (r) { return r.mae_gap_high < 0; };
-    $("ty-finding").innerHTML = "The typical cost is scaled up by " + fmt(100 * (TY.factor - 1), 1) + "% so that it adds up better, which the expected cost now does. " +
+    $("ty-finding").innerHTML = (tyAdopted ? "The typical cost used to be scaled up by " : "The typical cost is scaled up by ") + fmt(100 * (TY.factor - 1), 1) + "% so that it adds up better, which the expected cost now does. " +
       (tyClear(tyFree) ? "Without that factor the same model is <b>" + tyLess(tyFree) + " closer to each admission</b> (" + CUR + fmt(tyFree.mae, 2) + " against " + CUR + fmt(tyNow.mae, 2) + ")" :
         "Without that factor the same model is <b>not closer to each admission</b> (" + CUR + fmt(tyFree.mae, 2) + " against " + CUR + fmt(tyNow.mae, 2) + ")") +
       (tyBest !== tyNow && tyBest !== tyFree && tyClear(tyBest) ? "; a model fitted to give the median, " + tyLess(tyBest) + " closer. " : ". ") +
-      "The 10% most expensive admissions hold " + pct(TY.money_share_top_decile, 1) + " of the money and " + pct(tyNow.error_share_top_decile, 1) + " of today's error. On the other 90% the error goes from " +
+      "The 10% most expensive admissions hold " + pct(TY.money_share_top_decile, 1) + " of the money and " + pct(tyNow.error_share_top_decile, 1) + " of the scaled number's error. On the other 90% the error goes from " +
       CUR + fmt(tyNow.mae_common, 2) + " to <b>" + CUR + fmt(tyFree.mae_common, 2) + "</b> without the factor" +
       (tyFree.mae_top_decile > tyNow.mae_top_decile ? "; on those 10% it is " + tyTop(tyFree) + " larger. " : ". ") +
-      "Not adopted: it has to hold on a period not read yet.";
+      (tyAdopted ? "Adopted: the model now gives the typical cost without the factor. It still has to hold on a period not read yet." : "Not adopted: it has to hold on a period not read yet.");
     $("ty-sub").textContent = "The setting chosen for the typical cost, fitted once on the training window and read in different ways on the " + fmt(TY.n_valid, 0) +
       " admissions of the validation window. \u201cIf it were added up\u201d is the error on the month's total of this number itself; the model adds up the expected cost, not this one." +
       (TY.baseline ? " The lead is over the best baseline on this window, a table of medians (" + CUR + fmt(TY.baseline.mae, 2) + "); the gate asks for " + pct(100 * TY.min_mae_gain, 0) + "." : "") +
       " The interval is each row minus the first, from drawing the admissions again. The two bands are cut by what was paid, known only afterwards: a way to read the error, not something the model can use.";
     table($("ty-table"), ["The typical cost as", "MAE", "Against the first row (95%)", "MAE, other 90%", "MAE, top 10%", "If it were added up", "Lead over the best baseline"], TY.rows.map(function (r) {
-      return [TY_NAMES[r.number] || r.number, fmt(r.mae, 2), tySpan(r), fmt(r.mae_common, 2), fmt(r.mae_top_decile, 2), pct(r.bias_pct, 2, true), r.lead_over_baseline_pct == null ? "\u2013" : pct(r.lead_over_baseline_pct, 1)];
+      return [tyName(r), fmt(r.mae, 2), tySpan(r), fmt(r.mae_common, 2), fmt(r.mae_top_decile, 2), pct(r.bias_pct, 2, true), r.lead_over_baseline_pct == null ? "\u2013" : pct(r.lead_over_baseline_pct, 1)];
     }));
   }
   if (B) {
@@ -853,7 +855,7 @@ footer p { margin: 0 0 10px; }
       f1Series.push({ name: "trying to retrain every month", short: "every month", color: C2(), values: pMonthly.monthly.map(function (m) { return m.total_error_pct; }),
         events: pMonthly.serves.map(function (p) { return mp.indexOf(p); }).filter(function (i) { return i >= 0; }) });
     }
-    if (FR.production) f1Series.push({ name: "the model in production, last fitted on " + FR.production.fit_until.slice(0, 4), short: "in production", color: CN(), values: FR.production.monthly.map(function (m) { return m.total_error_pct; }) });
+    if (FR.production) f1Series.push({ name: "the model in production then, last fitted on " + FR.production.fit_until.slice(0, 4), short: "in production", color: CN(), values: FR.production.monthly.map(function (m) { return m.total_error_pct; }) });
     legend($("f1-legend"), f1Series.concat(pMonthly ? [{ name: "\u25cb a retrained model starts serving", color: "transparent" }] : []));
     lineChart($("f1"), { x: FR.monthly.map(function (m) { return m.period; }), zero: true, height: 300, yfmt: function (v) { return pct(v, 0, true); }, label: "Error on the month's total in the fresh year", series: f1Series });
 
@@ -863,10 +865,10 @@ footer p { margin: 0 0 10px; }
     }));
     var tried = 0, passed = 0; RT.policies.forEach(function (r) { tried += r.attempts; passed += r.promotions; });
     $("fresh-policies-sub").textContent = "The same replay as in section 04, starting from the model above. A retrained candidate is used only if it passes the gate on the last two known months: of the " +
-      tried + " candidates in these replays, " + passed + " passed." + (FR.production ? " The last row is the model in production exactly as it is, never retrained." : "");
+      tried + " candidates in these replays, " + passed + " passed." + (FR.production ? " The last row is the model that was in production when the year was read, exactly as it was, never retrained." : "");
     table($("fresh-policies"), ["Policy", "MAE", "Month's total", "Attempts", "Put in use", "Serving from"], RT.policies.map(function (r) {
       return [r.label, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), String(r.attempts), String(r.promotions), r.serves.join(", ") || "\u2013"];
-    }).concat(FR.production ? [["in production, last fitted on " + FR.production.fit_until.slice(0, 4), fmt(FR.production.mae, 2), pct(FR.production.monthly_total_mape, 2), "\u2013", "\u2013", "\u2013"]] : []));
+    }).concat(FR.production ? [["in production then, last fitted on " + FR.production.fit_until.slice(0, 4), fmt(FR.production.mae, 2), pct(FR.production.monthly_total_mape, 2), "\u2013", "\u2013", "\u2013"]] : []));
     table($("fresh-skill"), ["Totals of", "Plain average", "The model", "Gain"], WI.skill.map(function (r) {
       var money = r.level === "each admission";
       return [cap1(r.level), money ? CUR + fmt(r.global_mean, 2) : pct(r.global_mean, 2), money ? CUR + fmt(r.model, 2) : pct(r.model, 2), pct(r.gain_pct, 0)];

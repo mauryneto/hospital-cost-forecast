@@ -1,29 +1,29 @@
 {
-  "candidate_version": 3,
+  "candidate_version": 4,
   "promoted": true,
   "reasons": [
-    "MAE 778.62 is 10.8% below best baseline (median_by_proc_age_type) (872.80)",
+    "MAE 727.20 is 16.7% below best baseline (median_by_proc_age_type) (872.80)",
     "monthly total error 6.53% is not worse than best baseline (median_by_proc_age_type) (40.81%)",
-    "against production (version 2): MAE 778.62 vs 778.62 (+0.0%, 2.0% counts as better); monthly total error 6.53% vs 11.32% (+42.3%, 10.0% counts as better)",
-    "worth replacing production (version 2): better on monthly total, worse on neither",
+    "against production (version 3): MAE 727.20 vs 778.62 (+6.6%, 2.0% counts as better); monthly total error 6.53% vs 6.53% (+0.0%, 10.0% counts as better)",
+    "worth replacing production (version 3): better on MAE, worse on neither",
     "monthly total error 6.53% is within the 15.0% ceiling"
   ],
   "metrics": {
     "candidate": {
-      "mae": 778.6236713670914,
-      "rmse": 2705.55406813793,
-      "median_ae": 171.5523067430522,
+      "mae": 727.2023103794677,
+      "rmse": 2763.8827029989757,
+      "median_ae": 101.12329870933365,
       "bias_pct": -6.644081623461891,
-      "mae_top_decile": 4724.826734763731,
+      "mae_top_decile": 4902.423057250539,
       "monthly_total_mape": 6.525685542705431
     },
     "production": {
       "mae": 778.6236713670914,
       "rmse": 2705.55406813793,
       "median_ae": 171.5523067430522,
-      "bias_pct": -11.424603730230869,
+      "bias_pct": -6.644081623461891,
       "mae_top_decile": 4724.826734763731,
-      "monthly_total_mape": 11.315611258238375
+      "monthly_total_mape": 6.525685542705431
     },
     "global_mean": {
       "mae": 1579.6352958637658,
@@ -76,12 +76,12 @@
   },
   "candidate_numbers": {
     "typical_cost": {
-      "mae": 778.6236713670914,
-      "rmse": 2705.55406813793,
-      "median_ae": 171.5523067430522,
-      "bias_pct": -11.424603730230869,
-      "mae_top_decile": 4724.826734763731,
-      "monthly_total_mape": 11.315611258238375
+      "mae": 727.2023103794677,
+      "rmse": 2763.8827029989757,
+      "median_ae": 101.12329870933365,
+      "bias_pct": -24.232035842326518,
+      "mae_top_decile": 4902.423057250539,
+      "monthly_total_mape": 24.138802980164296
     },
     "expected_cost": {
       "mae": 819.1730732759114,

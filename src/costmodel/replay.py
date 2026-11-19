@@ -56,6 +56,7 @@ def like(template):
         template.min_category_count,
         template.seed,
         getattr(template, "use_time", False),
+        template.scaled,
     )
 
 

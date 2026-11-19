@@ -4,7 +4,8 @@ Three ways to fit a right-skewed, strictly positive cost, chosen per run in the 
 
 * ``tweedie`` and ``gamma``: predict the mean cost directly (log link), so monthly totals come out unbiased.
 * ``log_l2``: least squares on log(cost). Exponentiating gives the *median*; Duan's smearing factor rescales it towards
-  the mean, as in the log-linear baseline.
+  the mean, as in the log-linear baseline. With ``scaled=False`` the factor is left out and the number stays at the
+  median: closer to each admission, and well short when added up (see ``costmodel typical``).
 
 With ``use_time``, the model also sees ``admission_period`` (months elapsed). Trees cannot extrapolate, so for a future
 date they apply the most recent level they saw, which is what a price that keeps rising calls for. Whether that helps
@@ -27,6 +28,8 @@ OBJECTIVES = ("tweedie", "gamma", "log_l2")
 
 
 class CostModel:
+    scaled = True  # for models pickled before the attribute existed: they were always scaled
+
     def __init__(
         self,
         objective: str = "tweedie",
@@ -36,6 +39,7 @@ class CostModel:
         min_category_count: int = 20,
         seed: int = 42,
         use_time: bool = False,
+        scaled: bool = True,
     ):
         if objective not in OBJECTIVES:
             raise ValueError(f"objective must be one of {OBJECTIVES}")
@@ -46,6 +50,7 @@ class CostModel:
         self.min_category_count = min_category_count
         self.seed = seed
         self.use_time = use_time
+        self.scaled = scaled  # log_l2 only: multiply by the smearing factor (the other objectives have none)
 
     @property
     def name(self) -> str:
@@ -60,6 +65,7 @@ class CostModel:
             "min_category_count": self.min_category_count,
             "seed": self.seed,
             "use_time": self.use_time,
+            "scaled": self.scaled,
         }
 
     @property
@@ -135,7 +141,9 @@ class CostModel:
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         raw = self.booster_.predict(self._encode(X), num_iteration=self.best_iteration_)
-        return np.exp(raw) * self.smearing_ if self.objective == "log_l2" else raw
+        if self.objective != "log_l2":
+            return raw
+        return np.exp(raw) * self.smearing_ if self.scaled else np.exp(raw)
 
     def feature_importance(self) -> pd.Series:
         """Total gain per feature: how much each column reduced the loss over all trees."""
@@ -149,7 +157,8 @@ TYPICAL, EXPECTED = "typical_cost", "expected_cost"
 class CostPair:
     """Two fitted models behind one registered version, one for each question a cost prediction answers.
 
-    * ``typical``: what this admission should cost. Chosen for the lowest error per admission.
+    * ``typical``: what this admission should cost. Chosen for the lowest error per admission. From a ``log_l2``
+      model it can be given without the smearing factor (``scaled=False``), since it is not the number that is added up.
     * ``expected``: the number to add up. Chosen for the lowest error on the month's total.
 
     On a right-skewed cost no single number is best at both. The one closest to each admission sits near the typical

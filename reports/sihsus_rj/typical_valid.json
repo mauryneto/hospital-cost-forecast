@@ -1,5 +1,6 @@
 {
   "setting": "log_l2, 255 leaves, expanding, with time",
+  "in_use": "unscaled",
   "factor": 1.1566066941252695,
   "n_train": 2819848,
   "n_valid": 786766,
@@ -12,7 +13,7 @@
   "best": "median of log(cost)",
   "rows": [
     {
-      "number": "scaled (today)",
+      "number": "scaled",
       "trees": 324,
       "mae": 792.1481993509,
       "median_ae": 152.0904206347,
@@ -28,7 +29,7 @@
       "total_gap": null,
       "total_gap_low": null,
       "total_gap_high": null,
-      "seconds": 56.2
+      "seconds": 61.2
     },
     {
       "number": "unscaled",
@@ -66,7 +67,7 @@
       "total_gap": 16.7204412524,
       "total_gap_low": 16.6059077662,
       "total_gap_high": 16.8397423778,
-      "seconds": 306.5
+      "seconds": 354.8
     },
     {
       "number": "median of cost",
@@ -85,7 +86,7 @@
       "total_gap": 16.1804347369,
       "total_gap_low": 16.0566000395,
       "total_gap_high": 16.3168457901,
-      "seconds": 279.3
+      "seconds": 343.3
     }
   ]
 }

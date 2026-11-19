@@ -5,6 +5,8 @@
 2. **Choose two settings,** one for each number the model gives (see ``candidate.CostPair``). For the **typical
    cost**: lowest validation MAE among the settings whose monthly-total error is within the gate's ceiling (if none
    is, lowest MAE overall). For the **expected cost**: lowest error on the month's total. They can be the same.
+   With ``typical_scaled = false`` the typical cost of a ``log_l2`` setting is given without the smearing factor, and
+   the MAE that ranks the settings is that of the number as given (``mae_unscaled``).
 3. **Refit** both on training + validation (the most recent data the model can have before the test year), each with
    the number of trees found by early stopping, and register them as one version in MLflow with alias ``staging``.
 
@@ -13,11 +15,13 @@ Whether it goes to ``production`` is decided later, by ``costmodel evaluate`` (s
 
 from __future__ import annotations
 
+import copy
 import itertools
 import json
 import time
 
 import mlflow
+import numpy as np
 import pandas as pd
 
 from costmodel import features as F
@@ -68,7 +72,10 @@ def search(cfg: Config, train: pd.DataFrame, valid: pd.DataFrame) -> pd.DataFram
             label = f"{model.name} {leaves} leaves, {window_label(months)}{', with time' if use_time else ''}"
             with mlflow.start_run(run_name=label, nested=True):
                 model.fit(X, y, X_valid, y_valid, tc.early_stopping_rounds)
-                metrics = summary(y_valid.to_numpy(), model.predict(X_valid), valid["period"])
+                pred = model.predict(X_valid)
+                metrics = summary(y_valid.to_numpy(), pred, valid["period"])
+                # The same fit without the smearing factor (1 unless log_l2): what an unscaled typical cost would give.
+                metrics["mae_unscaled"] = float(np.abs(pred / model.smearing_ - y_valid.to_numpy()).mean())
                 row = {
                     "objective": objective,
                     "num_leaves": leaves,
@@ -91,10 +98,15 @@ def search(cfg: Config, train: pd.DataFrame, valid: pd.DataFrame) -> pd.DataFram
     return pd.DataFrame(rows)
 
 
+def typical_mae(results: pd.DataFrame, cfg: Config) -> str:
+    """The column holding the MAE of the typical cost as the config gives it (older reports have only ``mae``)."""
+    return "mae" if cfg.train.typical_scaled or "mae_unscaled" not in results else "mae_unscaled"
+
+
 def choose(results: pd.DataFrame, cfg: Config) -> pd.Series:
     ceiling = cfg.gate.max_monthly_total_mape
     eligible = results if ceiling is None else results[results["monthly_total_mape"] <= ceiling]
-    return (eligible if len(eligible) else results).sort_values("mae").iloc[0]
+    return (eligible if len(eligible) else results).sort_values(typical_mae(results, cfg)).iloc[0]
 
 
 def choose_for_totals(results: pd.DataFrame) -> pd.Series:
@@ -102,12 +114,12 @@ def choose_for_totals(results: pd.DataFrame) -> pd.Series:
     return results.sort_values(["monthly_total_mape", "mae"]).iloc[0]
 
 
-def refit(cfg: Config, setting: pd.Series, known: pd.DataFrame) -> CostModel:
+def refit(cfg: Config, setting: pd.Series, known: pd.DataFrame, scaled: bool = True) -> CostModel:
     """One setting of the search, fitted on its window of ``known`` with the number of trees the search found."""
     tc, months = cfg.train, int(setting["window_months"])
     data = last_months(known, months)
     model = CostModel(setting["objective"], int(setting["num_leaves"]), tc.learning_rate, int(setting["trees"]),
-                      tc.min_category_count, tc.seed, bool(setting["use_time"]))  # fmt: skip
+                      tc.min_category_count, tc.seed, bool(setting["use_time"]), scaled)  # fmt: skip
     print(f"refitting {model.name} ({window_label(months)}) on {len(data):,} admissions (train + valid)")
     return model.fit(F.build_features(data), data[F.TARGET])
 
@@ -122,15 +134,21 @@ def run(cfg: Config) -> str:
         results = search(cfg, train, valid)
         best, best_total = choose(results, cfg), choose_for_totals(results)
         known = pd.concat([train, valid])
-        typical = refit(cfg, best, known)
-        expected = typical if best_total.name == best.name else refit(cfg, best_total, known)
+        typical = refit(cfg, best, known, cfg.train.typical_scaled)
+        if best_total.name != best.name:
+            expected = refit(cfg, best_total, known)
+        elif typical.scaled or typical.objective != "log_l2":
+            expected = typical
+        else:  # one setting for both numbers: the same trees, read with the factor for the number that is added up
+            expected = copy.copy(typical)
+            expected.scaled = True
         model = CostPair(typical, expected)
         months = int(best["window_months"])
         refit_data = last_months(known, months)
         mlflow.log_params(typical.params() | {"window_months": months, "n_train": len(refit_data)})
         mlflow.log_params({f"expected_{k}": v for k, v in expected.params().items()})
         mlflow.log_param("expected_window_months", int(best_total["window_months"]))
-        mlflow.log_metrics({f"valid_{k}": float(best[k]) for k in ("mae", "rmse")})
+        mlflow.log_metrics({"valid_mae": float(best[typical_mae(results, cfg)]), "valid_rmse": float(best["rmse"])})
         mlflow.log_metrics({f"valid_{k}": float(best_total[k]) for k in ("bias_pct", "monthly_total_mape")})
         version = registry.log_model(cfg, model, refit_data)
     registry.tag_version(
@@ -140,10 +158,11 @@ def run(cfg: Config) -> str:
             "kind": "candidate",
             "model": model.name,
             "typical_setting": setting_label(best),
+            "typical_number": typical_number(typical),
             "expected_setting": setting_label(best_total),
             "window_months": str(months),
             "fitted_on": f"{refit_data['admission_date'].min():%Y-%m-%d} to {refit_data['admission_date'].max():%Y-%m-%d}",
-            "valid_mae": f"{best['mae']:.2f}",
+            "valid_mae": f"{best[typical_mae(results, cfg)]:.2f}",
             "valid_monthly_total_mape": f"{best_total['monthly_total_mape']:.2f}",
             "train_run_id": parent.info.run_id,
         },
@@ -152,6 +171,13 @@ def run(cfg: Config) -> str:
     write_report(cfg, results, best, best_total, model, version)
     print(f"registered {cfg.model_name} version {version} as '{registry.STAGING}'")
     return version
+
+
+def typical_number(model: CostModel) -> str:
+    """How a fitted model gives its number, in words (for the registry tag and the report)."""
+    if model.objective != "log_l2":
+        return "the mean, as fitted"
+    return "scaled by the smearing factor" if model.scaled else "the median: no smearing factor"
 
 
 def gain_shares(model: CostModel) -> pd.Series:
@@ -172,12 +198,14 @@ def write_report(cfg: Config, results: pd.DataFrame, best: pd.Series, best_total
         "use_time",
         "trees",
         "mae",
+        "mae_unscaled",
         "rmse",
         "mae_top_decile",
         "bias_pct",
         "monthly_total_mape",
     ]
     ceiling = cfg.gate.max_monthly_total_mape
+    key = typical_mae(results, cfg)
     same = model.expected is model.typical
     lines = [
         f"# Candidate search on the validation window ({cfg.name})",
@@ -187,9 +215,19 @@ def write_report(cfg: Config, results: pd.DataFrame, best: pd.Series, best_total
         "",
         to_markdown(results[cols].sort_values("mae"), index=False),
         "",
+        "`mae_unscaled` is the MAE of the same fit without the smearing factor (only `log_l2` has one); every other"
+        " column is of the number with the factor.",
+        "",
         f"**Chosen for the typical cost:** {best['objective']}, {int(best['num_leaves'])} leaves, {best['window']},"
         f" {'with' if best['use_time'] else 'without'} the time feature, {int(best['trees'])} trees"
-        + (f" (lowest MAE among settings with monthly total error at most {ceiling:.0f}%)." if ceiling is not None else "."),
+        + (
+            f" (lowest {'`mae`' if key == 'mae' else '`mae_unscaled`'} among settings with monthly total error at most"
+            f" {ceiling:.0f}%)."
+            if ceiling is not None
+            else "."
+        )
+        + f" The number is given as {typical_number(model.typical)}"
+        + (f" (validation MAE {best[key]:.2f})." if key != "mae" else "."),
         "",
         "**Chosen for the expected cost:** "
         + (

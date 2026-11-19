@@ -1,23 +1,25 @@
 """``costmodel typical``: should the typical cost be a median?
 
-The typical cost is the number meant to be close to each admission. Today it is least squares on log(cost),
+The typical cost is the number meant to be close to each admission. It started as least squares on log(cost),
 exponentiated and then scaled up by Duan's smearing factor so that it adds up better. Since the expected cost now does
 the adding up, that factor may be working against what the typical cost is for: on a right-skewed cost the number
 closest to each admission is the median, and a median is not scaled up. On the 2025 check a plain table of medians
-nearly tied with the model per admission, which is what raised the question.
+nearly tied with the model per admission, which is what raised the question. What this found is why
+``[train] typical_scaled`` exists; the comparison is the same whichever way the config now gives the number.
 
 Everything here is fitted on the training window and measured on validation, with the setting the search chose for
 the typical cost (leaves, window, time feature). What changes is only what the number is:
 
-* **scaled**: today's typical cost.
+* **scaled**: exp(prediction) times the smearing factor. Every other row is compared with this one.
 * **unscaled**: the same fitted model without the factor. A median if the errors in log(cost) are symmetric.
 * **median of log(cost)**: least absolute error on log(cost). The fitted value is the median itself, with no
   assumption about symmetry; the median of the log is the log of the median.
 * **median of cost**: least absolute error on the cost. The same target, fitted in money.
 
-Each is compared with today's on the same admissions, with a 95% interval from drawing the admissions again. A median
-is expected to be closer to each admission and to fall well short on the month's total; the second does not matter to
-the model (the total comes from the expected cost) but it is reported, so the price of the change is on the table.
+Each is compared with the scaled number on the same admissions, with a 95% interval from drawing the admissions
+again. A median is expected to be closer to each admission and to fall well short on the month's total; the second
+does not matter to the model (the total comes from the expected cost) but it is reported, so the price of the change
+is on the table.
 
 The error is also read in two bands, because one average hides both: the 10% most expensive admissions hold most of
 the money and most of the error, and the other 90% are what "a typical admission" means. The bands are cut by what
@@ -46,7 +48,7 @@ from costmodel.train import choose, last_months, load_splits, setting_label
 DRAWS = 1_000  # resamples of the validation admissions behind each interval
 KEEP = ("mae", "median_ae", "mae_top_decile", "bias_pct", "monthly_total_mape")
 BANDS = ("mae_common", "error_share_top_decile")
-SCALED, UNSCALED = "scaled (today)", "unscaled"
+SCALED, UNSCALED = "scaled", "unscaled"
 
 
 class MedianModel(CostModel):
@@ -119,13 +121,13 @@ def run(cfg: Config) -> pd.DataFrame:
     paid, month = y_valid.to_numpy(dtype=float), pd.factorize(valid["period"])[0]
 
     registry.setup(cfg)
-    rows, today = [], None
+    rows, first = [], None
 
     def add(number: str, model: CostModel, pred: np.ndarray, seconds: float) -> None:
         metrics = summary(paid, pred, valid["period"])
         row = {"number": number, "trees": model.best_iteration_, **{k: metrics[k] for k in KEEP}, **bands(paid, pred),
                "lead_over_baseline_pct": lead(metrics["mae"], baseline[1] if baseline else None)}  # fmt: skip
-        row |= dict.fromkeys(GAPS) if today is None else gap(paid, month, (today, today), (pred, pred), tc.seed, DRAWS)
+        row |= dict.fromkeys(GAPS) if first is None else gap(paid, month, (first, first), (pred, pred), tc.seed, DRAWS)
         row["seconds"] = round(seconds, 1)
         rows.append(row)
         mlflow.log_metrics({f"valid_{k}_{len(rows)}": metrics[k] for k in ("mae", "monthly_total_mape")})
@@ -140,7 +142,7 @@ def run(cfg: Config) -> pd.DataFrame:
         scaled.fit(X, y, X_valid, y_valid, tc.early_stopping_rounds)
         pred = scaled.predict(X_valid)
         add(SCALED, scaled, pred, time.perf_counter() - t0)
-        today, factor = pred, scaled.smearing_
+        first, factor = pred, scaled.smearing_
         add(UNSCALED, scaled, pred / factor, 0.0)
         for log_target in (True, False):
             t0 = time.perf_counter()
@@ -166,9 +168,11 @@ def write_report(cfg: Config, results: pd.DataFrame, setting: str, factor: float
     out = cfg.reports_dir
     out.mkdir(parents=True, exist_ok=True)
     best = results.sort_values("mae").iloc[0]
-    today = results.iloc[0]
+    scaled = results.iloc[0]
+    in_use = SCALED if cfg.train.typical_scaled else UNSCALED
     payload = {
         "setting": setting,
+        "in_use": in_use,
         "factor": factor,
         "n_train": n_train,
         "n_valid": n_valid,
@@ -195,8 +199,8 @@ def write_report(cfg: Config, results: pd.DataFrame, setting: str, factor: float
     gaps = pd.DataFrame(
         {
             "number": results["number"],
-            "MAE against today's": [interval(r, "mae_gap") for _, r in results.iterrows()],
-            "its own monthly total against today's (points)": [interval(r, "total_gap") for _, r in results.iterrows()],
+            "MAE against the scaled": [interval(r, "mae_gap") for _, r in results.iterrows()],
+            "its own monthly total against the scaled (points)": [interval(r, "total_gap") for _, r in results.iterrows()],
         }
     ).iloc[1:]
     lines = [
@@ -209,6 +213,8 @@ def write_report(cfg: Config, results: pd.DataFrame, setting: str, factor: float
         f"- **{SCALED}**: exp(prediction of log cost) times the smearing factor, here {factor:.3f}.",
         f"- **{UNSCALED}**: the same fitted model without the factor.",
         "- **median of log(cost)**, **median of cost**: least absolute error, on log(cost) and on the cost.",
+        "",
+        f"The config (`[train] typical_scaled`) gives the typical cost as the **{in_use}** number.",
         "",
         to_markdown(table, index=False),
         "",
@@ -233,13 +239,13 @@ def write_report(cfg: Config, results: pd.DataFrame, setting: str, factor: float
         "The error of the middle admission is the median absolute error: half of the admissions are priced closer"
         " than this.",
         "",
-        f"## Against today's typical cost, on the same admissions (95% interval, {DRAWS:,} resamples)",
+        f"## Against the scaled number, on the same admissions (95% interval, {DRAWS:,} resamples)",
         "",
-        "Negative = lower error than today's.",
+        "Negative = lower error than the scaled number's.",
         "",
         to_markdown(gaps, index=False),
         "",
-        f"**Lowest MAE:** {best['number']} ({best['mae']:.2f} against {today['mae']:.2f} today).",
+        f"**Lowest MAE:** {best['number']} ({best['mae']:.2f} against {scaled['mae']:.2f} scaled).",
         "",
         "Validation window only: the test window was not read and nothing was registered.",
     ]

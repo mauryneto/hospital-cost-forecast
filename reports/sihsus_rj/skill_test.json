@@ -1,5 +1,5 @@
 {
-  "version": "3",
+  "version": "4",
   "rules": {
     "global_mean": "plain average",
     "mean_by_proc": "mean per procedure"
@@ -71,11 +71,11 @@
     {
       "level": "each admission",
       "what": "mean absolute error",
-      "model": 778.6236713671,
+      "model": 727.2023103795,
       "totals": 877760,
       "global_mean": 1579.6352958638,
       "mean_by_proc": 1003.5290901969,
-      "gain_pct": 50.7086431022
+      "gain_pct": 53.963911019
     }
   ]
 }

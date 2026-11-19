@@ -36,6 +36,8 @@ class TrainConfig:
     sliding_months: tuple[int, ...] = ()
     # Whether the model sees the admission date as a number (False, True, or both to compare them).
     use_time: tuple[bool, ...] = (False,)
+    # Whether the typical cost of a log_l2 setting is multiplied by the smearing factor. False = left at the median.
+    typical_scaled: bool = True
     learning_rate: float = 0.1
     max_rounds: int = 2000
     early_stopping_rounds: int = 50

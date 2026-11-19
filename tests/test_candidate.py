@@ -106,3 +106,29 @@ def test_time_feature_is_used_only_when_asked(data):
     assert "admission_period" in with_time.feature_importance().index
     # Synthetic prices rise 6% a year; with the date, the model carries the latest level forward instead of the average.
     assert with_time.predict(Xv).mean() > without.predict(Xv).mean()
+
+
+def test_unscaled_log_model_gives_the_median_the_same_trees_without_the_factor(data):
+    X, y, X_valid, y_valid = data
+    scaled = CostModel("log_l2", 15, 0.1, 40, 5).fit(X, y)
+    unscaled = CostModel("log_l2", 15, 0.1, 40, 5, scaled=False).fit(X, y)
+    assert scaled.smearing_ > 1.0 and unscaled.smearing_ == pytest.approx(scaled.smearing_)
+    np.testing.assert_allclose(unscaled.predict(X_valid), scaled.predict(X_valid) / scaled.smearing_)
+    assert unscaled.params()["scaled"] is False and unscaled.name == scaled.name
+    # About half of the admissions cost more than the unscaled number (a median); fewer cost more than the scaled one.
+    above = (y_valid.to_numpy() > unscaled.predict(X_valid)).mean()
+    assert 0.4 < above < 0.6 and (y_valid.to_numpy() > scaled.predict(X_valid)).mean() < above
+    # The other objectives have no factor to leave out.
+    mean = CostModel("tweedie", 15, 0.1, 40, 5).fit(X, y)
+    np.testing.assert_array_equal(CostModel("tweedie", 15, 0.1, 40, 5, scaled=False).fit(X, y).predict(X_valid),
+                                  mean.predict(X_valid))  # fmt: skip
+
+
+def test_a_model_pickled_before_the_factor_was_optional_stays_scaled(data):
+    X, y, X_valid, _ = data
+    model = CostModel("log_l2", 15, 0.1, 40, 5).fit(X, y)
+    before = model.predict(X_valid)
+    del model.__dict__["scaled"]  # how a version registered earlier comes back from the registry
+    old = pickle.loads(pickle.dumps(model))
+    assert "scaled" not in old.__dict__ and old.scaled is True
+    np.testing.assert_array_equal(old.predict(X_valid), before)

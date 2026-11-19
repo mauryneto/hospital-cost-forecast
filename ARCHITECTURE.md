@@ -55,6 +55,8 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
 4. **Train** (`costmodel train`). Every combination of training window (expanding, or only the last N months) x
    objective x tree size is fitted on the training window and measured on validation, each as an MLflow run. The best
    one is refitted on training + validation and registered in the MLflow model registry with the alias `staging`.
+   With `typical_scaled = false` in `[train]`, a model fitted on log(cost) gives the typical cost without the
+   smearing factor (the median), and the settings are ranked by the error of that number.
    `costmodel families` is a side check, outside `costmodel run`: it fits other model families (random forest,
    CatBoost) on the same windows and features and reports them next to the chosen setting. It reads only the
    validation window and registers nothing; a family that won there would enter the search as a candidate and face
@@ -65,10 +67,10 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    months, built only from bills already known at admission (the monitor's billing delay decides which).
    `costmodel base-window` retrains before every block of three months with histories of different lengths (the
    last 4, 12 or 24 billed months, all of them, all of them with recent months weighing more).
-   `costmodel typical` asks what the typical cost should be: the chosen setting as it is, the same model without
-   the factor that scales it up, and two models fitted to give the median (least absolute error on log(cost) and on
-   the cost), each against today's with an interval, and with the error read in two bands (the 90% least expensive
-   admissions and the 10% most expensive).
+   `costmodel typical` asks what the typical cost should be: the chosen setting scaled up by the factor, the same
+   model without it, and two models fitted to give the median (least absolute error on log(cost) and on the cost),
+   each against the first with an interval, and with the error read in two bands (the 90% least expensive admissions
+   and the 10% most expensive). It is what `typical_scaled` was decided on.
    `costmodel foundation` puts a tabular foundation model (TabPFN-2, the checkpoint with open weights) next to the
    candidate. It is not fitted: it reads 10,000 admissions as context and prices a random sample of the validation
    window, on which LightGBM is scored too, both with all the training rows and with those same 10,000. It needs

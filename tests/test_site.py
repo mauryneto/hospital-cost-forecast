@@ -180,16 +180,18 @@ def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     sizes = {"checkpoint": "TabPFN-2", "context_rows": 300, "eval_rows": 200, "valid_rows": 800, "train_rows": 9000}
     found = {**sizes, "typical_setting": "a", "expected_setting": "b", "rows": read}
     (cfg.reports_dir / "foundation_valid.json").write_text(json.dumps(found), encoding="utf-8")
-    numbers = [("scaled (today)", None), ("unscaled", -2.0)]
+    numbers = [("scaled", None), ("unscaled", -2.0)]
     ways = [{"number": n, "trees": 50, "median_ae": 3.0, "lead_over_baseline_pct": 4.0, "seconds": 1.0, **metrics,
              "mae_common": 4.0, "error_share_top_decile": 60.0,
              **dict.fromkeys(site.FOUNDATION_GAPS, g)} for n, g in numbers]  # fmt: skip
-    typical = {"setting": "chosen", "factor": 1.2, "n_train": 9000, "n_valid": 800, "draws": 10, "best": "unscaled",
+    typical = {"setting": "chosen", "in_use": "unscaled", "factor": 1.2, "n_train": 9000, "n_valid": 800, "draws": 10,
+               "best": "unscaled",
                "money_share_top_decile": 55.0, "baseline": {"model": "median_by_proc", "mae": 12.0},
                "rows": ways}  # fmt: skip
     (cfg.reports_dir / "typical_valid.json").write_text(json.dumps(typical), encoding="utf-8")
     data = embedded(site.run(cfg).read_text(encoding="utf-8"))
     assert data["typical"]["factor"] == 1.2 and data["typical"]["baseline"]["mae"] == 12.0
+    assert data["typical"]["in_use"] == "unscaled"
     assert data["typical"]["money_share_top_decile"] == 55.0 and data["typical"]["rows"][1]["mae_common"] == 4.0
     assert [(r["number"], r["mae_gap"]) for r in data["typical"]["rows"]] == numbers
     assert "median_ae" not in data["typical"]["rows"][0] and "setting" not in data["typical"]

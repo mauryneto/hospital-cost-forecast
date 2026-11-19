@@ -174,3 +174,56 @@ def test_explorer_numbers_are_the_monitors_and_the_page_is_written(cfg, tmp_path
     assert "__" not in page.split("<script id=")[0]  # no placeholder left in the page itself
     assert "function lineChart" in page and "--series-1" in page  # the main page's chart code and styles
     assert '"url": "explore.html"' in index.read_text(encoding="utf-8")  # the main page links to it
+
+
+@pytest.mark.slow
+def test_typical_cost_without_the_factor_reaches_the_registry_and_the_retrains(tmp_path, monkeypatch):
+    """``typical_scaled = false``: the registered typical cost is the median, the expected cost is untouched."""
+    import numpy as np
+    import pandas as pd
+
+    from costmodel import features as F
+    from costmodel.synthetic import write
+
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", f"sqlite:///{(tmp_path / 'mlflow.db').as_posix()}")
+    monkeypatch.setattr(registry, "HOME", tmp_path)
+    monkeypatch.setattr(config_module, "DATA_DIR", tmp_path / "data")
+    monkeypatch.setattr(config_module, "REPORTS_DIR", tmp_path / "reports")
+    write(tmp_path / "admissions.csv", 12_000, "2022-01-01", "2024-12-31", 11)
+    cfg = Config(
+        name="unscaled_test",
+        source={"type": "file", "path": str(tmp_path / "admissions.csv")},
+        split=SplitConfig(mode="relative", valid_months=6, test_months=6, monitor_months=6),
+        train=TrainConfig(objectives=("log_l2", "tweedie"), num_leaves=(15,), use_time=(True,), min_category_count=5,
+                          typical_scaled=False),  # fmt: skip
+    )
+    build_table(cfg)
+    log_row = lambda results: results[results["objective"] == "log_l2"].iloc[0]  # noqa: E731
+    monkeypatch.setattr(train, "choose", lambda results, cfg: log_row(results))
+    monkeypatch.setattr(train, "choose_for_totals", lambda results: results[results["objective"] == "tweedie"].iloc[0])
+    version = train.run(cfg)
+    searched = pd.DataFrame(json.loads((cfg.reports_dir / "train_valid.json").read_text()))
+    assert (searched["mae_unscaled"] == searched["mae"]).tolist() == [False, True]  # only log_l2 has a factor
+    tags = registry.version_for(cfg, registry.STAGING).tags
+    assert tags["typical_number"].startswith("the median")
+    assert float(tags["valid_mae"]) == pytest.approx(log_row(searched)["mae_unscaled"], abs=0.01)
+    assert "given as the median: no smearing factor" in (cfg.reports_dir / "train_valid.md").read_text(encoding="utf-8")
+
+    loaded = registry.load_version(cfg, version)
+    pair = registry.unwrap(loaded)
+    assert pair.typical.scaled is False and pair.typical.smearing_ > 1.0 and pair.expected.objective == "tweedie"
+    table = pd.read_parquet(cfg.table_path).tail(500)
+    typical, expected = registry.predict_both(loaded, table)
+    X = F.build_features(table)
+    raw = pair.typical.booster_.predict(pair.typical._encode(X), num_iteration=pair.typical.best_iteration_)
+    np.testing.assert_allclose(typical, np.exp(raw))
+    np.testing.assert_allclose(expected, pair.expected.predict(X))
+    retrained = replay.like(pair)  # a retrain keeps giving the number the same way
+    assert retrained.typical.scaled is False and retrained.expected.scaled is True
+
+    # One setting best at both: the same trees give both numbers, the expected one with the factor.
+    monkeypatch.setattr(train, "choose_for_totals", log_row)
+    both = registry.unwrap(registry.load_version(cfg, train.run(cfg)))
+    assert both.expected is not both.typical and both.expected.booster_ is both.typical.booster_
+    assert both.expected.scaled is True and both.typical.scaled is False
+    np.testing.assert_allclose(both.expected.predict(X), both.typical.predict(X) * both.typical.smearing_)

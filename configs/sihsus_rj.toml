@@ -33,6 +33,9 @@ num_leaves = [63, 255]
 sliding_months = [24]
 # The admission date as a number: with it, trees apply the most recent price level to future admissions.
 use_time = [false, true]
+# The typical cost without the smearing factor: the factor makes a log model add up better, which is the expected
+# cost's job. Without it the same model was 5.7% closer to each admission on 2022 (`costmodel typical`).
+typical_scaled = false
 learning_rate = 0.1
 max_rounds = 2000
 early_stopping_rounds = 50
