@@ -110,6 +110,32 @@ the verdicts:
 - **Nothing was adopted.** The model in production is still version 3. What to do with each finding is in the
   roadmap and in [DECISIONS.md](DECISIONS.md).
 
+**Should the typical cost be a median? (2022)** The typical cost is the log model's prediction scaled up so that it
+adds up better, which the expected cost now does. The 2025 check suggested that this factor costs accuracy per
+admission, so the same setting was fitted on the training window and read four ways on the validation year
+([typical_valid.md](reports/sihsus_rj/typical_valid.md)):
+
+| The typical cost as | MAE (R$) | Against today's (95% interval) | MAE, other 90% | MAE, top 10% | If it were added up | Lead over the best baseline |
+|---|---:|---:|---:|---:|---:|---:|
+| Today's: scaled by the factor (1.157) | 792.15 | | 313.72 | 5,098.02 | 14.98% low | 6.7% |
+| The same model without the factor | 747.38 | −44.77 (−45.58 to −43.90) | 251.26 | 5,212.42 | 26.50% low | 11.9% |
+| A median model, fitted on log(cost) | 733.45 | −58.69 (−60.37 to −56.91) | 219.72 | 5,356.99 | 31.71% low | 13.6% |
+| A median model, fitted on the cost | 746.11 | −46.04 (−48.00 to −44.01) | 234.37 | 5,351.75 | 31.17% low | 12.1% |
+
+- **The factor costs 5.7% per admission.** Leaving it out needs no new model: the same 324 trees, a different last
+  step. The lead over the best baseline (a table of medians) goes from 6.7% to 11.9%.
+- **A model fitted to give the median goes further, 7.4%,** but it used all 2,000 trees it was allowed (six times
+  the size of today's) and had not stopped improving.
+- **One average hides two kinds of admission.** The 10% most expensive admissions received 57.3% of the money and
+  carry 64.4% of today's error per admission. They are real bills, and which admission will be one of them is not
+  known at admission, so they are not left out; the error is read in two bands. On the other 90% the error goes
+  from 313.72 to 251.26 without the factor (19.9% lower) and to 219.72 with the median model. The bands are cut by
+  what was paid, known only afterwards.
+- **What it gives up:** a median is 2% to 5% further from the 10% most expensive admissions, and added up it would
+  fall 26% to 32% short. The model does not add up the typical cost; the expected cost is for that.
+- **Not adopted.** This is the validation year, where choices are made. 2025 has been read and cannot confirm it; the
+  first half of 2026 can.
+
 **A tabular foundation model on the validation year (2022).** A foundation model is not trained on this data: it
 reads labelled admissions as context and prices the others in one pass. TabPFN-2, the TabPFN checkpoint with open
 weights, reads 10,000 rows; the training window has 2.8 million. Every row below is scored on the same 30,000
@@ -307,6 +333,7 @@ docker compose up api
 | `costmodel blend` | Average the candidate's best per-admission and best month's-total settings, on validation |
 | `costmodel segments` | One model for every admission, or one per admission type / procedure group? On validation |
 | `costmodel recent-price` | Does the model do better when given each procedure's recent billed price? On validation |
+| `costmodel typical` | Should the typical cost be a median? The same setting, four ways to give the number, on validation |
 | `costmodel foundation` | A tabular foundation model (TabPFN-2) against the candidate, on a sample of validation; needs `uv sync --extra foundation` and a GPU |
 | `costmodel base-window` | How much billed history should each retrain use? Retrained every 3 months, on validation |
 | `costmodel skill` | Is the production model worth it over a plain average? Totals by hospital, specialty and more, on test |
@@ -422,8 +449,8 @@ Not done yet, in the order planned:
 What the 2025 check left open:
 
 - **A typical cost that is a median.** The typical cost is scaled up to add up better, and in 2025 a table of medians
-  nearly tied with it per admission. Since the expected cost now does the adding up, the typical cost could be a true
-  median. To be tried on the validation year, then confirmed on a period not read yet.
+  nearly tied with it per admission. Tried on the validation year (see Results): without the factor the error per
+  admission is 5.7% lower, with a median model 7.4% lower. Still to be confirmed on a period not read yet.
 - **The gate's rule for a retrained model.** Judged on two months, "not worse on the other number" refused 18 of 21
   retrains that were clearly better per admission. The margin, the number of months, or both need rethinking.
 - **A typical-cost model of its own for surgery.** Better on 2022 and confirmed on 2025; not adopted yet.

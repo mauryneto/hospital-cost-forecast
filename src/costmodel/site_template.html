@@ -111,6 +111,9 @@ td:first-child { font-family: var(--sans); }
 #fresh-verdicts td:nth-child(2) { white-space: nowrap; font-weight: 600; }
 #fo-table th:nth-child(2), #fo-table td:nth-child(2) { text-align: left; font-family: var(--sans); }
 #fo-table td:nth-child(-n+2) { white-space: normal; min-width: 20ch; }
+#ty-table td:first-child { white-space: normal; min-width: 18ch; }
+#ty-table th { white-space: normal; vertical-align: bottom; }
+#ty-table td:nth-child(3) { white-space: normal; min-width: 19ch; max-width: 19ch; }
 details { margin-top: 8px; }
 details > summary { font-size: 13px; color: var(--ink-2); cursor: pointer; width: fit-content; }
 details[open] > summary { margin-bottom: 8px; }
@@ -243,7 +246,7 @@ footer p { margin: 0 0 10px; }
     <div class="side">
       <div class="no">05</div>
       <h2>Other kinds of model</h2>
-      <p>Is this the right kind of model? Other families, a tabular foundation model, an average of two settings of the candidate, one model per group of admissions, the recent price of each procedure as an input, and shorter histories for each retrain, all on the same admissions.</p>
+      <p>Is this the right kind of model? Other families, a tabular foundation model, the typical cost given as a median, an average of two settings of the candidate, one model per group of admissions, the recent price of each procedure as an input, and shorter histories for each retrain, all on the same admissions.</p>
       <p>Measured on the validation window, where choices are made. The test window was not looked at again.</p>
     </div>
     <div class="main">
@@ -263,6 +266,14 @@ footer p { margin: 0 0 10px; }
           <h3>A tabular foundation model, which reads examples instead of being trained</h3>
           <p class="sub" id="fo-sub"></p>
           <div class="tablewrap" id="fo-table"></div>
+        </div>
+      </div>
+      <div id="ty-block">
+        <p class="finding" id="ty-finding"></p>
+        <div class="figure">
+          <h3>The typical cost as a median</h3>
+          <p class="sub" id="ty-sub"></p>
+          <div class="tablewrap" id="ty-table"></div>
         </div>
       </div>
       <div id="blend-block">
@@ -672,7 +683,9 @@ footer p { margin: 0 0 10px; }
   if (BW.length < 3) $("bw-block").style.display = "none";
   var FO = D.foundation && D.foundation.rows.length > 1 ? D.foundation : null;
   if (!FO) $("fo-block").style.display = "none";
-  if (FAM.length < 2 && !FO && !B && SEG.length < 2 && RP.length < 2 && BW.length < 3) $("s-families").style.display = "none";
+  var TY = D.typical && D.typical.rows.length > 1 ? D.typical : null;
+  if (!TY) $("ty-block").style.display = "none";
+  if (FAM.length < 2 && !FO && !TY && !B && SEG.length < 2 && RP.length < 2 && BW.length < 3) $("s-families").style.display = "none";
   if (FAM.length >= 2) {
     var chosen = FAM.filter(isCandidate)[0];
     var others = FAM.filter(function (r) { return !r.candidate; }).sort(function (a, b) { return a.mae - b.mae; });
@@ -720,6 +733,31 @@ footer p { margin: 0 0 10px; }
       " from drawing the admissions again: an interval that contains zero is a difference this sample cannot show.";
     table($("fo-table"), ["Model and what it learns from", "Setting", "MAE", "Month's total error", "Bias", "MAE, top 10%", "Time", "MAE against the first row", "Month's total against the first row"], FO.rows.map(function (r) {
       return [r.model + ": " + r.reads, r.setting, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2), foTook(r), span(r, "mae_gap", 2, ""), span(r, "total_gap", 2, " pts")];
+    }));
+  }
+  if (TY) {
+    var TY_NAMES = { "scaled (today)": "Today's: scaled up by the factor", "unscaled": "The same model without the factor",
+      "median of log(cost)": "A median model, fitted on log(cost)", "median of cost": "A median model, fitted on the cost" };
+    var tySigned = function (v, d) { return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + fmt(Math.abs(v), d); };
+    var tySpan = function (r) { return r.mae_gap == null ? "\u2013" : tySigned(r.mae_gap, 2) + " (" + tySigned(r.mae_gap_low, 2) + " to " + tySigned(r.mae_gap_high, 2) + ")"; };
+    var tyNow = TY.rows[0], tyFree = TY.rows[1], tyBest = TY.rows.slice().sort(function (a, b) { return a.mae - b.mae; })[0];
+    var tyLess = function (r) { return fmt(Math.abs(100 * (r.mae / tyNow.mae - 1)), 1) + "%"; };
+    var tyTop = function (r) { return fmt(100 * (r.mae_top_decile / tyNow.mae_top_decile - 1), 1) + "%"; };
+    var tyClear = function (r) { return r.mae_gap_high < 0; };
+    $("ty-finding").innerHTML = "The typical cost is scaled up by " + fmt(100 * (TY.factor - 1), 1) + "% so that it adds up better, which the expected cost now does. " +
+      (tyClear(tyFree) ? "Without that factor the same model is <b>" + tyLess(tyFree) + " closer to each admission</b> (" + CUR + fmt(tyFree.mae, 2) + " against " + CUR + fmt(tyNow.mae, 2) + ")" :
+        "Without that factor the same model is <b>not closer to each admission</b> (" + CUR + fmt(tyFree.mae, 2) + " against " + CUR + fmt(tyNow.mae, 2) + ")") +
+      (tyBest !== tyNow && tyBest !== tyFree && tyClear(tyBest) ? "; a model fitted to give the median, " + tyLess(tyBest) + " closer. " : ". ") +
+      "The 10% most expensive admissions hold " + pct(TY.money_share_top_decile, 1) + " of the money and " + pct(tyNow.error_share_top_decile, 1) + " of today's error. On the other 90% the error goes from " +
+      CUR + fmt(tyNow.mae_common, 2) + " to <b>" + CUR + fmt(tyFree.mae_common, 2) + "</b> without the factor" +
+      (tyFree.mae_top_decile > tyNow.mae_top_decile ? "; on those 10% it is " + tyTop(tyFree) + " larger. " : ". ") +
+      "Not adopted: it has to hold on a period not read yet.";
+    $("ty-sub").textContent = "The setting chosen for the typical cost, fitted once on the training window and read in different ways on the " + fmt(TY.n_valid, 0) +
+      " admissions of the validation window. \u201cIf it were added up\u201d is the error on the month's total of this number itself; the model adds up the expected cost, not this one." +
+      (TY.baseline ? " The lead is over the best baseline on this window, a table of medians (" + CUR + fmt(TY.baseline.mae, 2) + "); the gate asks for " + pct(100 * TY.min_mae_gain, 0) + "." : "") +
+      " The interval is each row minus the first, from drawing the admissions again. The two bands are cut by what was paid, known only afterwards: a way to read the error, not something the model can use.";
+    table($("ty-table"), ["The typical cost as", "MAE", "Against the first row (95%)", "MAE, other 90%", "MAE, top 10%", "If it were added up", "Lead over the best baseline"], TY.rows.map(function (r) {
+      return [TY_NAMES[r.number] || r.number, fmt(r.mae, 2), tySpan(r), fmt(r.mae_common, 2), fmt(r.mae_top_decile, 2), pct(r.bias_pct, 2, true), r.lead_over_baseline_pct == null ? "\u2013" : pct(r.lead_over_baseline_pct, 1)];
     }));
   }
   if (B) {

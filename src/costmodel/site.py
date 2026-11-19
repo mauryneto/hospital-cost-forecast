@@ -30,6 +30,8 @@ SHIFT_FIELDS = ("code", "n", "extra", "reference_median", "monthly_median")
 FAMILY_FIELDS = ("family", "setting", "trees", "seconds", *TEST_METRICS)
 FOUNDATION_GAPS = ("mae_gap", "mae_gap_low", "mae_gap_high", "total_gap", "total_gap_low", "total_gap_high")
 FOUNDATION_FIELDS = ("model", "reads", "setting", "rows", "seconds", *TEST_METRICS, *FOUNDATION_GAPS)
+TYPICAL_BANDS = ("mae_common", "error_share_top_decile")
+TYPICAL_FIELDS = ("number", "trees", *TEST_METRICS, *TYPICAL_BANDS, "lead_over_baseline_pct", *FOUNDATION_GAPS)
 BLEND_FIELDS = ("weight", *TEST_METRICS)
 SEGMENT_FIELDS = ("scheme", "models", *TEST_METRICS)
 RECENT_PRICE_FIELDS = ("variant", "window", *TEST_METRICS)
@@ -116,6 +118,7 @@ def page_data(cfg: Config) -> dict:
     if cfg.site.fresh_dataset and (path := cfg.reports_dir.parent / cfg.site.fresh_dataset / "fresh_year.json").exists():
         fresh = fresh_data(json.loads(path.read_text(encoding="utf-8")))
     blend = _read(cfg, "blend_valid.json", required=False)
+    typical = _read(cfg, "typical_valid.json", required=False)
     segments = _read(cfg, "segments_valid.json", required=False) or {"schemes": []}
     if "price_shifts" not in monitor:
         raise RuntimeError("monitor.json has no price breakdown; run `costmodel monitor` again")
@@ -207,6 +210,13 @@ def page_data(cfg: Config) -> dict:
         and {
             **{k: foundation[k] for k in ("checkpoint", "context_rows", "eval_rows", "valid_rows", "train_rows")},
             "rows": [{k: row[k] for k in FOUNDATION_FIELDS} for row in foundation["rows"]],
+        },
+        # `costmodel typical`: the first row is today's typical cost; the others are the same setting read as a median.
+        "typical": typical
+        and {
+            **{k: typical[k] for k in ("factor", "n_valid", "baseline", "money_share_top_decile")},
+            "min_mae_gain": cfg.gate.min_mae_gain,
+            "rows": [{k: row[k] for k in TYPICAL_FIELDS} for row in typical["rows"]],
         },
         "blend": blend
         and {

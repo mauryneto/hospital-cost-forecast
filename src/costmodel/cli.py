@@ -26,6 +26,7 @@ def main(argv: list[str] | None = None) -> None:
         ("recent-price", "does the model do better when given each procedure's recent billed price? on validation"),
         ("base-window", "how much billed history should each retrain use? retrained every 3 months, on validation"),
         ("foundation", "a tabular foundation model (TabPFN) against the candidate, on a sample of validation"),
+        ("typical", "should the typical cost be a median? the same setting, four ways to give the number, on validation"),
         ("skill", "is the production model worth it over a plain average? totals by hospital, specialty..., on test"),
         ("fresh", "a year no choice was made on, scored once by the settings in [fresh] (slow: it retrains)"),
         ("explore", "the production model group by group (hospital, specialty...), month by month: data for the explorer"),
@@ -124,6 +125,10 @@ def main(argv: list[str] | None = None) -> None:
         run(cfg)
     elif args.command == "foundation":
         from costmodel.foundation import run
+
+        run(cfg)
+    elif args.command == "typical":
+        from costmodel.typical import run
 
         run(cfg)
     elif args.command == "skill":

@@ -60,8 +60,9 @@ recommended by the system and decided by a person, with nothing scheduled.
 - **The licence of the newer foundation models.** TabPFN-2.5 and later read up to a million rows instead of 10,000,
   the limit that hurt in the comparison. They need an account and a non-commercial licence that also covers the
   model's outputs. The author's call.
-- **What to do with the 2025 check** (see "Result of the 2025 check"): a typical cost that is a median, the gate's
-  rule for retrained models, and a typical-cost model of its own for surgery. The author's call.
+- **What to do with the 2025 check** (see "Result of the 2025 check"): a typical cost that is a median (tried on
+  2022 and better per admission, see "The typical cost as a median"; not adopted), the gate's rule for retrained
+  models, and a typical-cost model of its own for surgery. The author's call.
 - **The next period not used for any choice.** 2025 has been read. The first half of 2026 is next, once billed.
 
 ## The 2025 check: written before looking
@@ -146,6 +147,43 @@ One diagnostic was run after the check, on the same 30,000 admissions, to unders
 verdict and no code. Nothing was adopted: the model in production is still version 3, and what to do with each
 finding (a median for the typical cost, the gate's rule for retrains, a model of its own for surgery) is the
 author's decision. 2025 has now been read; the next period no choice was made on is the first half of 2026.
+
+## The typical cost as a median: tried on the validation year
+
+The first thing the 2025 check left to try. `costmodel typical` fits the setting chosen for the typical cost on the
+training window and reads it four ways on 2022 ([the report](reports/sihsus_rj/typical_valid.md)); each difference
+has a 95% interval from drawing the 786,766 admissions again.
+
+| The typical cost as | MAE | Against today's | MAE, other 90% | MAE, top 10% | If added up | Lead over the best baseline |
+|---|---:|---:|---:|---:|---:|---:|
+| Today's: scaled by the factor (1.157) | 792.15 | | 313.72 | 5,098.02 | 14.98% low | 6.65% |
+| The same model without the factor | 747.38 | −44.77 (−45.58 to −43.90) | 251.26 | 5,212.42 | 26.50% low | 11.93% |
+| A median model, on log(cost) | 733.45 | −58.69 (−60.37 to −56.91) | 219.72 | 5,356.99 | 31.71% low | 13.57% |
+| A median model, on the cost | 746.11 | −46.04 (−48.00 to −44.01) | 234.37 | 5,351.75 | 31.17% low | 12.08% |
+
+In the assistant's reading:
+
+- **The hypothesis holds on 2022.** The factor that makes the typical cost add up better makes it 5.7% worse at what
+  it is for. Three quarters of what a median model gains comes from just leaving the factor out.
+- **Leaving the factor out is the cheap option:** no new model, no retraining, the same 324 trees. The median model
+  on log(cost) is better by another 13.93 per admission, but it ran into the limit of 2,000 trees without stopping,
+  so it is six times larger and its number here is not its best. A fair version of it needs a higher limit or a
+  higher learning rate, which is one more search.
+- **The price is on the expensive admissions:** 2.2% further from the top 10% without the factor, 5.1% with the
+  median model. Whoever reads the typical cost of a likely expensive admission gets a lower number than today.
+- **Whether to leave the expensive admissions out** was asked by the author on seeing these numbers: they look like
+  outliers and they dominate the average error. They are kept. They are real bills, 57.3% of the money paid, and
+  nobody knows at admission which admission will be one of them, so a model cannot leave them out and an error
+  measured without them would describe a case that cannot be chosen in advance. What the question changed is how
+  the error is read: in two bands, the 90% least expensive admissions and the 10% most expensive, cut by what was
+  paid. On the first band the error is 313.72 today and 251.26 without the factor; on the second, 5,098.02 and
+  5,212.42. The typical cost without the factor is the "price of an ordinary admission" the question was after.
+- **It does not settle the 2025 question.** On 2025 the model led the table of medians by 0.6%; on 2022 leaving the
+  factor out adds about five points to that lead. Whether it does the same on a year like 2025 was not measured:
+  2025 has been read, and scoring this on it now would be choosing with a year that was meant to choose nothing.
+
+Not adopted. Adopting it would be a new version (the typical cost without the factor), judged by the gate, and
+confirmed on the first half of 2026. The author's call.
 
 ## Result of decision 8
 

@@ -65,6 +65,10 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    months, built only from bills already known at admission (the monitor's billing delay decides which).
    `costmodel base-window` retrains before every block of three months with histories of different lengths (the
    last 4, 12 or 24 billed months, all of them, all of them with recent months weighing more).
+   `costmodel typical` asks what the typical cost should be: the chosen setting as it is, the same model without
+   the factor that scales it up, and two models fitted to give the median (least absolute error on log(cost) and on
+   the cost), each against today's with an interval, and with the error read in two bands (the 90% least expensive
+   admissions and the 10% most expensive).
    `costmodel foundation` puts a tabular foundation model (TabPFN-2, the checkpoint with open weights) next to the
    candidate. It is not fitted: it reads 10,000 admissions as context and prices a random sample of the validation
    window, on which LightGBM is scored too, both with all the training rows and with those same 10,000. It needs
@@ -112,8 +116,8 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    `docs/explore.html`, a screen with filters, next to the main page.
    `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
    monitoring months, where prices changed, the retraining replay and, when they were run, the side comparisons
-   (other model families, a tabular foundation model, the blend, one model per group, the recent price, the length
-   of the history) and the fresh-year check of the dataset named in `[site] fresh_dataset`. The numbers
+   (other model families, a tabular foundation model, the typical cost as a median, the blend, one model per group,
+   the recent price, the length of the history) and the fresh-year check of the dataset named in `[site] fresh_dataset`. The numbers
    are embedded when the page is generated, so it cannot disagree with the reports, and only aggregates are published.
 
 ## Leakage control is part of the contract
