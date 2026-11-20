@@ -26,6 +26,7 @@ What transfers is the **pipeline**, not the model. A model trained on SUS prices
 | Layer | Module | Contract with the next layer |
 |---|---|---|
 | Sources | `costmodel.sources.sihsus` (download with checksums, `.dbc` reader, mapping) | Produces a DataFrame in the canonical schema. Source-only columns go in `src_*`. |
+| Reference tables | `costmodel.sources.sigtap` (the SUS price table, one checksummed file per month) | One row per procedure and month. Read only by `costmodel table-price`; the model in production does not use it. |
 | Contract | `costmodel.contract` | `validate(df)` fails with a readable report on a missing column, wrong type or absurd value. |
 | Split | `costmodel.split` | Time-based train / valid / test / monitor windows from the run config, by **admission date**. |
 | Features | `costmodel.features` | The only place that decides what the model sees. Reads admission-time columns only. |
@@ -65,6 +66,9 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    asks whether one model per group of admissions (by admission type, by procedure group) does better than one model
    for all of them. `costmodel recent-price` gives the model the mean paid for each procedure in the last billed
    months, built only from bills already known at admission (the monitor's billing delay decides which).
+   `costmodel table-price` gives it the official price table instead (SIGTAP): the row of the requested procedure,
+   from the admission month's table or from the newest table whose file is dated before that month began, and reads
+   the result apart for the procedures re-priced inside the window.
    `costmodel base-window` retrains before every block of three months with histories of different lengths (the
    last 4, 12 or 24 billed months, all of them, all of them with recent months weighing more).
    `costmodel typical` asks what the typical cost should be: the chosen setting scaled up by the factor, the same
@@ -94,6 +98,9 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    expensive stays bill later, so judging earlier would understate the error). When the error grows, the report
    also says where: the error by admission type, and the price level, which compares what was paid with what the same
    admissions would cost at the prices the model last saw (same mix of procedures, so only price counts).
+   `costmodel bill-parts` goes one step further for SIH/SUS, outside `costmodel run`: it reads from the raw files
+   the complements paid on top of the table and scores the same months against the bill with and without them,
+   which tells a payment programme being switched on from the model decaying.
 7. **Retrain rule.** When the last `patience` mature months all have an MAE more than `mae_tolerance` above the model's
    test MAE, or a monthly-total error beyond the gate's ceiling, the monitor recommends retraining. It does not retrain
    by itself: a person runs `costmodel run` with the new data, and the new candidate goes through the same gate.

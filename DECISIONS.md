@@ -27,6 +27,7 @@ and kept after review.
 | 13 | **Show the final model on a screen like a BI tool: the whole state, admission type, procedure group, bed specialty, hospital and each admission, month by month.** | A table in a report answers one question. A screen with filters lets someone look for their own. | `costmodel explore` and the [explorer page](https://mauryneto.github.io/hospital-cost-forecast/explore.html). Each admission is shown only as distributions: no admission is published. |
 | 14 | **No prediction ranges. Next: a tabular foundation model; then cash flow; then the official price table as an input; other states and patient history later. No neural network.** | Whoever uses this wants a value, not a range. Several kinds of model were already compared, so the recent one that is missing comes first. | The roadmap in the README, in this order. |
 | 15 | **Before moving on to the cash-flow forecast, do the 2025 check.** | Every choice so far was made on 2022 and judged on 2023 and 2024, which were looked at more than once. A year no choice was made on is the only clean check left. | The protocol below, written and committed before any 2025 cost was read; then `costmodel fresh`, run once. |
+| 16 | **Is the official price table fetched automatically, is it kept up to date, is it really worth it? Download it, put it in and see.** | A hospital or a payer would ask exactly that before depending on one more file. | `costmodel table-price` and `costmodel bill-parts`. Result: see "Tried and not adopted: the official price table as an input". |
 
 ## Fixed in the brief, before any code
 
@@ -64,6 +65,11 @@ recommended by the system and decided by a person, with nothing scheduled.
   typical-cost model of its own for surgery. The author's call. The third, a typical cost that is a median, became
   version 4 (see "Version 4: the typical cost without the factor") and waits for a period not read yet.
 - **The next period not used for any choice.** 2025 has been read. The first half of 2026 is next, once billed.
+- **Complements in the contract and in the monitor** (see "Tried and not adopted: the official price table as an
+  input"). In SIH/SUS a bill is the table's part plus complements, and the 2024 step was a complement. Two ways to
+  use that: an optional column in the contract for what was paid on top of the price list, so the monitor can tell a
+  programme being switched on from the model decaying; or a model that predicts the two parts apart. Neither was
+  built. The author's call.
 
 ## The 2025 check: written before looking
 
@@ -364,6 +370,47 @@ was picked on that same sample; it needs a GPU and minutes where LightGBM needs 
 face a test year already looked at twice. The assistant's reading is that this is the most promising result among
 the side comparisons, and that it deserves a fresh year more than a quick adoption. Whether to accept the licence of
 the newer checkpoints is open, and the author's call.
+
+## Tried and not adopted: the official price table as an input
+
+Before moving on to the cash-flow forecast, the author asked whether anything else could still improve the model.
+The assistant's answer was that small adjustments were not worth another look at the test year, and that the one
+candidate left was the official price table, already on the roadmap. The author then asked what someone at a
+hospital or a payer would ask: is that table fetched automatically, is it kept up to date, is it really worth it?
+And told the assistant to download it, put it in and find out. Two commands came out of that:
+`costmodel table-price` ([table_price_valid.md](reports/sihsus_rj/table_price_valid.md)) and `costmodel bill-parts`
+([bill_parts_monitor.md](reports/sihsus_rj/bill_parts_monitor.md)).
+
+- **The table is public, monthly and small.** One file per month on the DATASUS server, about 2 MB each; 85 were
+  read (December 2017 to December 2024) and their checksums recorded. Half of them are dated within 6 days of the
+  1st of their month, and 18 of the 85 are dated after their month had ended: the table of July 2022, with the
+  largest re-pricing of these years, is dated 24 August. So the comparison has a variant that only reads a table
+  whose file is dated before the admission month began.
+- **For a payer the file is not the point.** A private plan pays by its own contract table, not by this one. What
+  carries over is the question, whether the current price list helps as an input, and the place for it: a
+  reference table next to the source adapter, which the model in production does not depend on.
+- **Per admission it gains too little.** With the typical cost as version 4 gives it, 747.38 on 2022 becomes 744.92
+  (the admission month's table), 743.41 (the table as written) or 739.68 (the cost predicted relative to the table
+  price): 0.3% to 1.0%, where the gate asks 2%.
+- **On the month's total it passes the gate's number and should not be believed.** The expected cost's error goes
+  from 10.69% to 8.91%, 9.64% or 7.22%; the gate asks a 10% relative gain to replace a model, and two of the three
+  variants clear it. Read apart, the gain is two errors of opposite sign: for the 7.6% of admissions whose procedure
+  was re-priced inside 2022, the expected cost goes from 8.64% too low to between 5.93% and 21.93% too high after
+  the change, and their error per admission gets worse; the other 92% stay about 10% too low. The table price of
+  those procedures went up 38.6% and what was paid for them 12.1%. From 2018 to 2021 the table hardly moved, so the
+  model never saw a procedure change price and had nothing to learn the pass-through from. The assistant recommended
+  not adopting it, and not spending a fourth look at 2023 on it.
+- **The July 2024 step was not in the table.** The table did not move in 2024. The step is a federal complement,
+  paid on top of the table to elective admissions only: 2.63% of the admissions in June, 7.58% in July, about three
+  times the rest of the bill where it is paid, 6.38% of the year's money against 1% or less in every earlier year.
+  Against the bills without it, the production model's error over 2024 is 774.13 instead of 882.18 per admission,
+  and the month's total is 8% to 11% low in every month instead of 17% to 20% low from July. A federal complement of
+  this kind is how the national programme to shorten queues for elective surgery pays; which ordinance raised it in
+  July was not looked up.
+- **What this says about the monitor.** Most of what 2024 showed as decay was a payment programme being switched
+  on. The retrain rule did what it should, since the bills did change and a retrained model follows them (see the
+  replay). But the report could not say which part of the bill had moved, and the contract's single cost column
+  cannot either. 2024 had already been read; nothing was chosen on it here.
 
 ## Tried and not adopted: the recent price of each procedure as an input
 

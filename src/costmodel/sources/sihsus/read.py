@@ -26,6 +26,9 @@ NUMERIC_COLUMNS = [
     "VAL_SH", "VAL_SP", "VAL_UTI", "VAL_TOT",
 ]  # fmt: skip
 KEEP = STRING_COLUMNS + NUMERIC_COLUMNS
+# What a bill is made of: the table's hospital and professional parts, and the complements paid on top of them by the
+# federal government and by the state or city that runs the hospital. VAL_TOT is their sum.
+PARTS = ["VAL_SH", "VAL_SP", "VAL_SH_FED", "VAL_SP_FED", "VAL_SH_GES", "VAL_SP_GES"]
 
 
 def read_dbc(path: Path, columns: list[str] = KEEP) -> pd.DataFrame:
@@ -57,3 +60,26 @@ def load_interim(uf: str, interim_dir: Path = INTERIM_DIR) -> pd.DataFrame:
     if not files:
         raise FileNotFoundError(f"no Parquet files in {interim_dir}; run `costmodel data` first")
     return pd.concat((pd.read_parquet(f) for f in files), ignore_index=True)
+
+
+def read_parts(raw_dir: Path = RAW_DIR, cache: Path | None = None) -> pd.DataFrame:
+    """The parts of every regular bill (``PARTS`` and the total), one row per AIH: the same rows the adapter keeps
+    (regular AIH, the last file a number appears in). Kept as a Parquet copy next to the interim files."""
+    cache = cache or raw_dir.parent / "bill_parts.parquet"
+    files = sorted(raw_dir.glob("RD*.dbc"))
+    if cache.exists() and all(cache.stat().st_mtime >= f.stat().st_mtime for f in files):
+        return pd.read_parquet(cache)
+    frames = []
+    for path in files:
+        try:
+            df = read_dbf(datasus_dbc.decompress_bytes(path.read_bytes()), ["N_AIH", "IDENT", "VAL_TOT", *PARTS])
+        except KeyError as exc:
+            raise ValueError(f"{path.name}: {exc} (the RD layout may have changed)") from None
+        for col in ["VAL_TOT", *PARTS]:
+            # A few old files carry stray bytes in a money field; read through Python strings, they become missing.
+            df[col] = pd.to_numeric(pd.Series(df[col].astype("string[python]").tolist(), index=df.index), errors="coerce")
+        frames.append(df[df["IDENT"] == "1"].drop(columns="IDENT").assign(SOURCE_FILE=path.stem))
+    parts = pd.concat(frames, ignore_index=True).sort_values("SOURCE_FILE").drop_duplicates("N_AIH", keep="last")
+    parts = parts.drop(columns="SOURCE_FILE").reset_index(drop=True)
+    parts.to_parquet(cache, index=False)
+    return parts

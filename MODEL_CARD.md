@@ -21,7 +21,7 @@ expensive admissions take 57% of the money):
 | Common settings | Learning rate 0.1, seed 42, trees chosen by early stopping on 2022, the admission date as an input |
 | Trained on | 3,606,614 admissions from 2018-01-01 to 2022-12-31 (training + validation windows, refitted after the search) |
 | Chosen by | Among 16 settings measured on 2022: for the typical cost, the lowest MAE of the number as given (without the factor) among the settings whose monthly-total error with the factor is at or under 15%; for the expected cost, the lowest monthly-total error ([train_valid.md](reports/sihsus_rj/train_valid.md)) |
-| Alternatives tried | Random forest and CatBoost on the same 2022 validation year: 5–6% worse per admission ([families_valid.md](reports/sihsus_rj/families_valid.md)). An average of the two settings above: 0.6% better per admission and 2.4 points better on the month's total than the typical cost alone ([blend_valid.md](reports/sihsus_rj/blend_valid.md)); serving both numbers was preferred to averaging them. One model per procedure group: 1.8% better per admission, 1.5 points worse on the month's total, not adopted ([segments_valid.md](reports/sihsus_rj/segments_valid.md)). The recent billed price of each procedure as an input: no gain per admission, not adopted ([recent_price_valid.md](reports/sihsus_rj/recent_price_valid.md)). Retraining on only the last 4, 12 or 24 billed months instead of all of them: worse per admission ([base_window_valid.md](reports/sihsus_rj/base_window_valid.md)). The typical cost without its scaling factor, or from a model fitted to give the median: 5.7% and 7.4% better per admission on 2022 (20% and 30% better on the 90% least expensive admissions), further from the 10% most expensive; the first is this version, the second was left for a search of its own ([typical_valid.md](reports/sihsus_rj/typical_valid.md)). Every other comparison in this row was run with the scaled typical cost of version 3. A tabular foundation model (TabPFN-2, open weights) reading 10,000 recent admissions plus statistics of each code: a tie per admission and 2.34 points better on the month's total on a sample of 30,000 validation admissions, but it needs a GPU and was picked among four variants on that sample; not adopted, to be confirmed on a fresh year ([foundation_valid.md](reports/sihsus_rj/foundation_valid.md)) |
+| Alternatives tried | Random forest and CatBoost on the same 2022 validation year: 5–6% worse per admission ([families_valid.md](reports/sihsus_rj/families_valid.md)). An average of the two settings above: 0.6% better per admission and 2.4 points better on the month's total than the typical cost alone ([blend_valid.md](reports/sihsus_rj/blend_valid.md)); serving both numbers was preferred to averaging them. One model per procedure group: 1.8% better per admission, 1.5 points worse on the month's total, not adopted ([segments_valid.md](reports/sihsus_rj/segments_valid.md)). The recent billed price of each procedure as an input: no gain per admission, not adopted ([recent_price_valid.md](reports/sihsus_rj/recent_price_valid.md)). The official price table (SIGTAP) as an input, measured with this version's typical cost: 0.3% to 1.0% better per admission, and a gain on the month's total that comes from over-predicting the procedures re-priced in 2022; not adopted ([table_price_valid.md](reports/sihsus_rj/table_price_valid.md)). Retraining on only the last 4, 12 or 24 billed months instead of all of them: worse per admission ([base_window_valid.md](reports/sihsus_rj/base_window_valid.md)). The typical cost without its scaling factor, or from a model fitted to give the median: 5.7% and 7.4% better per admission on 2022 (20% and 30% better on the 90% least expensive admissions), further from the 10% most expensive; the first is this version, the second was left for a search of its own ([typical_valid.md](reports/sihsus_rj/typical_valid.md)). Every other comparison in this row was run with the scaled typical cost of version 3. A tabular foundation model (TabPFN-2, open weights) reading 10,000 recent admissions plus statistics of each code: a tie per admission and 2.34 points better on the month's total on a sample of 30,000 validation admissions, but it needs a GPU and was picked among four variants on that sample; not adopted, to be confirmed on a fresh year ([foundation_valid.md](reports/sihsus_rj/foundation_valid.md)) |
 | Promoted by | The gate on 2023 ([test.md](reports/sihsus_rj/test.md)); see "How many times the test year was looked at" below |
 | Packaging | MLflow pyfunc that takes the raw admission columns and builds its own features, so callers cannot build them differently |
 | Served by | `costmodel score` (a month in batch) and `costmodel serve` (`POST /predict`); both return `typical_cost` and `expected_cost` |
@@ -216,8 +216,13 @@ judged only 3 months after it ends, when 98.7% of admissions and 95.4% of the mo
   procedure in 2022, same mix), what was paid is 7.91–9.12% higher from January to April, 11.08–13.07% in May and June
   and 16.90–21.89% from July. The error on urgent admissions stays between −5.50% and −9.14% all year; on elective
   admissions it goes from −12.74% to −16.35% (January to April) to −27.31% to −33.25% (July to December). The median
-  paid for cataract surgery (SIGTAP 0405050372) is R$ 772 in every month up to June and R$ 3,858 from July. The rule
-  behind this change was not identified.
+  paid for cataract surgery (SIGTAP 0405050372) is R$ 772 in every month up to June and R$ 3,858 from July.
+- **The July step is a federal complement, not the price table**
+  ([bill_parts_monitor.md](reports/sihsus_rj/bill_parts_monitor.md)). A SIH/SUS bill is the table's parts plus
+  complements. The federal one was paid on 2.63% of the admissions in June and 7.58% in July, elective admissions
+  only, and is about three times the rest of the bill where it is paid; the table did not move in 2024. Against the
+  bills without it, the MAE over 2024 is 774.13 instead of 882.18 and the month's total is 8% to 11% low all year.
+  The model predicts the whole bill, so it cannot tell the two parts apart.
 - **The retrain rule fires at the end of September 2024.** May and June were the first two months in a row to break
   a limit (MAE more than 10% above the test MAE, or the month's total off by more than 15%): their MAE, 842.60 and
   825.09, is above 799.92, and their costs were known only in September. With version 3 the rule fired two months
@@ -244,9 +249,10 @@ at"), so this replay is a description of 2024 under that rule, not an independen
 
 ## Known limitations
 
-- **Payment-rule changes are invisible until billed.** The July 2024 change in what is paid for elective surgery
-  could not be learned from earlier data, and showed in no input. The monitor's price level and its breakdown by
-  admission type show where such a change happened, three months later.
+- **Payment-rule changes are invisible until billed.** The federal complement paid for elective surgery from July
+  2024 could not be learned from earlier data, and showed in no input, the official price table included. The
+  monitor's price level and its breakdown by admission type show where such a change happened, three months later;
+  `costmodel bill-parts` shows which part of the bill it was.
 - **Systematic under-prediction when prices rise.** The time input carries the latest price level forward but cannot
   anticipate increases. Without retraining, the error grows month after month.
 - **Both numbers were judged on a year already seen** (see "How many times the test year was looked at").

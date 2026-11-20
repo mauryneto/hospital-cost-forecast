@@ -24,6 +24,8 @@ def main(argv: list[str] | None = None) -> None:
         ("blend", "average the candidate's best per-admission and best month's-total settings, on validation"),
         ("segments", "one model for every admission, or one per admission type / procedure group? on validation"),
         ("recent-price", "does the model do better when given each procedure's recent billed price? on validation"),
+        ("table-price", "does the model do better when given the official price table (SIGTAP)? on validation"),
+        ("bill-parts", "which part of the bill moved on the monitoring window: the table's, or a complement? (SIH/SUS)"),
         ("base-window", "how much billed history should each retrain use? retrained every 3 months, on validation"),
         ("foundation", "a tabular foundation model (TabPFN) against the candidate, on a sample of validation"),
         ("typical", "should the typical cost be a median? the same setting, four ways to give the number, on validation"),
@@ -117,6 +119,14 @@ def main(argv: list[str] | None = None) -> None:
         run(cfg)
     elif args.command == "recent-price":
         from costmodel.recent_price import run
+
+        run(cfg)
+    elif args.command == "table-price":
+        from costmodel.table_price import run
+
+        run(cfg)
+    elif args.command == "bill-parts":
+        from costmodel.bill_parts import run
 
         run(cfg)
     elif args.command == "base-window":

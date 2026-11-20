@@ -251,6 +251,36 @@ any new input (10.69% at an MAE of 807.86). So on a year of steady price rises i
 objective does not already give, and it would cost a table of recent prices kept up to date for serving. What it
 was built for, a sudden change like July 2024, is not in this year and was not tested.
 
+**Giving the model the official price table** ([table_price_valid.md](reports/sihsus_rj/table_price_valid.md)). The
+SUS publishes a price for every procedure, month by month (SIGTAP). Every admission gets the table's row for its
+requested procedure as extra inputs: the price, the stay the table assumes, points, complexity, financing. Three
+variants: the admission month's table (the best case); the newest table whose file is dated before the month began
+(what a model in use could have read: the table of July 2022, the largest re-pricing of these years, is dated 24
+August); and the cost predicted relative to the table price. Measured with the typical cost as version 4 gives it.
+
+| | Typical cost: MAE (R$) | Expected cost: error on the month's total |
+|---|---:|---:|
+| **The candidate as it is** | **747.38** | 10.69% |
+| The admission month's table, as inputs | 744.92 | 8.91% |
+| The table as written before the month began, as inputs | 743.41 | 9.64% |
+| Cost predicted relative to the table price | 739.68 | 7.22% |
+
+- **Per admission it gains 0.3% to 1.0%,** where the gate asks 2% to replace a model.
+- **The gain on the month's total is two errors of opposite sign.** 7.6% of the 2022 admissions are of a procedure
+  re-priced inside the year, mostly elective surgery in June and July. From the change on, the expected cost of those
+  admissions goes from 8.64% too low to between 5.93% and 21.93% too high, and their error per admission gets worse
+  (950.09 becomes 954.85 to 1,000.61). The other 92% stay about 10% too low. The total looks better because one
+  error offsets the other.
+- **Why it overshoots.** For the re-priced procedures the table price went up 38.6% and what was paid 12.1%: a bill
+  is more than the table price of its main procedure. And from 2018 to 2021 the table hardly moved, so the model
+  never saw a procedure change price; it learned that dearer procedures cost more, not how a bill follows its table.
+- **The table is a small part of a bill, and it rarely moves.** The table prices of the requested procedures add up
+  to 36.0% of what was paid, and 22.8% of the admissions were paid within 5% of the table price. From 2018 to 2024
+  the table moved the cost of a fixed basket by more than 0.5% in three months (June and July 2022, September 2023),
+  and not at all in 2024.
+- **Not adopted.** It would add a table to keep current at serving, for less than the gate asks per admission and a
+  gain on the total that is not one. What moved the bills in 2024 is not in the table (see July 2024, below).
+
 **How much billed history should each retrain use?**
 ([base_window_valid.md](reports/sihsus_rj/base_window_valid.md)). Prices move every few months, so a short, recent
 history is a natural idea. Here the model is fitted again before every quarter of 2022, with only the admission months
@@ -294,8 +324,28 @@ same admissions would cost at the prices the model last saw (mean per procedure 
 Urgent admissions were paid as before; elective ones were not. The median paid for cataract surgery
 (phacoemulsification, SIGTAP 0405050372) was R$ 772 in every month up to June and R$ 3,858 from July; for laparoscopic
 cholecystectomy (0407030034) it went from R$ 1,057 to between R$ 1,397 and R$ 2,026. A model trained on earlier prices
-cannot know this, and no input drift shows it. The rule behind the change was not identified; a payment complement
-for elective surgery is the likely kind of cause.
+cannot know this, and no input drift shows it.
+
+**It is a federal complement, paid on top of the table**
+([bill_parts_monitor.md](reports/sihsus_rj/bill_parts_monitor.md)). What the SUS pays for an admission is the table's hospital and professional parts plus complements. The raw files
+carry the parts; the federal complement was 1% of the money or less in every year from 2018 to 2023, and 6.38% in
+2024:
+
+| | June 2024 | July 2024 |
+|---|---:|---:|
+| Admissions paid a federal complement | 2.63% | 7.58% |
+| Federal complement per admission (all admissions) | R$ 63.90 | R$ 224.71 |
+| Error per admission (MAE) | 825.09 | 995.69 |
+| The same, against the bill without the complement | 765.23 | 784.41 |
+| Error on the month's total | −11.77% | −19.75% |
+| The same, against the bill without the complement | −8.43% | −9.35% |
+
+Only elective admissions receive it (13.69% of them over the year, no urgent one), in 88 of 250 hospitals, and where it
+is paid it is about three times the rest of the bill. Judged against the bills without it, the error over 2024 is
+774.13 per admission instead of 882.18, and the month's total is 8% to 11% low in every month instead of 17% to 20%
+low from July. The price table did not move in 2024. So most of what looked like the model decaying was a payment
+programme being switched on: a federal complement of this kind is how the national programme to shorten queues for
+elective surgery pays. Which ordinance raised it in July was not looked up.
 
 **Retraining policies, replayed over 2024** with only the data known at each moment:
 
@@ -350,6 +400,8 @@ docker compose up api
 | `costmodel blend` | Average the candidate's best per-admission and best month's-total settings, on validation |
 | `costmodel segments` | One model for every admission, or one per admission type / procedure group? On validation |
 | `costmodel recent-price` | Does the model do better when given each procedure's recent billed price? On validation |
+| `costmodel table-price` | Does the model do better when given the official price table (SIGTAP, downloaded and checksummed)? On validation |
+| `costmodel bill-parts` | Which part of the bill moved on the monitoring window: the table's, or a complement paid on top? SIH/SUS only |
 | `costmodel typical` | Should the typical cost be a median? The same setting, four ways to give the number, on validation |
 | `costmodel foundation` | A tabular foundation model (TabPFN-2) against the candidate, on a sample of validation; needs `uv sync --extra foundation` and a GPU |
 | `costmodel base-window` | How much billed history should each retrain use? Retrained every 3 months, on validation |
@@ -431,7 +483,8 @@ More in [ARCHITECTURE.md](ARCHITECTURE.md).
 - **SUS reimbursement, not cost of care,** and for Rio de Janeiro only. The target is what the SUS paid.
 - **It under-predicts when prices rise:** the expected cost by 7% on 2023 and up to 20% in late 2024 without
   retraining (the typical cost, which is not meant to be added up, by more). A change
-  in payment rules, like the one for elective surgery in July 2024, is seen only after the bills arrive.
+  in payment rules, like the federal complement for elective surgery from July 2024, is seen only after the bills
+  arrive, and the model's target does not tell the table's part of a bill from a complement.
 - **Individual predictions for the most expensive admissions are low:** the top decile is under-predicted by about
   47% on average by the typical cost, which is a median, and 36% by the expected cost. What happens during the stay
   is not known at admission.
@@ -456,12 +509,8 @@ Not done yet, in the order planned:
    over the following months (about a third of the money in the same month, a third one month later, the rest after
    that, the expensive bills last). Spreading each month's expected cost over the months it will be billed in gives a
    cash-flow forecast.
-3. **The official price table as an input.** The SUS publishes the table price of every procedure, and it is known
-   before the admission. It may let the model follow a published price change at once instead of months later. The
-   July 2024 change looks like a complement paid outside the table, so it may not be caught; finding the rule behind
-   it belongs here.
-4. **Other states,** to see how much of the model is specific to Rio de Janeiro.
-5. **The patient's history** (earlier admissions). It usually helps a cost model a great deal, but the public SUS files
+3. **Other states,** to see how much of the model is specific to Rio de Janeiro.
+4. **The patient's history** (earlier admissions). It usually helps a cost model a great deal, but the public SUS files
    do not identify the patient across admissions; this is for a payer's own data.
 
 What the 2025 check left open:

@@ -1,0 +1,197 @@
+{
+  "settings": {
+    "typical": "log_l2, 255 leaves, expanding, with time",
+    "expected": "tweedie, 63 leaves, expanding, with time"
+  },
+  "typical_scaled": false,
+  "draws": 1000,
+  "table": {
+    "months": [
+      "2017-12",
+      "2024-12"
+    ],
+    "basket_in_every_month_pct": 98.76964688357148,
+    "priced_pct": 95.22094244031898,
+    "money_pct": 36.03664929241561,
+    "paid_within_5pct": 22.83105777321338,
+    "index_first": 551.1919755728466,
+    "index_last": 602.2337712556925,
+    "steps": [
+      {
+        "month": "2022-06",
+        "step_pct": 1.6689312348361796,
+        "procedures": 73,
+        "admissions_pct": 1.429700187624021,
+        "file_dated": "2022-06-28"
+      },
+      {
+        "month": "2022-07",
+        "step_pct": 3.773374584212874,
+        "procedures": 49,
+        "admissions_pct": 6.305994445917183,
+        "file_dated": "2022-08-24"
+      },
+      {
+        "month": "2023-09",
+        "step_pct": 3.536524123496232,
+        "procedures": 14,
+        "admissions_pct": 0.33291038572307313,
+        "file_dated": "2023-10-09"
+      }
+    ],
+    "procedures_repriced_by_year": {
+      "2018": 36,
+      "2019": 4,
+      "2020": 4,
+      "2021": 17,
+      "2022": 201,
+      "2023": 26,
+      "2024": 0
+    },
+    "file_days_median": 6.0,
+    "files_dated_after_month": 18,
+    "files": 85,
+    "repriced_admissions_pct": 7.640518273540035,
+    "repriced_money_pct": 12.21822163066733,
+    "repriced": {
+      "re-priced, before the change": {
+        "n": 25662,
+        "mean_paid": 2397.103340737277,
+        "mean_table_price": 1124.0759184786843
+      },
+      "re-priced, from the change on": {
+        "n": 34451,
+        "mean_paid": 2686.308443586543,
+        "mean_table_price": 1557.698148094395
+      }
+    }
+  },
+  "rows": [
+    {
+      "variant": "the candidate as it is",
+      "typical_trees": 324,
+      "mae": 747.3792331291,
+      "mae_top_decile": 5212.4196026856,
+      "expected_trees": 303,
+      "monthly_total_mape": 10.6879819724,
+      "bias_pct": -10.1780506076,
+      "typical_table_gain_pct": null,
+      "expected_table_gain_pct": null,
+      "mae_gap": null,
+      "mae_gap_low": null,
+      "mae_gap_high": null,
+      "total_gap": null,
+      "total_gap_low": null,
+      "total_gap_high": null
+    },
+    {
+      "variant": "the admission month's table, as inputs",
+      "typical_trees": 246,
+      "mae": 744.9193922012,
+      "mae_top_decile": 5223.761379112,
+      "expected_trees": 270,
+      "monthly_total_mape": 8.910186519,
+      "bias_pct": -8.4337287226,
+      "typical_table_gain_pct": 45.3290965021,
+      "expected_table_gain_pct": 43.8605277296,
+      "mae_gap": -2.4598409279,
+      "mae_gap_low": -3.2467711959,
+      "mae_gap_high": -1.689380807,
+      "total_gap": -1.7777954534,
+      "total_gap_low": -1.843253127,
+      "total_gap_high": -1.7098193225
+    },
+    {
+      "variant": "the table as written before the month began, as inputs",
+      "typical_trees": 192,
+      "mae": 743.4063261834,
+      "mae_top_decile": 5207.1988227309,
+      "expected_trees": 335,
+      "monthly_total_mape": 9.6394728624,
+      "bias_pct": -9.0943839629,
+      "typical_table_gain_pct": 45.6700486929,
+      "expected_table_gain_pct": 43.7736577755,
+      "mae_gap": -3.9729069458,
+      "mae_gap_low": -4.7551316193,
+      "mae_gap_high": -3.143936807,
+      "total_gap": -1.04850911,
+      "total_gap_low": -1.1098860065,
+      "total_gap_high": -0.9834470578
+    },
+    {
+      "variant": "cost predicted relative to the admission month's table price",
+      "typical_trees": 234,
+      "mae": 739.6790529161,
+      "mae_top_decile": 5207.4593475102,
+      "expected_trees": 151,
+      "monthly_total_mape": 7.2219455771,
+      "bias_pct": -6.8418960736,
+      "typical_table_gain_pct": 83.5185877292,
+      "expected_table_gain_pct": 94.7576288054,
+      "mae_gap": -7.700180213,
+      "mae_gap_low": -8.8041350663,
+      "mae_gap_high": -6.7243178502,
+      "total_gap": -3.4660363953,
+      "total_gap_low": -3.6128616111,
+      "total_gap_high": -3.2957970976
+    }
+  ],
+  "groups": {
+    "the candidate as it is": {
+      "not re-priced": {
+        "mae": 747.2086905118323,
+        "expected_sum_pct": -10.835485640654785
+      },
+      "re-priced, before the change": {
+        "mae": 480.0754218497959,
+        "expected_sum_pct": -0.6698858085731119
+      },
+      "re-priced, from the change on": {
+        "mae": 950.0867223031477,
+        "expected_sum_pct": -8.635138562796008
+      }
+    },
+    "the admission month's table, as inputs": {
+      "not re-priced": {
+        "mae": 742.998824744166,
+        "expected_sum_pct": -10.727124353537409
+      },
+      "re-priced, before the change": {
+        "mae": 456.03432064362505,
+        "expected_sum_pct": 0.05290371794226534
+      },
+      "re-priced, from the change on": {
+        "mae": 1000.6145769766346,
+        "expected_sum_pct": 13.354217749232866
+      }
+    },
+    "the table as written before the month began, as inputs": {
+      "not re-priced": {
+        "mae": 742.8583816877187,
+        "expected_sum_pct": -10.822691226653047
+      },
+      "re-priced, before the change": {
+        "mae": 457.09990600993495,
+        "expected_sum_pct": -0.6064666943386365
+      },
+      "re-priced, from the change on": {
+        "mae": 968.2288528469736,
+        "expected_sum_pct": 5.934271415409853
+      }
+    },
+    "cost predicted relative to the admission month's table price": {
+      "not re-priced": {
+        "mae": 739.5517051246251,
+        "expected_sum_pct": -9.797543404312737
+      },
+      "re-priced, before the change": {
+        "mae": 454.4241849559708,
+        "expected_sum_pct": 3.054010667732987
+      },
+      "re-priced, from the change on": {
+        "mae": 954.8469167324861,
+        "expected_sum_pct": 21.92982612885239
+      }
+    }
+  }
+}

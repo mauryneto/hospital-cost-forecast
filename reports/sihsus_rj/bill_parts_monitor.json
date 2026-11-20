@@ -1,0 +1,298 @@
+{
+  "version": "4",
+  "window": [
+    "2024-01",
+    "2024-12"
+  ],
+  "mae": 882.1756501869472,
+  "mae_without_complement": 774.1307180485397,
+  "complement_times_table_median": 2.9939768276952057,
+  "hospitals": 250,
+  "hospitals_with_complement": 88,
+  "months": [
+    {
+      "period": "2024-01",
+      "n": 74155,
+      "with_complement_pct": 0.6904456880857662,
+      "complement_per_admission": 12.82459496999528,
+      "complement_money_pct": 0.7601832009145215,
+      "mae": 781.0922881687123,
+      "mae_without_complement": 768.8611768885642,
+      "mae_admissions_with": 1988.5792202936339,
+      "mae_admissions_without": 772.6972837657419,
+      "total_error_pct": -9.807072175492204,
+      "total_error_without_complement_pct": -9.116188709712581
+    },
+    {
+      "period": "2024-02",
+      "n": 70341,
+      "with_complement_pct": 0.5800315605407941,
+      "complement_per_admission": 11.090078759187389,
+      "complement_money_pct": 0.6800215476788474,
+      "mae": 754.7971217842147,
+      "mae_without_complement": 744.3957369698167,
+      "mae_admissions_with": 2006.1892800425246,
+      "mae_admissions_without": 747.4963052802839,
+      "total_error_pct": -9.16279927449496,
+      "total_error_without_complement_pct": -8.540857397475465
+    },
+    {
+      "period": "2024-03",
+      "n": 77764,
+      "with_complement_pct": 1.1766370042693277,
+      "complement_per_admission": 25.166705416388044,
+      "complement_money_pct": 1.5422816781840474,
+      "mae": 747.9912763916822,
+      "mae_without_complement": 724.6936062301731,
+      "mae_admissions_with": 2281.7964997201498,
+      "mae_admissions_without": 729.7290767619467,
+      "total_error_pct": -9.177212532971158,
+      "total_error_without_complement_pct": -7.754527511831832
+    },
+    {
+      "period": "2024-04",
+      "n": 78687,
+      "with_complement_pct": 1.9456835309517455,
+      "complement_per_admission": 40.085580591457294,
+      "complement_money_pct": 2.3902420279617282,
+      "mae": 779.3279612560473,
+      "mae_without_complement": 742.4116066349472,
+      "mae_admissions_with": 2334.176183588308,
+      "mae_admissions_without": 748.4752391295673,
+      "total_error_pct": -10.22543083321118,
+      "total_error_without_complement_pct": -8.027054843731863
+    },
+    {
+      "period": "2024-05",
+      "n": 79045,
+      "with_complement_pct": 2.2455563286735405,
+      "complement_per_admission": 57.3865777721551,
+      "complement_money_pct": 3.2262949189688803,
+      "mae": 842.6008715848925,
+      "mae_without_complement": 789.3488087829033,
+      "mae_admissions_with": 2813.1672791407486,
+      "mae_admissions_without": 797.334204399547,
+      "total_error_pct": -13.345239050724711,
+      "total_error_without_complement_pct": -10.456295047588583
+    },
+    {
+      "period": "2024-06",
+      "n": 75564,
+      "with_complement_pct": 2.6282356677783074,
+      "complement_per_admission": 63.89756352231222,
+      "complement_money_pct": 3.6426496033085916,
+      "mae": 825.0884687301395,
+      "mae_without_complement": 765.2344737563302,
+      "mae_admissions_with": 2655.265715814382,
+      "mae_admissions_without": 775.688756687011,
+      "total_error_pct": -11.766724129628825,
+      "total_error_without_complement_pct": -8.43119335771938
+    },
+    {
+      "period": "2024-07",
+      "n": 76772,
+      "with_complement_pct": 7.583493982181004,
+      "complement_per_admission": 224.7050178450477,
+      "complement_money_pct": 11.474759482059763,
+      "mae": 995.6909323479756,
+      "mae_without_complement": 784.4115633717532,
+      "mae_admissions_with": 3118.029800011395,
+      "mae_admissions_without": 821.536501234002,
+      "total_error_pct": -19.75235910929336,
+      "total_error_without_complement_pct": -9.350553106439829
+    },
+    {
+      "period": "2024-08",
+      "n": 76809,
+      "with_complement_pct": 7.969118202294003,
+      "complement_per_admission": 210.80136351208841,
+      "complement_money_pct": 11.080213447183427,
+      "mae": 969.1249360669997,
+      "mae_without_complement": 769.1303123667337,
+      "mae_admissions_with": 2766.369595617326,
+      "mae_admissions_without": 813.4983154085068,
+      "total_error_pct": -19.350623344844276,
+      "total_error_without_complement_pct": -9.300978126784386
+    },
+    {
+      "period": "2024-09",
+      "n": 76389,
+      "with_complement_pct": 7.7052978832030785,
+      "complement_per_admission": 156.99744138553982,
+      "complement_money_pct": 8.584679334902395,
+      "mae": 908.9731968690443,
+      "mae_without_complement": 763.5875910511145,
+      "mae_admissions_with": 2155.026214923557,
+      "mae_admissions_without": 804.9454524571914,
+      "total_error_pct": -16.571280664341902,
+      "total_error_without_complement_pct": -8.736611403135175
+    },
+    {
+      "period": "2024-10",
+      "n": 77484,
+      "with_complement_pct": 7.38733157813226,
+      "complement_per_admission": 205.4053254865521,
+      "complement_money_pct": 10.654668216311954,
+      "mae": 985.8364604608372,
+      "mae_without_complement": 790.4562298531497,
+      "mae_admissions_with": 2910.0275628646414,
+      "mae_admissions_without": 832.3516517908347,
+      "total_error_pct": -19.537580774443086,
+      "total_error_without_complement_pct": -9.942223483636903
+    },
+    {
+      "period": "2024-11",
+      "n": 70378,
+      "with_complement_pct": 6.764898121572083,
+      "complement_per_admission": 192.87722271164284,
+      "complement_money_pct": 10.187573062160066,
+      "mae": 985.053850179188,
+      "mae_without_complement": 802.0559086421476,
+      "mae_admissions_with": 3000.071174543198,
+      "mae_admissions_without": 838.8493988739311,
+      "total_error_pct": -18.699734496844755,
+      "total_error_without_complement_pct": -9.477710072990275
+    },
+    {
+      "period": "2024-12",
+      "n": 67776,
+      "with_complement_pct": 6.94493626062323,
+      "complement_per_admission": 182.5530257023135,
+      "complement_money_pct": 9.443284801257796,
+      "mae": 1025.4778037032204,
+      "mae_without_complement": 854.717817381948,
+      "mae_admissions_with": 2782.580265695603,
+      "mae_admissions_without": 894.3407745986183,
+      "total_error_pct": -19.153812427282556,
+      "total_error_without_complement_pct": -10.723144721750732
+    }
+  ],
+  "by_year": [
+    {
+      "year": 2018,
+      "window": "train",
+      "n": 704497,
+      "federal_money_pct": 0.9647940281199435,
+      "with_federal_pct": 2.1964607372352187,
+      "manager_money_pct": 0.0
+    },
+    {
+      "year": 2019,
+      "window": "train",
+      "n": 727106,
+      "federal_money_pct": 0.9884574128402421,
+      "with_federal_pct": 2.2757342120681168,
+      "manager_money_pct": 0.0
+    },
+    {
+      "year": 2020,
+      "window": "train",
+      "n": 649147,
+      "federal_money_pct": 0.0174294205153068,
+      "with_federal_pct": 0.050065701605337465,
+      "manager_money_pct": 0.0
+    },
+    {
+      "year": 2021,
+      "window": "train",
+      "n": 739098,
+      "federal_money_pct": 0.06320921724655451,
+      "with_federal_pct": 0.16154826558859584,
+      "manager_money_pct": 0.0
+    },
+    {
+      "year": 2022,
+      "window": "valid",
+      "n": 786766,
+      "federal_money_pct": 0.025038837449886844,
+      "with_federal_pct": 0.07854940350752321,
+      "manager_money_pct": 0.0
+    },
+    {
+      "year": 2023,
+      "window": "test",
+      "n": 877760,
+      "federal_money_pct": 0.9765512450760293,
+      "with_federal_pct": 1.0205523149835947,
+      "manager_money_pct": 0.020092468810969176
+    },
+    {
+      "year": 2024,
+      "window": "monitor",
+      "n": 901164,
+      "federal_money_pct": 6.382750474379552,
+      "with_federal_pct": 4.455126924732901,
+      "manager_money_pct": 0.0
+    }
+  ],
+  "by_admission_type": [
+    {
+      "admission_type": "elective",
+      "n": 293238,
+      "with_complement_pct": 13.691267843867438,
+      "complement_money_pct": 14.184117024637672
+    },
+    {
+      "admission_type": "other",
+      "n": 2617,
+      "with_complement_pct": 0.0,
+      "complement_money_pct": 0.0
+    },
+    {
+      "admission_type": "urgent",
+      "n": 605309,
+      "with_complement_pct": 0.0,
+      "complement_money_pct": 0.0
+    }
+  ],
+  "top_procedures": [
+    {
+      "requested_procedure": "0407030034",
+      "n": 15443,
+      "with_complement_pct": 28.362364825487273,
+      "share_of_complement_pct": 11.93776644809755
+    },
+    {
+      "requested_procedure": "0415010012",
+      "n": 32982,
+      "with_complement_pct": 6.743071978655024,
+      "share_of_complement_pct": 8.965731249086701
+    },
+    {
+      "requested_procedure": "0405050372",
+      "n": 8586,
+      "with_complement_pct": 32.70440251572327,
+      "share_of_complement_pct": 7.684326622060894
+    },
+    {
+      "requested_procedure": "0415020050",
+      "n": 3614,
+      "with_complement_pct": 13.171001660210294,
+      "share_of_complement_pct": 6.652440827465413
+    },
+    {
+      "requested_procedure": "0409060186",
+      "n": 11835,
+      "with_complement_pct": 31.89691592733418,
+      "share_of_complement_pct": 5.397422242194262
+    },
+    {
+      "requested_procedure": "0405030177",
+      "n": 2651,
+      "with_complement_pct": 13.692946058091287,
+      "share_of_complement_pct": 5.284877863951963
+    },
+    {
+      "requested_procedure": "0409040240",
+      "n": 9027,
+      "with_complement_pct": 37.26597983826299,
+      "share_of_complement_pct": 4.223154538056764
+    },
+    {
+      "requested_procedure": "0407040102",
+      "n": 9892,
+      "with_complement_pct": 23.473513950667204,
+      "share_of_complement_pct": 3.9381660628915083
+    }
+  ]
+}
