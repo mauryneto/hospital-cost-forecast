@@ -114,6 +114,8 @@ td:first-child { font-family: var(--sans); }
 #ty-table td:first-child { white-space: normal; min-width: 18ch; }
 #ty-table th { white-space: normal; vertical-align: bottom; }
 #ty-table td:nth-child(3) { white-space: normal; min-width: 19ch; max-width: 19ch; }
+#tp-table td:first-child, #tp-groups td:first-child { white-space: normal; min-width: 22ch; }
+#tp-table th, #tp-groups th { white-space: normal; vertical-align: bottom; }
 details { margin-top: 8px; }
 details > summary { font-size: 13px; color: var(--ink-2); cursor: pointer; width: fit-content; }
 details[open] > summary { margin-bottom: 8px; }
@@ -212,11 +214,24 @@ footer p { margin: 0 0 10px; }
       <h2>Where prices changed</h2>
       <p>The procedures that cost most above the prices the model last saw, and the median paid for each, month by month.</p>
       <p>A cell is shaded by how far its median is above what the model last saw. A row that turns dark at one month was repriced.</p>
+      <p id="bp-side">A bill is the price table's part plus complements paid on top of it. The last chart scores the same predictions against the bill with and without them.</p>
     </div>
     <div class="main">
-      <p class="finding" id="prices-finding"></p>
-      <div class="figure">
-        <div class="tablewrap heat" id="prices-table"></div>
+      <div id="heat-block">
+        <p class="finding" id="prices-finding"></p>
+        <div class="figure">
+          <div class="tablewrap heat" id="prices-table"></div>
+        </div>
+      </div>
+      <div id="bp-block">
+        <p class="finding" id="bp-finding"></p>
+        <div class="figure">
+          <h3>Which part of the bill moved</h3>
+          <p class="sub" id="bp-sub"></p>
+          <div class="legend" id="bp-legend"></div>
+          <div class="chart" id="bp"></div>
+          <details><summary>Table</summary><div class="tablewrap" id="bp-table"></div></details>
+        </div>
       </div>
     </div>
   </section>
@@ -298,6 +313,19 @@ footer p { margin: 0 0 10px; }
           <h3>Telling the model what each procedure has been costing lately</h3>
           <p class="sub">One more input: the mean paid for the same procedure in the last billed months, using only bills already known at admission. The model is not retrained along the window; only this input moves.</p>
           <div class="tablewrap" id="rp-table"></div>
+        </div>
+      </div>
+      <div id="tp-block">
+        <p class="finding" id="tp-finding"></p>
+        <div class="figure">
+          <h3>Giving the model the official price table</h3>
+          <p class="sub" id="tp-sub"></p>
+          <div class="tablewrap" id="tp-table"></div>
+        </div>
+        <div class="figure">
+          <h3>The same result, read apart for the procedures re-priced inside the window</h3>
+          <p class="sub">The expected cost added up against what was paid: negative = too low, positive = too high. And the error per admission of the typical cost, for the re-priced procedures from the month their price changed.</p>
+          <div class="tablewrap" id="tp-groups"></div>
         </div>
       </div>
       <div id="bw-block">
@@ -614,7 +642,10 @@ footer p { margin: 0 0 10px; }
 
   // ---- 03 prices ---------------------------------------------------------------------------------------------------
   var shifts = M.price_shifts || [];
-  if (!shifts.length) $("s-prices").style.display = "none";
+  var BP = D.bill_parts && D.bill_parts.months.length > 1 ? D.bill_parts : null;
+  if (!shifts.length && !BP) $("s-prices").style.display = "none";
+  if (!BP) { $("bp-block").style.display = "none"; $("bp-side").style.display = "none"; }
+  if (!shifts.length) $("heat-block").style.display = "none";
   else {
     var jump = null;
     shifts.forEach(function (s) {
@@ -637,6 +668,31 @@ footer p { margin: 0 0 10px; }
       html += "</tr>";
     });
     $("prices-table").innerHTML = html + "</tbody></table>";
+  }
+  if (BP) {
+    var bm = BP.months, bx = bm.map(function (m) { return m.period; });
+    var bstep = 1;
+    bm.forEach(function (m, i) { if (i && m.with_complement_pct - bm[i - 1].with_complement_pct > bm[bstep].with_complement_pct - bm[bstep - 1].with_complement_pct) bstep = i; });
+    var without = bm.map(function (m) { return Math.abs(m.total_error_without_complement_pct); });
+    var allLow = bm.every(function (m) { return m.total_error_without_complement_pct < 0; });
+    var lastY = BP.by_year[BP.by_year.length - 1], earlier = BP.by_year.slice(0, -1).map(function (y) { return y.federal_money_pct; });
+    var paidTypes = BP.by_admission_type.filter(function (t) { return t.with_complement_pct > 0; });
+    $("bp-finding").innerHTML = "What moved is a <b>complement paid on top of the price table</b>: " + pct(bm[bstep - 1].with_complement_pct, 1) + " of the admissions received one in " + bx[bstep - 1] +
+      " and <b>" + pct(bm[bstep].with_complement_pct, 1) + "</b> in " + bx[bstep] + ". Against the bills without it, the error per admission over these months is <b>" + CUR + fmt(BP.mae_without_complement, 2) +
+      "</b> instead of " + CUR + fmt(BP.mae, 2) + ", and the month's total is " + pct(Math.min.apply(null, without), 0) + " to " + pct(Math.max.apply(null, without), 0) + (allLow ? " too low" : " off") + " in every month.";
+    $("bp-sub").textContent = "Error on the month's total, percent; negative = under-predicted. The same predictions of version " + BP.version + ", judged against the whole bill and against the bill without the federal complement. " +
+      (paidTypes.length === 1 ? "Only " + paidTypes[0].admission_type + " admissions receive it (" + pct(paidTypes[0].with_complement_pct, 1) + " of them), in " : "It is paid in ") +
+      fmt(BP.hospitals_with_complement) + " of " + fmt(BP.hospitals) + " hospitals, and where it is paid it is about " + fmt(BP.complement_times_table_median, 1) + " times the rest of the bill. It was " +
+      pct(lastY.federal_money_pct, 1) + " of the money paid in " + lastY.year + (earlier.length ? " and " + pct(Math.max.apply(null, earlier), 1) + " or less in every earlier year." : ".");
+    var bpChart = { x: bx, zero: true, height: 280, yfmt: function (v) { return pct(v, 0, true); }, label: "Error on the month's total against the bill with and without the federal complement",
+      extra: function (i) { return [{ name: "admissions paid a complement", value: pct(bm[i].with_complement_pct, 2) }, { name: "complement per admission", value: CUR + fmt(bm[i].complement_per_admission, 2) }]; } };
+    Object.defineProperty(bpChart, "series", { get: function () { return [
+      { name: "against the whole bill", short: "whole bill", color: css("--ink"), values: bm.map(function (m) { return m.total_error_pct; }) },
+      { name: "against the bill without the complement", short: "without it", color: C1(), values: bm.map(function (m) { return m.total_error_without_complement_pct; }) }]; } });
+    legend($("bp-legend"), bpChart.series); lineChart($("bp"), bpChart);
+    table($("bp-table"), ["Month", "Paid a complement", "Complement per admission", "MAE", "MAE, bill without it", "Month's total", "Month's total, bill without it"], bm.map(function (m) {
+      return [m.period, pct(m.with_complement_pct, 2), fmt(m.complement_per_admission, 2), fmt(m.mae, 2), fmt(m.mae_without_complement, 2), pct(m.total_error_pct, 2, true), pct(m.total_error_without_complement_pct, 2, true)];
+    }));
   }
 
   // ---- 04 replay ---------------------------------------------------------------------------------------------------
@@ -679,13 +735,15 @@ footer p { margin: 0 0 10px; }
   if (SEG.length < 2) $("seg-block").style.display = "none";
   var RP = D.recent_price || [];
   if (RP.length < 2) $("rp-block").style.display = "none";
+  var TP = D.table_price && D.table_price.rows.length > 1 ? D.table_price : null;
+  if (!TP) $("tp-block").style.display = "none";
   var BW = (D.base_window && D.base_window.rows) || [];
   if (BW.length < 3) $("bw-block").style.display = "none";
   var FO = D.foundation && D.foundation.rows.length > 1 ? D.foundation : null;
   if (!FO) $("fo-block").style.display = "none";
   var TY = D.typical && D.typical.rows.length > 1 ? D.typical : null;
   if (!TY) $("ty-block").style.display = "none";
-  if (FAM.length < 2 && !FO && !TY && !B && SEG.length < 2 && RP.length < 2 && BW.length < 3) $("s-families").style.display = "none";
+  if (FAM.length < 2 && !FO && !TY && !B && SEG.length < 2 && RP.length < 2 && !TP && BW.length < 3) $("s-families").style.display = "none";
   if (FAM.length >= 2) {
     var chosen = FAM.filter(isCandidate)[0];
     var others = FAM.filter(function (r) { return !r.candidate; }).sort(function (a, b) { return a.mae - b.mae; });
@@ -799,6 +857,33 @@ footer p { margin: 0 0 10px; }
         pct(rpTotal.monthly_total_mape, 2) + "</b>, at " + more(rpTotal) + "." : "It does not help the month's total either.");
     table($("rp-table"), ["", "Window", "MAE", "Month's total error", "Bias", "MAE, top 10%"], RP.map(function (r) {
       return [r.variant.charAt(0).toUpperCase() + r.variant.slice(1), r.window === "-" ? "–" : r.window, fmt(r.mae, 2), pct(r.monthly_total_mape, 2), pct(r.bias_pct, 2, true), fmt(r.mae_top_decile, 2)];
+    }));
+  }
+
+  if (TP) {
+    var tpIs = TP.rows[0], tpWith = TP.rows.slice(1);
+    var tpCap = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
+    var tpSigned = function (v, d) { return (v > 0 ? "+" : v < 0 ? "\u2212" : "") + fmt(Math.abs(v), d); };
+    var tpSpan = function (r, k, d) { return r[k] == null ? "\u2013" : tpSigned(r[k], d) + " (" + tpSigned(r[k + "_low"], d) + " to " + tpSigned(r[k + "_high"], d) + ")"; };
+    var tpGains = tpWith.map(function (r) { return 100 * (1 - r.mae / tpIs.mae); });
+    var tpTotal = tpWith.slice().sort(function (a, b) { return a.monthly_total_mape - b.monthly_total_mape; })[0];
+    var KEPT = "not re-priced", MOVED = "re-priced, from the change on";
+    var grp = function (r, g) { return (TP.groups[r.variant] || {})[g] || {}; };
+    var off = function (v) { return pct(Math.abs(v), 1) + (v < 0 ? " too low" : " too high"); };
+    var movedSums = tpWith.map(function (r) { return grp(r, MOVED).expected_sum_pct; }), keptSums = TP.rows.map(function (r) { return grp(r, KEPT).expected_sum_pct; });
+    var opposite = grp(tpIs, MOVED).expected_sum_pct < 0 && Math.min.apply(null, movedSums) > 0 && Math.max.apply(null, keptSums) < 0;
+    $("tp-finding").innerHTML = "The official price table makes the model <b>" + fmt(Math.min.apply(null, tpGains), 1) + "% to " + fmt(Math.max.apply(null, tpGains), 1) + "% better per admission</b>, where the gate asks " +
+      pct(100 * TP.min_mae_gain, 0) + ". On the month's total the error goes from " + pct(tpIs.monthly_total_mape, 2) + " to as low as <b>" + pct(tpTotal.monthly_total_mape, 2) + "</b>" +
+      (opposite ? ", but that is <b>two errors of opposite sign</b>: the " + pct(TP.repriced_admissions_pct, 1) + " of admissions whose procedure was re-priced go from " + off(grp(tpIs, MOVED).expected_sum_pct) +
+        " to between " + pct(Math.min.apply(null, movedSums), 1) + " and " + pct(Math.max.apply(null, movedSums), 1) + " too high after the change, while the others stay " +
+        pct(Math.min.apply(null, keptSums.map(Math.abs)), 1) + " to " + pct(Math.max.apply(null, keptSums.map(Math.abs)), 1) + " too low." : ".");
+    $("tp-sub").textContent = "Every admission gets, as extra inputs, the row of its requested procedure in the price table the payer publishes each month (" + fmt(TP.files) + " monthly tables read; " +
+      pct(TP.priced_pct, 1) + " of the admissions have a price there, and those prices add up to " + pct(TP.money_pct, 1) + " of what was paid). Measured on the validation window; the model in production does not read the table.";
+    table($("tp-table"), ["", "MAE", "Against the first row (95%)", "Month's total error", "Against the first row, in points (95%)"], TP.rows.map(function (r) {
+      return [tpCap(r.variant), fmt(r.mae, 2), tpSpan(r, "mae_gap", 2), pct(r.monthly_total_mape, 2), tpSpan(r, "total_gap", 2)];
+    }));
+    table($("tp-groups"), ["", "Not re-priced: expected cost added up", "Re-priced, from the change on: expected cost added up", "Re-priced, from the change on: MAE"], TP.rows.map(function (r) {
+      return [tpCap(r.variant), pct(grp(r, KEPT).expected_sum_pct, 2, true), pct(grp(r, MOVED).expected_sum_pct, 2, true), fmt(grp(r, MOVED).mae, 2)];
     }));
   }
 

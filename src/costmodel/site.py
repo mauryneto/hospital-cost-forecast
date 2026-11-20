@@ -36,6 +36,12 @@ BLEND_FIELDS = ("weight", *TEST_METRICS)
 SEGMENT_FIELDS = ("scheme", "models", *TEST_METRICS)
 RECENT_PRICE_FIELDS = ("variant", "window", *TEST_METRICS)
 BASE_WINDOW_FIELDS = ("history", "retrains", "mean_rows", *TEST_METRICS)
+TABLE_PRICE_FIELDS = ("variant", "mae", "monthly_total_mape", *FOUNDATION_GAPS)
+TABLE_FACTS = ("files", "priced_pct", "money_pct", "repriced_admissions_pct")
+BILL_FIELDS = ("version", "mae", "mae_without_complement", "complement_times_table_median")
+BILL_HOSPITALS = ("hospitals", "hospitals_with_complement")
+BILL_MONTH_ERRORS = ("mae", "mae_without_complement", "total_error_pct", "total_error_without_complement_pct")
+BILL_MONTH_FIELDS = ("period", "with_complement_pct", "complement_per_admission", *BILL_MONTH_ERRORS)
 
 
 GAP_KEYS = ("mae_gap", "mae_gap_low", "mae_gap_high", "total_gap", "total_gap_low", "total_gap_high")
@@ -120,6 +126,8 @@ def page_data(cfg: Config) -> dict:
     blend = _read(cfg, "blend_valid.json", required=False)
     typical = _read(cfg, "typical_valid.json", required=False)
     segments = _read(cfg, "segments_valid.json", required=False) or {"schemes": []}
+    table_price = _read(cfg, "table_price_valid.json", required=False)  # `costmodel table-price`
+    bill = _read(cfg, "bill_parts_monitor.json", required=False)  # `costmodel bill-parts`, on the monitoring window
     if "price_shifts" not in monitor:
         raise RuntimeError("monitor.json has no price breakdown; run `costmodel monitor` again")
     from costmodel.monitor import shown_types
@@ -231,6 +239,27 @@ def page_data(cfg: Config) -> dict:
         "segments": [{k: row[k] for k in SEGMENT_FIELDS} for row in segments["schemes"]],
         # The first row is the candidate as it is; each other row gives it the recent billed price in some way.
         "recent_price": [{k: row[k] for k in RECENT_PRICE_FIELDS} for row in recent["rows"]],
+        # `costmodel table-price`: the first row is the candidate as it is; each other row reads the official price
+        # table in some way. `groups` is the same result read apart for the procedures re-priced inside the window.
+        "table_price": table_price
+        and {
+            **{k: table_price["table"][k] for k in TABLE_FACTS},
+            "min_mae_gain": cfg.gate.min_mae_gain,
+            "rows": [{k: row[k] for k in TABLE_PRICE_FIELDS} for row in table_price["rows"]],
+            "groups": table_price["groups"],
+        },
+        # `costmodel bill-parts`: the monitoring months scored against the bill with and without the complements
+        # paid on top of the price table. The procedures that receive them stay in the report.
+        "bill_parts": bill
+        and {
+            **{k: bill[k] for k in (*BILL_FIELDS, *BILL_HOSPITALS)},
+            "months": [{k: m[k] for k in BILL_MONTH_FIELDS} for m in bill["months"]],
+            "by_year": [{"year": y["year"], "federal_money_pct": y["federal_money_pct"]} for y in bill["by_year"]],
+            "by_admission_type": [
+                {"admission_type": t["admission_type"], "with_complement_pct": t["with_complement_pct"]}
+                for t in bill["by_admission_type"]
+            ],
+        },
         # The first row is the candidate fitted once; each other row is retrained before every block of months.
         "base_window": {
             "horizon": base_window.get("horizon"),

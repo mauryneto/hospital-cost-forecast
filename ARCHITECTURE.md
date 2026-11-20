@@ -126,7 +126,8 @@ uv run costmodel run --config configs/my_plan.toml          # your own admission
    `costmodel site` writes one static page (`docs/index.html`) from the JSON reports: the test table, the
    monitoring months, where prices changed, the retraining replay and, when they were run, the side comparisons
    (other model families, a tabular foundation model, the typical cost as a median, the blend, one model per group,
-   the recent price, the length of the history) and the fresh-year check of the dataset named in `[site] fresh_dataset`. The numbers
+   the recent price, the official price table, the length of the history), the parts of the bill over the
+   monitoring months and the fresh-year check of the dataset named in `[site] fresh_dataset`. The numbers
    are embedded when the page is generated, so it cannot disagree with the reports, and only aggregates are published.
 
 ## Leakage control is part of the contract

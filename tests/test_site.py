@@ -153,6 +153,7 @@ def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
     assert data["families"] == [] and data["blend"] is None and data["segments"] == []  # all optional
     assert data["recent_price"] == [] and data["base_window"]["rows"] == [] and data["foundation"] is None
     assert data["typical"] is None
+    assert data["table_price"] is None and data["bill_parts"] is None
 
     metrics = {"mae": 10.0, "rmse": 30.0, "bias_pct": -5.0, "mae_top_decile": 80.0, "monthly_total_mape": 6.0}
     families = [
@@ -189,7 +190,33 @@ def test_page_embeds_the_side_comparisons_when_they_exist(cfg):
                "money_share_top_decile": 55.0, "baseline": {"model": "median_by_proc", "mae": 12.0},
                "rows": ways}  # fmt: skip
     (cfg.reports_dir / "typical_valid.json").write_text(json.dumps(typical), encoding="utf-8")
+    ways_in = [("as it is", None), ("the table, as inputs", -1.0)]
+    priced = [{"variant": v, "typical_trees": 9, **metrics, **dict.fromkeys(site.FOUNDATION_GAPS, g)} for v, g in ways_in]
+    apart = {v: {"not re-priced": {"mae": 9.0, "expected_sum_pct": -4.0}} for v, _ in ways_in}
+    facts = {"files": 12, "priced_pct": 95.0, "money_pct": 36.0, "repriced_admissions_pct": 7.0, "steps": [{"month": "m"}]}
+    (cfg.reports_dir / "table_price_valid.json").write_text(
+        json.dumps({"settings": {"typical": "a"}, "table": facts, "rows": priced, "groups": apart}), encoding="utf-8"
+    )
+    month = {"n": 50, "with_complement_pct": 2.0, "complement_per_admission": 60.0, "complement_money_pct": 3.0,
+             "mae": 9.0, "mae_without_complement": 8.0, "mae_admissions_with": 30.0, "mae_admissions_without": 8.5,
+             "total_error_pct": -12.0, "total_error_without_complement_pct": -8.0}  # fmt: skip
+    bill = {"version": "3", "window": ["2024-01", "2024-02"], "mae": 9.0, "mae_without_complement": 8.0,
+            "complement_times_table_median": 3.0, "hospitals": 20, "hospitals_with_complement": 5,
+            "months": [{"period": p, **month} for p in ("2024-01", "2024-02")],
+            "by_year": [{"year": 2024, "window": "monitor", "n": 100, "federal_money_pct": 6.0, "manager_money_pct": 0.0}],
+            "by_admission_type": [{"admission_type": "elective", "n": 40, "with_complement_pct": 5.0}],
+            "top_procedures": [{"requested_procedure": "0405050372", "n": 9}]}  # fmt: skip
+    (cfg.reports_dir / "bill_parts_monitor.json").write_text(json.dumps(bill), encoding="utf-8")
     data = embedded(site.run(cfg).read_text(encoding="utf-8"))
+    assert [(r["variant"], r["mae_gap"]) for r in data["table_price"]["rows"]] == ways_in
+    assert data["table_price"]["money_pct"] == 36.0 and data["table_price"]["groups"] == apart
+    assert "steps" not in data["table_price"] and "typical_trees" not in data["table_price"]["rows"][0]
+    assert data["table_price"]["min_mae_gain"] == cfg.gate.min_mae_gain
+    assert [m["period"] for m in data["bill_parts"]["months"]] == ["2024-01", "2024-02"]
+    assert data["bill_parts"]["months"][0]["total_error_without_complement_pct"] == -8.0
+    assert data["bill_parts"]["by_year"] == [{"year": 2024, "federal_money_pct": 6.0}]
+    assert "0405050372" not in json.dumps(data["bill_parts"])  # which procedures: in the report, not on the page
+    assert "n" not in data["bill_parts"]["months"][0]
     assert data["typical"]["factor"] == 1.2 and data["typical"]["baseline"]["mae"] == 12.0
     assert data["typical"]["in_use"] == "unscaled"
     assert data["typical"]["money_share_top_decile"] == 55.0 and data["typical"]["rows"][1]["mae_common"] == 4.0
